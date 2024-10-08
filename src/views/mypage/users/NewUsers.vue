@@ -29,12 +29,12 @@ onMounted(async () => {
 
 // functions
 const toList = () => {
-  router.push({ name: 'admin_users', params: {} })
+  router.push({ name: 'mypage_users', params: {} })
 }
 const submitForm = async () => {
   try {
     await userStore.createUser()
-    router.push({ name: 'admin_users', params: {} })
+    router.push({ name: 'mypage_users', params: {} })
   } catch (err) {
     if (err instanceof AxiosError) {
       showErrorAlert.value = true

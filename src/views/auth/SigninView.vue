@@ -20,7 +20,7 @@ watch(passwordRaw, async (newPasswordRaw) => {
 const submitSignin = async () => {
   try {
     await authStore.signIn()
-    router.push({ name: 'admin' })
+    router.push({ name: 'mypage' })
   } catch (err: any) {
     if (err.response.status === 401) {
       showErrorMessage.value = true

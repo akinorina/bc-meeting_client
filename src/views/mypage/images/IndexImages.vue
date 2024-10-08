@@ -18,10 +18,10 @@ onMounted(async () => {
 
 // functions
 const toNew = () => {
-  router.push({ name: 'admin_images_new', params: {} })
+  router.push({ name: 'mypage_images_new', params: {} })
 }
 const toEdit = (iid: number) => {
-  router.push({ name: 'admin_images_edit', params: { id: iid } })
+  router.push({ name: 'mypage_images_edit', params: { id: iid } })
 }
 </script>
 

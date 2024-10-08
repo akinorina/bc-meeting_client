@@ -81,63 +81,63 @@ const router = createRouter({
       component: () => import('../views/auth/ResetPasswordCompletionView.vue')
     },
     {
-      path: '/admin',
-      name: 'admin',
-      component: () => import('../views/admin/IndexView.vue')
+      path: '/mypage',
+      name: 'mypage',
+      component: () => import('../views/mypage/IndexView.vue')
     },
     {
-      path: '/admin/change-password',
-      name: 'admin_change-password',
-      component: () => import('../views/admin/ChangePasswordView.vue')
+      path: '/mypage/change-password',
+      name: 'mypage_change-password',
+      component: () => import('../views/mypage/ChangePasswordView.vue')
     },
     {
-      path: '/admin/users',
-      name: 'admin_users',
-      component: () => import('../views/admin/users/IndexUsers.vue')
+      path: '/mypage/users',
+      name: 'mypage_users',
+      component: () => import('../views/mypage/users/IndexUsers.vue')
     },
     {
-      path: '/admin/users/:id/edit',
-      name: 'admin_users_edit',
-      component: () => import('../views/admin/users/EditUsers.vue'),
+      path: '/mypage/users/:id/edit',
+      name: 'mypage_users_edit',
+      component: () => import('../views/mypage/users/EditUsers.vue'),
       props: true
     },
     {
-      path: '/admin/users/new',
-      name: 'admin_users_new',
-      component: () => import('../views/admin/users/NewUsers.vue')
+      path: '/mypage/users/new',
+      name: 'mypage_users_new',
+      component: () => import('../views/mypage/users/NewUsers.vue')
     },
     {
-      path: '/admin/images',
-      name: 'admin_images',
-      component: () => import('../views/admin/images/IndexImages.vue')
+      path: '/mypage/images',
+      name: 'mypage_images',
+      component: () => import('../views/mypage/images/IndexImages.vue')
     },
     {
-      path: '/admin/images/:id/edit',
-      name: 'admin_images_edit',
-      component: () => import('../views/admin/images/EditImages.vue'),
+      path: '/mypage/images/:id/edit',
+      name: 'mypage_images_edit',
+      component: () => import('../views/mypage/images/EditImages.vue'),
       props: true
     },
     {
-      path: '/admin/images/new',
-      name: 'admin_images_new',
-      component: () => import('../views/admin/images/NewImages.vue'),
+      path: '/mypage/images/new',
+      name: 'mypage_images_new',
+      component: () => import('../views/mypage/images/NewImages.vue'),
       props: true
     },
     {
-      path: '/admin/blogs',
-      name: 'admin_blogs',
-      component: () => import('../views/admin/blogs/IndexBlogs.vue')
+      path: '/mypage/blogs',
+      name: 'mypage_blogs',
+      component: () => import('../views/mypage/blogs/IndexBlogs.vue')
     },
     {
-      path: '/admin/blogs/:id/edit',
-      name: 'admin_blogs_edit',
-      component: () => import('../views/admin/blogs/EditBlogs.vue'),
+      path: '/mypage/blogs/:id/edit',
+      name: 'mypage_blogs_edit',
+      component: () => import('../views/mypage/blogs/EditBlogs.vue'),
       props: true
     },
     {
-      path: '/admin/blogs/new',
-      name: 'admin_blogs_new',
-      component: () => import('../views/admin/blogs/NewBlogs.vue')
+      path: '/mypage/blogs/new',
+      name: 'mypage_blogs_new',
+      component: () => import('../views/mypage/blogs/NewBlogs.vue')
     }
   ]
 })
@@ -146,9 +146,9 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
   // 行き先ページが管理者用ページである判定
-  const isAdminPage = String(to.name).match(/^admin/) !== null
+  const isMyPage = String(to.name).match(/^mypage/) !== null
 
-  if (isAdminPage && !authStore.isAuthenticated()) {
+  if (isMyPage && !authStore.isAuthenticated()) {
     // 管理者用ページへ未認証状態で遷移の場合、ログイン画面へ遷移
     next({ name: 'sign-in' })
   } else {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import W4Header from './components/W4Header.vue'
+import VccHeader from './components/VccHeader.vue'
 </script>
 
 <template>
-  <w4-header />
+  <VccHeader />
   <router-view />
 </template>
 

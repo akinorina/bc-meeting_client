@@ -14,8 +14,8 @@ const authStore = useAuthStore()
 
     <div class="bg-slate-100 p-3">
       <div class="grid grid-cols-3 gap-3">
-        <div class="rounded-md border bg-slate-50 p-2" v-if="authStore.getUsername() === 'admin'">
-          <router-link :to="{ name: 'admin_users' }" class="">
+        <div class="rounded-md border bg-slate-50 p-2" v-if="authStore.getUsername() === 'mypage'">
+          <router-link :to="{ name: 'mypage_users' }" class="">
             <div class="">
               <div class="flex flex-col items-center">
                 <div class="font-bold">Users</div>
@@ -26,7 +26,7 @@ const authStore = useAuthStore()
         </div>
 
         <div class="rounded-md border bg-slate-50 p-2">
-          <router-link :to="{ name: 'admin_images' }" class="">
+          <router-link :to="{ name: 'mypage_images' }" class="">
             <div class="">
               <div class="flex flex-col items-center">
                 <h5 class="font-bold">Image</h5>
@@ -37,7 +37,7 @@ const authStore = useAuthStore()
         </div>
 
         <div class="rounded-md border bg-slate-50 p-2">
-          <router-link :to="{ name: 'admin_blogs' }" class="">
+          <router-link :to="{ name: 'mypage_blogs' }" class="">
             <div class="">
               <div class="flex flex-col items-center">
                 <h5 class="font-bold">Blog</h5>
@@ -48,7 +48,7 @@ const authStore = useAuthStore()
         </div>
 
         <div class="rounded-md border bg-slate-50 p-2">
-          <router-link :to="{ name: 'admin_change-password' }" class="">
+          <router-link :to="{ name: 'mypage_change-password' }" class="">
             <div class="">
               <div class="flex flex-col items-center">
                 <h5 class="font-bold">change Password</h5>

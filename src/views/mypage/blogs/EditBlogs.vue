@@ -32,7 +32,7 @@ onMounted(async () => {
 
 // functions
 const toIndex = () => {
-  router.push({ name: 'admin_blogs', params: {} })
+  router.push({ name: 'mypage_blogs', params: {} })
 }
 const updateBlog = async () => {
   modalUpdateConfirm.value.close()

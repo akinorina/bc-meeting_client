@@ -31,8 +31,8 @@ onMounted(() => {
 })
 
 // functions
-const toAdmin = () => {
-  router.push({ name: 'admin', params: {} })
+const tomypage = () => {
+  router.push({ name: 'mypage', params: {} })
 }
 const submitForm = async () => {
   try {
@@ -71,7 +71,7 @@ const submitForm = async () => {
         </div>
 
         <div class="mt-5 text-center">
-          <button-general type="button" class="me-2" @click="toAdmin">戻る</button-general>
+          <button-general type="button" class="me-2" @click="tomypage">戻る</button-general>
           <button-general type="submit" class="">更新</button-general>
         </div>
       </form>
