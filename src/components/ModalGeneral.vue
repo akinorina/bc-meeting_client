@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const props = defineProps({
-  isCloseModalBack: { type: Boolean, default: true },
-  classBg: { type: String, default: '' },
-  classFg: { type: String, default: '' },
-  styleBg: { type: String, default: '' },
-  styleFg: { type: String, default: '' }
-})
+export interface Props {
+  isCloseModalBack: Boolean
+  classBg: String
+  classFg: String
+  styleBg: String
+  styleFg: String
+
+}
+const {
+  isCloseModalBack = true,
+  classBg = '',
+  classFg = '',
+  styleBg = '',
+  styleFg = ''
+} = defineProps<Props>()
 
 const status = ref(false)
 
@@ -18,7 +26,7 @@ const close = () => {
   status.value = false
 }
 const closeModalBack = () => {
-  if (props.isCloseModalBack) {
+  if (isCloseModalBack) {
     status.value = false
   }
 }
@@ -34,16 +42,16 @@ defineExpose({
     <div v-if="status" class="fixed left-0 top-0 z-[1000]">
       <div
         class="flex h-screen w-screen items-center justify-center"
-        :class="props.classBg"
+        :class="classBg"
         style="background-color: rgba(0, 0, 0, 0.75)"
-        :style="props.styleBg"
+        :style="styleBg"
         @click.stop.prevent="closeModalBack"
       >
         <div
           class="rounded-md border"
-          :class="props.classFg"
+          :class="classFg"
           style="background-color: white"
-          :style="props.styleFg"
+          :style="styleFg"
           @click.stop
         >
           <slot></slot>
