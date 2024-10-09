@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/user'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 import { digestMessage } from '@/lib/Functions'
+import GoBack from '@/components/GoBack.vue'
 
 // stores
 const router = useRouter()
@@ -30,9 +31,9 @@ onMounted(() => {
   userStore.newPassword = ''
 })
 
-// functions
-const tomypage = () => {
-  router.push({ name: 'mypage', params: {} })
+// functions - パスワード変更
+const toMypage = () => {
+  router.push({ name: 'mypage'})
 }
 const submitForm = async () => {
   try {
@@ -49,32 +50,71 @@ const submitForm = async () => {
     }, 3000)
   }
 }
+
+// import { onMounted, ref } from 'vue'
+// import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+// import InputPassword from '@/components/ui/InputPassword.vue';
+// import { RouterLink, useRouter } from 'vue-router'
+// import { useAuthStore } from '@/stores/auth'
+// import { useRoomStore } from '@/stores/rooms';
+// import ModalGeneral from '@/components/ModalGeneral.vue';
+// import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+
+// const router = useRouter()
+
+// const roomStore = useRoomStore()
+// const authStore = useAuthStore()
+
+// const modal1 = ref()
+// const modal2 = ref()
+
+// onMounted(() => {
+// })
+
+const goBack = () => {
+  router.push({ name: 'mypage' });
+}
+
 </script>
 
 <template>
-  <div class="container mx-auto">
+  <div class="container mx-auto h-screen bg-slate-100">
     <div class="border p-3">
+      <div class="font-bold">設定</div>
+    </div>
+
+    <GoBack
+      @click="goBack"
+    />
+
+    <div class="border p-3">
+      <div class="">
+        <h3 class="font-bold pb-3">パスワード変更</h3>
+      </div>
+
       <div class="mb-3 bg-green-300 p-3" v-if="resultSuccess">パスワードが変更されました。</div>
       <div class="mb-3 bg-red-300 p-3" v-if="resultFailure">パスワード変更が失敗しました。</div>
 
       <form class="" novalidate @submit.stop.prevent="submitForm">
         <div class="flex flex-col items-center">
-          <div class="flex justify-start">
-            <label for="old_password" class="block w-48">これまでのパスワード</label>
-            <input-password class="w-80" id="old_password" v-model="passwordOldRaw" />
+          <div class="">
+            <label for="old_password" class="block w-48">パスワード</label>
+            <InputPassword class="w-80" id="old_password" v-model="passwordOldRaw" />
           </div>
 
-          <div class="mt-3 flex justify-start">
+          <div class="mt-3">
             <label for="new_password" class="block w-48">新しいパスワード</label>
-            <input-password class="w-80" id="new_password" v-model="passwordNewRaw" />
+            <InputPassword class="w-80" id="new_password" v-model="passwordNewRaw" />
           </div>
         </div>
 
         <div class="mt-5 text-center">
-          <button-general type="button" class="me-2" @click="tomypage">戻る</button-general>
-          <button-general type="submit" class="">更新</button-general>
+          <ButtonGeneral type="submit" class="">更新</ButtonGeneral>
         </div>
       </form>
+    </div>
+    <div class="w-100 text-center p-3">
+      <ButtonGeneral type="button" class="me-2" @click="toMypage">戻る</ButtonGeneral>
     </div>
   </div>
 </template>

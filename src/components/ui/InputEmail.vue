@@ -2,16 +2,16 @@
 const model = defineModel({ required: true })
 
 export interface Props {
-  placefolder?: any
+  placeholder?: any
 }
-const { placefolder = '' } = defineProps<Props>()
+const { placeholder = '' } = defineProps<Props>()
 </script>
 
 <template>
   <input
     type="email"
-    :placeholder="placefolder"
-    class="mx-1 rounded-sm border px-2"
+    :placeholder="placeholder"
+    class="border px-2 mx-1"
     v-model="model"
   />
 </template>

@@ -81,15 +81,23 @@ const router = createRouter({
       component: () => import('../views/auth/ResetPasswordCompletionView.vue')
     },
     {
+      path: '/room/:room_hash',
+      name: 'room',
+      component: () => import('../views/room/IndexView.vue'),
+      props: true
+    },
+    {
       path: '/mypage',
       name: 'mypage',
       component: () => import('../views/mypage/IndexView.vue')
     },
+    // settings
     {
-      path: '/mypage/change-password',
-      name: 'mypage_change-password',
-      component: () => import('../views/mypage/ChangePasswordView.vue')
+      path: '/mypage/settings',
+      name: 'mypage_settings',
+      component: () => import('../views/mypage/settings/IndexView.vue')
     },
+    // users
     {
       path: '/mypage/users',
       name: 'mypage_users',
@@ -106,6 +114,7 @@ const router = createRouter({
       name: 'mypage_users_new',
       component: () => import('../views/mypage/users/NewUsers.vue')
     },
+    // images
     {
       path: '/mypage/images',
       name: 'mypage_images',
@@ -123,6 +132,7 @@ const router = createRouter({
       component: () => import('../views/mypage/images/NewImages.vue'),
       props: true
     },
+    // blogs
     {
       path: '/mypage/blogs',
       name: 'mypage_blogs',

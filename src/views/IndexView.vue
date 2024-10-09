@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useImagePublicStore } from '@/stores/imagePublic'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router';
 import InputText from '@/components/ui/InputText.vue';
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
 
-const imagePublicStore = useImagePublicStore()
+const router = useRouter()
 
 const room_ash = ref('')
-
-onMounted(() => {
-  imagePublicStore.getImages()
-})
 </script>
 
 <template>
@@ -30,8 +26,15 @@ onMounted(() => {
 
         <div class="my-5">
           <h3 class="font-bold">Room作成するには・・・</h3>
-          ビデオ通話、および、テキストチャットをするための Room を作成するには、アカウントを作成して、
-          <RouterLink :to="{ name: 'sign-in' }">サインイン</RouterLink> する必要があります。
+          <div class="">
+            ビデオ通話、および、テキストチャットをするための Room を作成するには、アカウントを作成して、
+            <RouterLink :to="{ name: 'sign-in' }">サインイン</RouterLink> する必要があります。
+          </div>
+          <div class="my-3">
+            <ButtonGeneral class="" @click="router.push({ name: 'mypage' })">
+              my page へ進む
+            </ButtonGeneral>
+          </div>
         </div>
       </div>
     </div>

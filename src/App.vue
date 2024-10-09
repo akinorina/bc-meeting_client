@@ -4,8 +4,10 @@ import VccHeader from './components/VccHeader.vue'
 </script>
 
 <template>
-  <VccHeader />
-  <router-view />
+  <div class="h-screen">
+    <VccHeader />
+    <router-view />
+  </div>
 </template>
 
 <style scoped></style>

@@ -102,7 +102,7 @@ const submitForm = async () => {
               <input-email
                 id="email"
                 class="w-64"
-                placefolder="name@example.com"
+                placeholder="name@example.com"
                 v-model="user.email"
                 readonly
               />
@@ -113,7 +113,7 @@ const submitForm = async () => {
               <input-password
                 id="password"
                 class="w-64"
-                placefolder="Password"
+                placeholder="Password"
                 v-model="passwordRaw"
               />
             </div>

@@ -2,12 +2,11 @@
 import { ref } from 'vue'
 
 export interface Props {
-  isCloseModalBack: Boolean
-  classBg: String
-  classFg: String
-  styleBg: String
-  styleFg: String
-
+  isCloseModalBack?: Boolean
+  classBg?: string
+  classFg?: string
+  styleBg?: string
+  styleFg?: string
 }
 const {
   isCloseModalBack = true,

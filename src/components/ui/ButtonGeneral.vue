@@ -9,7 +9,6 @@ const { type = 'button' } = defineProps<Props>()
   <button
     :type="type"
     class="rounded-md bg-sky-500 px-3 py-1 text-slate-50 hover:bg-sky-700"
-    @click="$emit('click')"
   >
     <slot></slot>
   </button>
