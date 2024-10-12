@@ -71,9 +71,10 @@ import 'ckeditor5/ckeditor5.css'
 import { onMounted, ref } from 'vue'
 import { axios } from '@/lib/Axios'
 
-const props = defineProps<{
+export interface Props {
   placeholder?: string
-}>()
+}
+const { placeholder = '' } = defineProps<Props>()
 
 const vmodel = defineModel({ type: String, default: '' })
 
@@ -313,7 +314,7 @@ const editorConfig: any = {
       reversed: true
     }
   },
-  placeholder: props.placeholder,
+  placeholder: placeholder,
   style: {
     definitions: [
       {

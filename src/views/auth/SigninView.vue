@@ -20,7 +20,7 @@ watch(passwordRaw, async (newPasswordRaw) => {
 const submitSignin = async () => {
   try {
     await authStore.signIn()
-    router.push({ name: 'admin' })
+    router.push({ name: 'mypage' })
   } catch (err: any) {
     if (err.response.status === 401) {
       showErrorMessage.value = true
@@ -58,7 +58,7 @@ const signInGoogle = () => {
                 <input-text
                   id="floatingInput"
                   v-model="authStore.email"
-                  placefolder="name@example.com"
+                  placeholder="name@example.com"
                   class="w-64"
                 />
               </div>
@@ -71,7 +71,7 @@ const signInGoogle = () => {
                 <input-password
                   id="floatingPassword"
                   v-model="passwordRaw"
-                  placefolder="Password"
+                  placeholder="Password"
                   class="w-64"
                 />
               </div>

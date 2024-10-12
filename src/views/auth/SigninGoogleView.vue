@@ -14,7 +14,7 @@ onMounted(async () => {
 })
 
 const toUserPage = async () => {
-  router.push({ name: 'admin' })
+  router.push({ name: 'mypage' })
 }
 const toTop = async () => {
   router.push({ name: 'index' })

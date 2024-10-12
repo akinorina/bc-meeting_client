@@ -34,7 +34,7 @@ onMounted(async () => {
 
 // functions
 const toIndex = () => {
-  router.push({ name: 'admin_users', params: { id: id } })
+  router.push({ name: 'mypage_users', params: { id: id } })
 }
 const updateUser = async () => {
   modalUpdateConfirm.value.close()
@@ -54,7 +54,7 @@ const deleteUser = async () => {
   modalDeleteSuccess.value.open()
   setTimeout(() => {
     modalDeleteSuccess.value.close()
-    router.push({ name: 'admin_users' })
+    router.push({ name: 'mypage_users' })
   }, 3000)
 }
 </script>

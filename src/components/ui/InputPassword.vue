@@ -3,10 +3,10 @@ import { ref } from 'vue'
 
 const model = defineModel({ required: true })
 
-const props = defineProps({
-  id: { type: String, default: '' },
-  placefolder: { type: String, default: '' }
-})
+export interface Props {
+  placeholder?: string
+}
+const { placeholder = '' } = defineProps<Props>()
 
 const type = ref('password')
 </script>
@@ -14,9 +14,8 @@ const type = ref('password')
 <template>
   <input
     :type="type"
-    :id="props.id"
-    :placeholder="props.placefolder"
-    class="mx-1 rounded-sm border px-2"
+    :placeholder="placeholder"
+    class="border px-2 mx-1"
     v-model="model"
   />
 </template>

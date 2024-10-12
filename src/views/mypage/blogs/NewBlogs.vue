@@ -27,7 +27,7 @@ onMounted(() => {
 
 // functions
 const toIndex = () => {
-  router.push({ name: 'admin_blogs', params: {} })
+  router.push({ name: 'mypage_blogs', params: {} })
 }
 const createBlog = async () => {
   try {
@@ -40,7 +40,7 @@ const createBlog = async () => {
     setTimeout(() => {
       modalCreateSuccess.value.close()
       //
-      router.push({ name: 'admin_blogs', params: {} })
+      router.push({ name: 'mypage_blogs', params: {} })
     }, 3000)
   } catch (err) {
     if (err instanceof AxiosError) {

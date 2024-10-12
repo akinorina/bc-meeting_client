@@ -1,18 +1,17 @@
 <script setup lang="ts">
 const model = defineModel({ required: true })
 
-const props = defineProps({
-  id: { type: String, default: '' },
-  placefolder: { type: String, default: '' }
-})
+export interface Props {
+  placeholder?: any
+}
+const { placeholder = '' } = defineProps<Props>()
 </script>
 
 <template>
   <input
     type="email"
-    :id="props.id"
-    :placeholder="props.placefolder"
-    class="mx-1 rounded-sm border px-2"
+    :placeholder="placeholder"
+    class="border px-2 mx-1"
     v-model="model"
   />
 </template>

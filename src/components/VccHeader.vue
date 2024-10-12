@@ -18,18 +18,18 @@ const signUp = () => {
 </script>
 
 <template>
-  <header class="container mx-auto flex bg-slate-100">
+  <header class="container mx-auto flex bg-yellow-400">
     <div class="flex-auto" v-if="authStore.isAuthenticated()">
       <div class="m-1 px-2 py-1">
-        <router-link :to="{ name: 'admin' }">
-          <span class="text-xl">Webapp4</span>
+        <router-link :to="{ name: 'mypage' }">
+          <h1 class="text-xl">vc-contact - my page</h1>
         </router-link>
       </div>
     </div>
     <div class="flex-auto" v-else>
       <div class="m-1 px-2 py-1">
         <router-link :to="{ name: 'index' }">
-          <span class="text-xl">Webapp4</span>
+          <h1 class="text-xl">vc-contact</h1>
         </router-link>
       </div>
     </div>
