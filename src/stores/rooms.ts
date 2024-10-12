@@ -47,6 +47,40 @@ export const useRoomStore = defineStore('room', () => {
     await axios.delete('/api/rooms/' + id, options)
   }
 
+  async function statusRoom(roomHash: string) {
+    console.log('--- roomStore.statusRoom() ---')
+    // console.log('roomHash', roomHash)
+
+    const res = await axios.get('/api/rooms/status/' + roomHash)
+    // console.log('res.data', res.data)
+
+    return res.data
+  }
+
+  async function enterRoom(roomHash: string, peerId: string) {
+    console.log('--- roomStore.enterRoom() ---')
+    console.log('roomHash', roomHash)
+    console.log('peerId  ', peerId)
+    const options = {
+      room_hash: roomHash,
+      peer_id: peerId
+    }
+    console.log('options', options)
+    const res = await axios.post('/api/rooms/enter', options)
+    return res.data
+  }
+
+  async function exitRoom(roomHash: string, peerId: string) {
+    console.log('--- roomStore.exitRoom() ---')
+    const options = {
+      room_hash: roomHash,
+      peer_id: peerId
+    }
+    console.log('options', options)
+    const res = await axios.post('/api/rooms/exit', options)
+    return res.data
+  }
+
   return {
     room,
     rooms,
@@ -56,6 +90,9 @@ export const useRoomStore = defineStore('room', () => {
     newRoom,
     createRoom,
     updateRoom,
-    deleteRoom
+    deleteRoom,
+    statusRoom,
+    enterRoom,
+    exitRoom
   }
 })

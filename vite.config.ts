@@ -30,6 +30,11 @@ export default defineConfig({
         target: 'http://localhost:9000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/s3/, '')
+      },
+      '/peer': {
+        target: 'http://localhost:9500',
+        changeOrigin: true,
+        ws: true
       }
     },
     open: true
