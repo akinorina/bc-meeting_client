@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
 import { useRoomStore } from '@/stores/rooms';
 import { useWebrtcStore } from '@/stores/webrtc';
-// import Room from '@/lib/Room';
-// import RoomAttender from '@/lib/RoomAttender';
+import InputText from '@/components/ui/InputText.vue';
 
 const router = useRouter()
 const route = useRoute()
@@ -22,22 +21,18 @@ const roomHash = computed({
 
 const roomStore = useRoomStore()
 
-// // Room データ
-// const room = ref<Room>(new Room())
-// Room 出席者データ
-// const attenders = ref<RoomAttender[]>([])
+// 状態: 入室 / 退室
+const statusEnterRoom = ref(false)
+
+// check interval ID.
+const cIId = ref<any>(null)
 
 onMounted(async () => {
-  console.log('--- onMounted() ---')
-  console.log('roomHash', roomHash.value)
+  // 状態: 退室
+  statusEnterRoom.value = false
 
-  // Room情報取得
-  const res = await roomStore.statusRoom(roomHash.value)
-  console.log('res', res)
-
-  console.log('VITE_PEER_SERVER_HOST', import.meta.env.VITE_PEER_SERVER_HOST)
-  console.log('VITE_PEER_SERVER_PORT', import.meta.env.VITE_PEER_SERVER_PORT)
-  console.log('VITE_PEER_SERVER_PATH', import.meta.env.VITE_PEER_SERVER_PATH)
+  // Room 情報取得
+  roomStore.getRoomByRoomHash(roomHash.value)
 
   // open Peer
   await webrtcStore.open({
@@ -48,52 +43,58 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  console.log('--- onBeforeUnmount() ---')
+  clearInterval(cIId.value)
   webrtcStore.close()
+  statusEnterRoom.value = false
 })
 
-const getRoomStatus = async () => {
-  console.log('--- getRoomStatus() ---')
-  console.log('roomHash:', roomHash.value)
-  const res = await roomStore.statusRoom(roomHash.value)
-  console.log('res', res)
-}
-
 const enterRoom = async () => {
-  console.log('--- enterRoom() ---')
-
   // 入室APIアクセス
-  console.log('roomHash:', roomHash.value)
-  const res = await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId)
-  console.log('res', res)
+  await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId)
 
   // 入室状態を取得
   const res2 = await roomStore.statusRoom(roomHash.value)
   res2.attenders.forEach(async (item: any) => {
-    console.log('peer_id', item.peer_id)
     if (item.peer_id !== webrtcStore.myPeerId) {
       // 現在の参加者それぞれへメディア接続
-      console.log('connect to :', item.peer_id)
       webrtcStore.connectMedia(item.peer_id)
     }
   })
+
+  // 状態: 入室
+  statusEnterRoom.value = true
+
+  // 相手の disconnect 不良への対応
+  cIId.value = setInterval(() => { checkStatusPeerConn() }, 5000)
 }
 
 const exitRoom = async () => {
-  console.log('--- exitRoom() ---')
+  clearInterval(cIId.value)
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
-
   // 退室APIアクセス
-  const res = await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
-  console.log('res', res)
+  await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
+
+  // 状態: 退室
+  statusEnterRoom.value = false
 }
+
+// PeerConn 状態をチェック、改善処理
+const checkStatusPeerConn = async () => {
+  // status
+  const res = await roomStore.statusRoom(roomHash.value)
+  const peerIds: Array<string> = res.attenders.map((item: any) => {
+    return item.peer_id
+  })
+  webrtcStore.checkMedias(peerIds)
+}
+
 </script>
 
 <template>
-  <div class="container mx-auto h-screen bg-slate-100">
-    <div class="border p-3">
+  <div class="h-screen bg-slate-100">
+    <div class="p-3">
       <div class="font-bold">Contact Rooms</div>
       <div class="p-3">
         <div class="">{{ roomStore.room.room_name }}</div>
@@ -101,22 +102,28 @@ const exitRoom = async () => {
       </div>
     </div>
 
-    <div class="p-3 mt-3 border rounded">
-      {{ webrtcStore.myPeerId }}
+    <div class=" flex justify-start">
+      <div class="w-1/6 font-bold p-2">my name.</div>
+      <InputText class="w-3/6 px-3 rounded-md" readonly v-model="webrtcStore.myName" />
+    </div>
+
+    <div class=" flex justify-start">
+      <div class="w-1/6 font-bold p-2">my peer id.</div>
+      <InputText class="w-3/6 px-3 rounded-md" readonly v-model="webrtcStore.myPeerId" />
     </div>
 
     <div class="p-3">
-      <ButtonGeneral class="me-2" @click="getRoomStatus">Room状態</ButtonGeneral>
-      <ButtonGeneral class="me-2" @click="enterRoom">入室</ButtonGeneral>
-      <ButtonGeneral class="me-2" @click="exitRoom">退室</ButtonGeneral>
-      <ButtonGeneral class="me-0" @click.prevent="router.push({ name: 'index' })">Topページへ</ButtonGeneral>
+      <ButtonGeneral class="me-2" @click="router.push({ name: 'index' })">Topページへ</ButtonGeneral>
+
+      <ButtonGeneral class="me-2" @click="enterRoom" v-if="statusEnterRoom === false">入室</ButtonGeneral>
+      <ButtonGeneral class="me-2" @click="exitRoom" v-else>退室</ButtonGeneral>
     </div>
 
-    <div class="flex flex-wrap justify-start border">
-      <video class="size-60" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
+    <div class="flex flex-wrap">
+      <video class="size-80 bg-slate-100" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
 
       <template v-for="(pm, idx) in webrtcStore.peerMedias" :key="idx">
-        <video class="size-60" :srcObject.prop="pm.mediaStream" autoplay muted playsinline></video>
+        <video class="size-80 bg-slate-100" :srcObject.prop="pm.mediaStream" autoplay muted playsinline></video>
       </template>
     </div>
   </div>

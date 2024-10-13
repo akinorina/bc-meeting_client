@@ -6,7 +6,7 @@ import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
 
 const router = useRouter()
 
-const room_hash = ref('56oa-co0j-4wal') // ToDo: 実際は空文字にする
+const room_hash = ref('56oa-co0j-4wal')
 
 const joinRoom = async () => {
   console.log('--- joinRoom() ---')

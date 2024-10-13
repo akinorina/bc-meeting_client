@@ -40,9 +40,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   const getUserMedia = navigator.mediaDevices.getUserMedia
 
   async function open(options: PeerOptions) {
-    console.log('--- open() ---')
-    // console.log('options', options)
-    // console.log('---')
     // Peerサーバー接続
     peer.value = new Peer(myPeerId.value, {
       host: options.host,
@@ -64,14 +61,11 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         sdpSemantics: 'unified-plan'
       }
     })
-    // console.log('peer.value:', peer.value)
 
     // on: Peerサーバー接続確立
     peer.value.on('open', () => {
-      console.log('--- peer.on() - open ---')
       myPeerId.value = peer.value ? peer.value.id : ''
       localStorage.setItem('peer_id', myPeerId.value)
-      console.log('myPeerId:', myPeerId.value)
     })
 
     // on: Peer接続が切断された
@@ -82,7 +76,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peer接続が破壊され、再接続できない
     peer.value.on('close', () => {
-      console.log('>>> >>> peer.on(close) ---')
       myPeerId.value = ''
       localStorage.setItem('peer_id', '')
     })
@@ -119,15 +112,13 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peer Media接続 呼び出しあり
     peer.value.on('call', (call: MediaConnection) => {
-      console.log('call', call)
       if (!myMediaStream.value || !call) {
         return false
       }
-      console.log('call.peer', call.peer)
       const remotePeerId: string = call.peer.toString()
-      console.log('remotePeerId', remotePeerId)
 
       peerMedias.value[remotePeerId] = new PeerMedia()
+      peerMedias.value[remotePeerId].peerId = remotePeerId
 
       // media接続を確保
       peerMedias.value[remotePeerId].mediaConn = call
@@ -142,8 +133,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // on media: Media接続 切断
       peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
-        console.log('>>> >>> peerMedia.on(close) ---')
-
         // closeした MediaStream停止
         await peerMedias.value[remotePeerId].mediaStream
           .getTracks()
@@ -175,25 +164,25 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       console.error('Failed to get local stream', err)
 
       // log to console first
-      console.log(err) /* handle the error */
+      console.error(err) /* handle the error */
       if (err.name == 'NotFoundError' || err.name == 'DevicesNotFoundError') {
         // required track is missing
-        console.log('Required track is missing')
+        console.error('Required track is missing')
       } else if (err.name == 'NotReadableError' || err.name == 'TrackStartError') {
         // webcam or mic are already in use
-        console.log('Webcam or mic are already in use')
+        console.error('Webcam or mic are already in use')
       } else if (err.name == 'OverconstrainedError' || err.name == 'ConstraintNotSatisfiedError') {
         // constraints can not be satisfied by avb. devices
-        console.log('Constraints can not be satisfied by available devices')
+        console.error('Constraints can not be satisfied by available devices')
       } else if (err.name == 'NotAllowedError' || err.name == 'PermissionDeniedError') {
         // permission denied in browser
-        console.log('Permission Denied.')
+        console.error('Permission Denied.')
       } else if (err.name == 'TypeError' || err.name == 'TypeError') {
         // empty constraints object
-        console.log('Both audio and video are FALSE')
+        console.error('Both audio and video are FALSE')
       } else {
         // other errors
-        console.log('Sorry! Another error occurred.')
+        console.error('Sorry! Another error occurred.')
       }
     }
   }
@@ -216,7 +205,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
 
     peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
-      console.log('>>> >>> peerMedia2.on(close) --- 2')
       // closeした MediaStream停止
       await peerMedias.value[remotePeerId].mediaStream
         .getTracks()
@@ -235,11 +223,15 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   function disconnectMedia() {
     // PeerMediaすべてを停止、Close、削除
     Object.keys(peerMedias.value).forEach(async (key) => {
+      // MediaStream停止
       await peerMedias.value[key].mediaStream
         ?.getTracks()
         .forEach((track: MediaStreamTrack) => track.stop())
 
+      // MediaConnection CLOSE
       await peerMedias.value[key].mediaConn?.close()
+
+      // peerMedia 削除
       delete peerMedias.value[key]
     })
   }
@@ -287,6 +279,24 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     localStorage.setItem('peer_id', '')
   }
 
+  // 相手側から disconnect() されたときの Media close 不良への対応
+  function checkMedias(currentPeerIds: Array<string>) {
+    Object.keys(peerMedias.value).forEach(async (peerId: string) => {
+      if (!currentPeerIds.includes(peerMedias.value[peerId].peerId)) {
+        // MediaStream停止
+        await peerMedias.value[peerId].mediaStream
+          ?.getTracks()
+          .forEach((track: MediaStreamTrack) => track.stop())
+
+        // MediaConnection CLOSE
+        await peerMedias.value[peerId].mediaConn?.close()
+
+        // peerMedia 削除
+        delete peerMedias.value[peerId]
+      }
+    })
+  }
+
   return {
     myName,
     myPeerId,
@@ -297,7 +307,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     open,
     close,
     connectMedia,
-    disconnectMedia
+    disconnectMedia,
+    checkMedias
     // connectData,
     // sendData,
     // disconnectData,
