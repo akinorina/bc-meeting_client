@@ -15,7 +15,7 @@ const toSignin = () => {
   <div class="container mx-auto">
     <div class="border">
       <div class="p-3 text-center">
-        <div class="font-bold">Webapp4 ユーザー登録</div>
+        <div class="font-bold">vc-contact ユーザー登録</div>
         <div class="">ユーザー登録が完了しました。</div>
       </div>
 
