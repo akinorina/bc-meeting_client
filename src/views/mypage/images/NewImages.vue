@@ -18,7 +18,7 @@ onMounted(() => {
 
 // functions
 const toList = () => {
-  router.push({ name: 'admin_images', params: {} })
+  router.push({ name: 'mypage_images', params: {} })
 }
 
 const chooseImage = (ev: any) => {
@@ -37,7 +37,7 @@ const chooseImage = (ev: any) => {
 
 const submitForm = async () => {
   await imageStore.createImage()
-  router.push({ name: 'admin_images', params: {} })
+  router.push({ name: 'mypage_images', params: {} })
 }
 </script>
 

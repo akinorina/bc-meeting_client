@@ -37,7 +37,7 @@ onMounted(() => {
 
 // functions
 const toList = () => {
-  router.push({ name: 'admin_images', params: {} })
+  router.push({ name: 'mypage_images', params: {} })
 }
 const updateImage = async () => {
   modalUpdateConfirm.value.close()
@@ -55,7 +55,7 @@ const deleteImage = async () => {
   modalDeleteSuccess.value.open()
   setTimeout(() => {
     modalDeleteSuccess.value.close()
-    router.push({ name: 'admin_images', params: {} })
+    router.push({ name: 'mypage_images', params: {} })
   }, 3000)
 }
 </script>
