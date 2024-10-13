@@ -10,7 +10,7 @@ const gmodal2 = ref()
 <template>
   <div class="container mx-auto">
     <div class="border p-3">
-      <h2 class="font-bold">Webapp4 - Samples</h2>
+      <h2 class="font-bold">vc-contact - Samples</h2>
       <div class="">sample of general modal</div>
     </div>
 

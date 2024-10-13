@@ -14,7 +14,7 @@ const toSignin = () => {
 <template>
   <div class="container mx-auto">
     <div class="p-2">
-      <h1 class="text-xl font-bold">Webapp4 ユーザー登録</h1>
+      <h1 class="text-xl font-bold">vc-contact ユーザー登録</h1>
       <p class="">いただいたメールアドレス宛にメールを送信しました。</p>
       <p>内容をご確認いただき、登録の続きを行なってください。</p>
     </div>

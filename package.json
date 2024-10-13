@@ -1,6 +1,6 @@
 {
-  "name": "webapp4_client_vue3",
-  "version": "0.0.0",
+  "name": "vc-contact_client",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
