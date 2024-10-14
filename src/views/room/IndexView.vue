@@ -12,7 +12,7 @@ const webrtcStore = useWebrtcStore()
 
 const roomHash = computed({
   get() {
-    return route.params.room_hash ?? ''
+    return route.params.room_hash.toString() ?? ''
   },
   set(roomHash) {
     router.replace({ params: { room_hash: roomHash } })
@@ -25,7 +25,7 @@ const roomStore = useRoomStore()
 const statusEnterRoom = ref(false)
 
 // check interval ID.
-const cIId = ref(null)
+let cIId: any = null
 
 // NotFound (== bad room hash)
 const isBadRoomHash = ref<boolean>(false)
@@ -55,7 +55,10 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(async () => {
-  await clearInterval(cIId.value)
+  if (cIId !== null) {
+    await clearInterval(cIId)
+    cIId = null
+  }
 
   if (statusEnterRoom.value) {
     await exitRoom()
@@ -83,11 +86,14 @@ const enterRoom = async () => {
   statusEnterRoom.value = true
 
   // 相手の disconnect 不良への対応
-  cIId.value = setInterval(() => { checkStatusPeerConn() }, 5000)
+  cIId = setInterval(() => { checkStatusPeerConn() }, 5000)
 }
 
 const exitRoom = async () => {
-  clearInterval(cIId.value)
+  if (cIId !== null) {
+    await clearInterval(cIId)
+    cIId = null
+  }
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
