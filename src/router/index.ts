@@ -83,8 +83,7 @@ const router = createRouter({
     {
       path: '/room/:room_hash',
       name: 'room',
-      component: () => import('../views/room/IndexView.vue'),
-      props: true
+      component: () => import('../views/room/IndexView.vue')
     },
     {
       path: '/mypage',

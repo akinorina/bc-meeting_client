@@ -9,8 +9,6 @@ const router = useRouter()
 const room_hash = ref('56oa-co0j-4wal')
 
 const joinRoom = async () => {
-  console.log('--- joinRoom() ---')
-  console.log('room_hash', room_hash.value)
   router.push({ name: 'room', params: { room_hash: room_hash.value }})
 }
 </script>
