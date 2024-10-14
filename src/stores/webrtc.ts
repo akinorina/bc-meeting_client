@@ -25,7 +25,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   const myPeerId = ref<string>(peerIdOnStorage ? peerIdOnStorage : '')
 
   // my Media Stream
-  const myMediaStream = ref<MediaStream>()
+  const myMediaStream = ref<MediaStream | null>(null)
 
   // (remote) PeerMedia
   const peerMedias = ref<PeerMediaObject>({})
@@ -38,6 +38,44 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
   // UserMedia
   const getUserMedia = navigator.mediaDevices.getUserMedia
+
+  // open my MediaStream
+  async function openMyMediaStream() {
+    // local stream 取得
+    try {
+      myMediaStream.value = await getUserMedia({ video: true, audio: false })
+    } catch (err: any) {
+      console.error('Failed to get local stream', err)
+
+      // log to console first
+      console.error(err) /* handle the error */
+      if (err.name == 'NotFoundError' || err.name == 'DevicesNotFoundError') {
+        // required track is missing
+        console.error('Required track is missing')
+      } else if (err.name == 'NotReadableError' || err.name == 'TrackStartError') {
+        // webcam or mic are already in use
+        console.error('Webcam or mic are already in use')
+      } else if (err.name == 'OverconstrainedError' || err.name == 'ConstraintNotSatisfiedError') {
+        // constraints can not be satisfied by avb. devices
+        console.error('Constraints can not be satisfied by available devices')
+      } else if (err.name == 'NotAllowedError' || err.name == 'PermissionDeniedError') {
+        // permission denied in browser
+        console.error('Permission Denied.')
+      } else if (err.name == 'TypeError' || err.name == 'TypeError') {
+        // empty constraints object
+        console.error('Both audio and video are FALSE')
+      } else {
+        // other errors
+        console.error('Sorry! Another error occurred.')
+      }
+    }
+  }
+
+  // close my MediaStream
+  function closeMyMediaStream() {
+    myMediaStream.value?.getTracks().forEach((track) => track.stop())
+    myMediaStream.value = null
+  }
 
   async function open(options: PeerOptions) {
     // Peerサーバー接続
@@ -112,10 +150,11 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peer Media接続 呼び出しあり
     peer.value.on('call', (call: MediaConnection) => {
-      if (!myMediaStream.value || !call) {
+      if (myMediaStream.value === null || !call) {
         return false
       }
-      const remotePeerId: string = call.peer.toString()
+
+      const remotePeerId: string = call.peer
 
       peerMedias.value[remotePeerId] = new PeerMedia()
       peerMedias.value[remotePeerId].peerId = remotePeerId
@@ -155,40 +194,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     peer.value.on('error', (error: any) => {
       throw error
     })
-
-    // local stream 取得
-    try {
-      myMediaStream.value = await getUserMedia({ video: true, audio: false })
-      // console.log('my media stream:', myMediaStream.value)
-    } catch (err: any) {
-      console.error('Failed to get local stream', err)
-
-      // log to console first
-      console.error(err) /* handle the error */
-      if (err.name == 'NotFoundError' || err.name == 'DevicesNotFoundError') {
-        // required track is missing
-        console.error('Required track is missing')
-      } else if (err.name == 'NotReadableError' || err.name == 'TrackStartError') {
-        // webcam or mic are already in use
-        console.error('Webcam or mic are already in use')
-      } else if (err.name == 'OverconstrainedError' || err.name == 'ConstraintNotSatisfiedError') {
-        // constraints can not be satisfied by avb. devices
-        console.error('Constraints can not be satisfied by available devices')
-      } else if (err.name == 'NotAllowedError' || err.name == 'PermissionDeniedError') {
-        // permission denied in browser
-        console.error('Permission Denied.')
-      } else if (err.name == 'TypeError' || err.name == 'TypeError') {
-        // empty constraints object
-        console.error('Both audio and video are FALSE')
-      } else {
-        // other errors
-        console.error('Sorry! Another error occurred.')
-      }
-    }
   }
 
   // Media Coonection 発信
-  function connectMedia(remotePeerId: string) {
+  async function connectMedia(remotePeerId: string) {
     if (!peer.value || !myMediaStream.value) {
       return false
     }
@@ -211,7 +220,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         .forEach((track: MediaStreamTrack) => track.stop())
 
       // closeした MediaConnection CLOSE
-      await peerMedias.value[remotePeerId].mediaConn.close()
+      await peerMedias.value[remotePeerId].mediaConn?.close()
 
       // closeした peerMedia 削除
       delete peerMedias.value[remotePeerId]
@@ -266,12 +275,12 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   //   dataConn.value.close()
   // }
 
-  function close() {
+  async function close() {
     // stream の全Trackをstop, 削除
     disconnectMedia()
 
     // myMediaStream stops.
-    myMediaStream.value?.getTracks().forEach((track) => track.stop())
+    closeMyMediaStream()
 
     // Peer切断
     peer.value?.disconnect()
@@ -306,6 +315,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     open,
     close,
+    openMyMediaStream,
+    closeMyMediaStream,
     connectMedia,
     disconnectMedia,
     checkMedias
