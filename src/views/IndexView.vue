@@ -6,7 +6,7 @@ import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
 
 const router = useRouter()
 
-const room_hash = ref('56oa-co0j-4wal')
+const room_hash = ref('')
 
 const joinRoom = async () => {
   router.push({ name: 'room', params: { room_hash: room_hash.value }})
