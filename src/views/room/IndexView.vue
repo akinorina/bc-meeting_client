@@ -185,7 +185,7 @@ const toggleAudio = () => {
         </div>
       </div>
       <div class="" v-else>
-        <div class="absolute right-2 bottom-10 z-10 rounded-md p-2 bg-slate-200">
+        <div class="absolute right-3 bottom-3 z-10 rounded-md p-2 bg-slate-200">
           <div class="flex">
             <ButtonGeneral class="w-12 h-12 me-1" @click="toggleVideo">
               <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 20 20" v-if="trackStatus.video">
@@ -207,54 +207,117 @@ const toggleAudio = () => {
               </svg>
             </ButtonGeneral>
 
-            <ButtonGeneral class="" @click="exitRoom">退室</ButtonGeneral>
+            <ButtonGeneral class="me-0" @click="exitRoom">退室</ButtonGeneral>
           </div>
         </div>
-        <div class="w-screen h-svh flex flex-wrap justify-center">
-          <div
-            class="relative bg-slate-500 border flex items-center"
-            :class="{
-              'w-full': (Object.keys(webrtcStore.peerMedias).length === 0),
-              'w-1/2': (1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
-              'w-1/3': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8),
-              'w-1/4': (9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15),
-              'w-1/5': (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
-              'h-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1),
-              'h-1/2': (2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5),
-              'h-1/3': (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
-              'h-1/4': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19),
-              'h-1/5': (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)
-            }"
-          >
-            <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
-            <div class="absolute right-2 bottom-2">
-              {{ webrtcStore.myPeerId }}
+
+        <div class="sm:hidden">
+          <!-- smart phone view -->
+
+          <div class="w-screen h-svh flex flex-wrap justify-center">
+            <div
+              class="relative bg-slate-500 border flex items-center"
+              :class="{
+                'w-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
+                'w-1/2': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
+                'w-1/3': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14),
+                'w-1/4': (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23),
+                'w-1/5': (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
+                'h-full': Object.keys(webrtcStore.peerMedias).length == 0,
+                'h-1/2': ((1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1)),
+                'h-1/3': ((2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 2) || (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5)),
+                'h-1/4': ((3 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3) || (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 7) || (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15)),
+                'h-1/5': ((8 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 9) || (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14) || (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19) || (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)),
+                'h-1/6': ((10 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11) || (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23)),
+              }"
+            >
+              <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
+              <div class="absolute right-2 bottom-2">
+                {{ webrtcStore.myPeerId }}
+              </div>
+            </div>
+
+            <div
+              class="relative bg-slate-500 border flex items-center"
+              :class="{
+                'w-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
+                'w-1/2': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
+                'w-1/3': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14),
+                'w-1/4': (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23),
+                'w-1/5': (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
+                'h-full': Object.keys(webrtcStore.peerMedias).length == 0,
+                'h-1/2': ((1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1)),
+                'h-1/3': ((2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 2) || (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5)),
+                'h-1/4': ((3 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3) || (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 7) || (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15)),
+                'h-1/5': ((8 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 9) || (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14) || (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19) || (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)),
+                'h-1/6': ((10 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11) || (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23)),
+              }"
+              v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId"
+            >
+              <video class="w-full h-full" :srcObject.prop="pm.mediaStream" autoplay playsinline></video>
+              <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
+              <div class="absolute right-2 bottom-2">
+                {{ peerId }}
+              </div>
             </div>
           </div>
 
-          <div
-            class="relative bg-slate-500 border flex items-center"
-            :class="{
-              'w-full': (Object.keys(webrtcStore.peerMedias).length === 0),
-              'w-1/2': (1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
-              'w-1/3': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8),
-              'w-1/4': (9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15),
-              'w-1/5': (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
-              'h-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1),
-              'h-1/2': (2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5),
-              'h-1/3': (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
-              'h-1/4': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19),
-              'h-1/5': (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)
-            }"
-            v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId"
-          >
-            <video class="w-full h-full" :srcObject.prop="pm.mediaStream" autoplay playsinline></video>
-            <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
-            <div class="absolute right-2 bottom-2">
-              {{ peerId }}
+          <!-- // smart phone view -->
+        </div>
+        <div class="hidden sm:block">
+          <!-- tablet & PC view -->
+
+          <div class="w-screen h-svh flex flex-wrap justify-center">
+            <!-- local -->
+            <div
+              class="relative bg-slate-500 border flex items-center"
+              :class="{
+                'w-full': (Object.keys(webrtcStore.peerMedias).length === 0),
+                'w-1/2': (1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
+                'w-1/3': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8),
+                'w-1/4': (9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15),
+                'w-1/5': (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
+                'h-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1),
+                'h-1/2': (2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5),
+                'h-1/3': (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
+                'h-1/4': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19),
+                'h-1/5': (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)
+              }"
+            >
+              <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
+              <div class="absolute right-2 bottom-2">
+                {{ webrtcStore.myPeerId }}
+              </div>
+            </div>
+
+            <!-- remotes -->
+            <div
+              class="relative bg-slate-500 border flex items-center"
+              :class="{
+                'w-full': (Object.keys(webrtcStore.peerMedias).length === 0),
+                'w-1/2': (1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
+                'w-1/3': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8),
+                'w-1/4': (9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15),
+                'w-1/5': (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
+                'h-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1),
+                'h-1/2': (2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5),
+                'h-1/3': (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
+                'h-1/4': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19),
+                'h-1/5': (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)
+              }"
+              v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId"
+            >
+              <video class="w-full h-full" :srcObject.prop="pm.mediaStream" autoplay playsinline></video>
+              <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
+              <div class="absolute right-2 bottom-2">
+                {{ peerId }}
+              </div>
             </div>
           </div>
+
+          <!-- // tablet & PC view -->
         </div>
+
       </div>
     </template>
   </div>
