@@ -40,10 +40,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   const getUserMedia = navigator.mediaDevices.getUserMedia
 
   // open my MediaStream
-  async function openMyMediaStream() {
+  async function openMyMediaStream(trackStatus: object = { video: true, audio: true }) {
     // local stream 取得
     try {
-      myMediaStream.value = await getUserMedia({ video: true, audio: false })
+      myMediaStream.value = await getUserMedia(trackStatus)
     } catch (err: any) {
       console.error('Failed to get local stream', err)
 
@@ -71,9 +71,20 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     }
   }
 
+  function setVideoEnabled(value: boolean) {
+    myMediaStream.value?.getVideoTracks().forEach((track) => {
+      track.enabled = value
+    })
+  }
+  function setAudioEnabled(value: boolean) {
+    myMediaStream.value?.getAudioTracks().forEach((track) => {
+      track.enabled = value
+    })
+  }
+
   // close my MediaStream
   function closeMyMediaStream() {
-    myMediaStream.value?.getTracks().forEach((track) => track.stop())
+    myMediaStream.value?.getTracks().forEach(async (track) => await track.stop())
     myMediaStream.value = null
   }
 
@@ -315,6 +326,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     open,
     close,
+    setVideoEnabled,
+    setAudioEnabled,
     openMyMediaStream,
     closeMyMediaStream,
     connectMedia,
