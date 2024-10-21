@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
-import { useRoomStore } from '@/stores/rooms';
+import { useAuthStore } from '@/stores/auth';
 import { useWebrtcStore } from '@/stores/webrtc';
+import { useRoomStore } from '@/stores/rooms';
+import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
 
 const router = useRouter()
 const route = useRoute()
+
+const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
+const roomStore = useRoomStore()
 
 const roomHash = computed({
   get() {
@@ -17,8 +21,6 @@ const roomHash = computed({
     router.replace({ params: { room_hash: roomHash } })
   }
 })
-
-const roomStore = useRoomStore()
 
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
@@ -74,7 +76,11 @@ onBeforeUnmount(async () => {
 // top page へ遷移
 const toTopPage = () => {
   // my page へ遷移
-  router.push({ name: 'mypage' })
+  if (authStore.isAuthenticated()) {
+    router.push({ name: 'mypage' })
+  } else {
+    router.push({ name: 'index' })
+  }
 }
 
 // Roomへの入室
@@ -147,6 +153,8 @@ const toggleAudio = () => {
     </template>
     <template v-else>
       <div class="h-svh bg-slate-100" v-if="statusEnterRoom === false">
+        <!-- 入室前状態 -->
+
         <div class="w-full">
           <div class="w-full flex items-center p-3">
             <video class="w-full max-h-80 bg-slate-100" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
@@ -183,6 +191,8 @@ const toggleAudio = () => {
             </div>
           </div>
         </div>
+
+        <!-- // 入室前状態 -->
       </div>
       <div class="" v-else>
         <div class="absolute right-3 bottom-3 z-10 rounded-md p-2 bg-slate-200">
