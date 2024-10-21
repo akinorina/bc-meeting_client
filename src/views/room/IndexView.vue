@@ -5,6 +5,9 @@ import { useAuthStore } from '@/stores/auth';
 import { useWebrtcStore } from '@/stores/webrtc';
 import { useRoomStore } from '@/stores/rooms';
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+import InputEmail from '@/components/ui/InputEmail.vue';
+import { axios } from '@/lib/Axios';
+import ModalGeneral from '@/components/ModalGeneral.vue';
 
 const router = useRouter()
 const route = useRoute()
@@ -25,6 +28,9 @@ const roomHash = computed({
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
 
+// 招待メール送信先メールアドレス
+const invitedEmailAddress = ref<string>('')
+
 // 状態: 入室 / 退室
 const statusEnterRoom = ref(false)
 
@@ -33,6 +39,9 @@ let cIId: any = null
 
 // NotFound (== bad room hash)
 const isBadRoomHash = ref<boolean>(false)
+
+// Modal: 招待メール送信 完了
+const modalSendInvitaionSuccess = ref()
 
 onMounted(async () => {
   // 状態: 退室
@@ -139,6 +148,24 @@ const toggleAudio = () => {
   webrtcStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
 }
+
+const sendInviteMail = async () => {
+  // サインインユーザー情報取得
+  const profile = await authStore.getProfile()
+  // 招待メール送信
+  const options = {
+    room_id: roomStore.room.id,
+    user_id: profile.data.id,
+    invite_email: invitedEmailAddress.value,
+  }
+  await axios.post('/api/rooms/send_invite_mail', options)
+
+  // 完了告知モーダルダイアログ表示
+  modalSendInvitaionSuccess.value.open()
+  setTimeout(() => {
+    modalSendInvitaionSuccess.value.close()
+  }, 3000)
+}
 </script>
 
 <template>
@@ -187,6 +214,17 @@ const toggleAudio = () => {
                     <path d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"/>
                   </svg>
                 </ButtonGeneral>
+              </div>
+
+              <div class="my-3 text-left" v-if="authStore.isAuthenticated()">
+                <div class="text-md font-semibold">招待する</div>
+                <div class="">
+                  <p class="text-xs">メールアドレスを入力後［送信］を押してください。</p>
+                </div>
+                <div class="w-full mx-0 my-2">
+                  <InputEmail class="w-3/4 py-1" v-model="invitedEmailAddress" />
+                  <ButtonGeneral class="" :disabled="invitedEmailAddress.length === 0" @click="sendInviteMail">送信</ButtonGeneral>
+                </div>
               </div>
             </div>
           </div>
@@ -331,6 +369,15 @@ const toggleAudio = () => {
       </div>
     </template>
   </div>
+
+  <ModalGeneral ref="modalSendInvitaionSuccess">
+    <div class="w-64 p-3">
+      <div class="text-center">
+        <div class="font-bold">招待メール</div>
+        <div class="m-3">送信しました。</div>
+      </div>
+    </div>
+  </ModalGeneral>
 </template>
 
 <style scoped lang="scss"></style>

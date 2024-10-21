@@ -93,8 +93,8 @@ const contactRoom = async (roomHash: string) => {
         <div class="flex justify-between items-end">
           <div class="">{{ item.room_hash }}</div>
           <div class="flex">
-            <ButtonGeneral class="me-2" @click="contactRoom(item.room_hash)">contact</ButtonGeneral>
-            <ButtonGeneral class="me-0" @click="editRoomInit(item.id)">edit</ButtonGeneral>
+            <ButtonGeneral class="me-2" @click="contactRoom(item.room_hash)">詳細</ButtonGeneral>
+            <ButtonGeneral class="me-0" @click="editRoomInit(item.id)">編集</ButtonGeneral>
           </div>
         </div>
       </div>
