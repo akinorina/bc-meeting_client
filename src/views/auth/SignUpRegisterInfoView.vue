@@ -28,7 +28,7 @@ const showErrorAlert = ref(false)
 onMounted(() => {
   // QueryString取得
   const queryData: any = route.query
-  // 新樹ユーザーデータ作成
+  // 新規ユーザーデータ作成
   userStore.newUser()
   user.value.email = queryData.email
   user.value.email_hash = queryData.hash
