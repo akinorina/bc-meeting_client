@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -31,7 +31,7 @@ const toTop = async () => {
         </div>
 
         <div class="border p-3 text-center">
-          <button-general class="" @click="toUserPage">Userページ</button-general>
+          <ButtonGeneralPrimary class="" @click="toUserPage">Userページ</ButtonGeneralPrimary>
         </div>
       </div>
       <div v-else>
@@ -41,7 +41,7 @@ const toTop = async () => {
         </div>
 
         <div class="">
-          <button-general class="" @click="toTop">Topページ</button-general>
+          <ButtonGeneralPrimary class="" @click="toTop">Topページ</ButtonGeneralPrimary>
         </div>
       </div>
     </div>

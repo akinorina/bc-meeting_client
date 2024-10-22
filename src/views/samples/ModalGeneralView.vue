@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 const gmodal = ref()
 const gmodal2 = ref()
@@ -10,13 +10,13 @@ const gmodal2 = ref()
 <template>
   <div class="container mx-auto">
     <div class="border p-3">
-      <h2 class="font-bold">vc-contact - Samples</h2>
+      <h2 class="font-bold">bc-meeting - Samples</h2>
       <div class="">sample of general modal</div>
     </div>
 
     <!-- モーダル 1 -->
     <div class="m-3 border p-3">
-      <button-general type="button" class="" @click="gmodal.open()">open modal 1</button-general>
+      <ButtonGeneralPrimary type="button" class="" @click="gmodal.open()">open modal 1</ButtonGeneralPrimary>
 
       <modal-general ref="gmodal" :is-close-modal-back="true">
         <div class="">
@@ -25,7 +25,7 @@ const gmodal2 = ref()
             ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。
           </div>
           <div class="mb-3 text-center">
-            <button-general class="" @click="gmodal.close()">close</button-general>
+            <ButtonGeneralPrimary class="" @click="gmodal.close()">close</ButtonGeneralPrimary>
           </div>
         </div>
       </modal-general>
@@ -33,7 +33,7 @@ const gmodal2 = ref()
 
     <!-- モーダル 2 -->
     <div class="m-3 border p-3">
-      <button-general type="button" class="" @click="gmodal2.open()">open modal 2</button-general>
+      <ButtonGeneralPrimary type="button" class="" @click="gmodal2.open()">open modal 2</ButtonGeneralPrimary>
 
       <modal-general
         ref="gmodal2"
@@ -49,7 +49,7 @@ const gmodal2 = ref()
             ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。
           </div>
           <div class="mb-3 text-center">
-            <button-general class="" @click="gmodal2.close()">close</button-general>
+            <ButtonGeneralPrimary class="" @click="gmodal2.close()">close</ButtonGeneralPrimary>
           </div>
         </div>
       </modal-general>

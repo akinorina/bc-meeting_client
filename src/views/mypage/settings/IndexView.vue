@@ -2,7 +2,8 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import InputPassword from '@/components/ui/InputPassword.vue'
 import { digestMessage } from '@/lib/Functions'
 import GoBack from '@/components/GoBack.vue'
@@ -42,39 +43,17 @@ const submitForm = async () => {
     resultSuccess.value = true
     setTimeout(() => {
       resultSuccess.value = false
-    }, 3000)
+    }, 2000)
   } catch (err) {
     resultFailure.value = true
     setTimeout(() => {
       resultFailure.value = false
-    }, 3000)
+    }, 2000)
   }
 }
-
-// import { onMounted, ref } from 'vue'
-// import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
-// import InputPassword from '@/components/ui/InputPassword.vue';
-// import { RouterLink, useRouter } from 'vue-router'
-// import { useAuthStore } from '@/stores/auth'
-// import { useRoomStore } from '@/stores/rooms';
-// import ModalGeneral from '@/components/ModalGeneral.vue';
-// import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
-
-// const router = useRouter()
-
-// const roomStore = useRoomStore()
-// const authStore = useAuthStore()
-
-// const modal1 = ref()
-// const modal2 = ref()
-
-// onMounted(() => {
-// })
-
 const goBack = () => {
   router.push({ name: 'mypage' });
 }
-
 </script>
 
 <template>
@@ -109,12 +88,12 @@ const goBack = () => {
         </div>
 
         <div class="mt-5 text-center">
-          <ButtonGeneral type="submit" class="">更新</ButtonGeneral>
+          <ButtonGeneralPrimary type="submit" class="">更新</ButtonGeneralPrimary>
         </div>
       </form>
     </div>
     <div class="w-100 text-center p-3">
-      <ButtonGeneral type="button" class="me-2" @click="toMypage">戻る</ButtonGeneral>
+      <ButtonGeneralSecondary type="button" class="me-2" @click="toMypage">戻る</ButtonGeneralSecondary>
     </div>
   </div>
 </template>

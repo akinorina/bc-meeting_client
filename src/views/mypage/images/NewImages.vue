@@ -4,7 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useImageStore } from '@/stores/image'
 import { useRouter } from 'vue-router'
 import InputText from '@/components/ui/InputText.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 // stores
 const router = useRouter()
@@ -64,8 +64,8 @@ const submitForm = async () => {
         </div>
 
         <div class="">
-          <button-general type="button" class="me-2" @click="toList">戻る</button-general>
-          <button-general type="submit" class="">作成</button-general>
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toList">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="submit" class="">作成</ButtonGeneralPrimary>
         </div>
       </form>
     </div>

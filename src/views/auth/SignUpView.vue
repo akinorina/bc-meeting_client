@@ -6,7 +6,8 @@ import { useRouter } from 'vue-router'
 import { AxiosError } from 'axios'
 import { digestMessage } from '@/lib/Functions'
 import InputEmail from '@/components/ui/InputEmail.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 
 // stores
 const router = useRouter()
@@ -38,7 +39,7 @@ const submitForm = async () => {
       showErrorAlert.value = true
       setTimeout(() => {
         showErrorAlert.value = false
-      }, 3000)
+      }, 2000)
     }
   }
 }
@@ -48,7 +49,7 @@ const submitForm = async () => {
   <div class="container mx-auto">
     <div class="mt-3 border p-3">
       <div class="px-2">
-        <div class="text-xl">vc-contact ユーザー登録</div>
+        <div class="text-xl">bc-meeting ユーザー登録</div>
         <p class="text-xs">
           ユーザー登録ページです。<br />
           次の各項目を入力して登録ボタンを押してください。
@@ -67,7 +68,7 @@ const submitForm = async () => {
           <div class="">
             <div class="">
               <label for="email" class="">Email</label>
-              <input-email
+              <InputEmail
                 id="email"
                 class="w-64"
                 placeholder="name@example.com"
@@ -77,12 +78,12 @@ const submitForm = async () => {
           </div>
 
           <div class="">
-            <button-general type="submit" class="m-2 rounded-md border px-2 py-1">
+            <ButtonGeneralPrimary type="submit" class="m-2 rounded-md border px-2 py-1">
               メールアドレス送信
-            </button-general>
-            <button-general type="button" class="m-2 rounded-md border px-2 py-1" @click="toIndex">
+            </ButtonGeneralPrimary>
+            <ButtonGeneralSecondary type="button" class="m-2 rounded-md border px-2 py-1" @click="toIndex">
               Topへ戻る
-            </button-general>
+            </ButtonGeneralSecondary>
           </div>
         </form>
       </div>

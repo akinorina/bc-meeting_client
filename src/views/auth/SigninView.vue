@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { digestMessage } from '@/lib/Functions'
 
 import InputText from '@/components/ui/InputText.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -15,6 +15,11 @@ const showErrorMessage = ref(false)
 const passwordRaw = ref('')
 watch(passwordRaw, async (newPasswordRaw) => {
   authStore.password = await digestMessage(newPasswordRaw)
+})
+
+onMounted(() => {
+  passwordRaw.value = ''
+  authStore.password = ''
 })
 
 const submitSignin = async () => {
@@ -26,7 +31,7 @@ const submitSignin = async () => {
       showErrorMessage.value = true
       setTimeout(() => {
         showErrorMessage.value = false
-      }, 3000)
+      }, 2000)
     } else {
       throw err
     }
@@ -77,9 +82,9 @@ const signInGoogle = () => {
               </div>
             </div>
             <div class="flex justify-center">
-              <button-general type="submit" class="rounded-md border px-3 py-1">
-                sign-in
-              </button-general>
+              <ButtonGeneralPrimary type="submit" class="rounded-md border px-3 py-1">
+                サインイン
+              </ButtonGeneralPrimary>
             </div>
           </div>
         </div>

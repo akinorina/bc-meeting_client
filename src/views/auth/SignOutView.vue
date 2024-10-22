@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 const router = useRouter()
 
@@ -16,7 +16,7 @@ const toTop = async () => {
     </div>
 
     <div class="p-3 text-center">
-      <button-general class="" @click="toTop">Topページへ</button-general>
+      <ButtonGeneralPrimary class="" @click="toTop">Topページへ</ButtonGeneralPrimary>
     </div>
   </div>
 </template>

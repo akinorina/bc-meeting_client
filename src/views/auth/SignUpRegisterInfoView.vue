@@ -8,7 +8,8 @@ import { digestMessage } from '@/lib/Functions'
 import InputText from '@/components/ui/InputText.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 
 // stores
 const router = useRouter()
@@ -46,7 +47,7 @@ const submitForm = async () => {
       showErrorAlert.value = true
       setTimeout(() => {
         showErrorAlert.value = false
-      }, 3000)
+      }, 2000)
     }
   }
 }
@@ -57,7 +58,7 @@ const submitForm = async () => {
     <div class="mt-3 border p-2">
       <div class="flex justify-center">
         <div>
-          <div class="text-xl font-bold">vc-contact ユーザー登録</div>
+          <div class="text-xl font-bold">bc-meeting ユーザー登録</div>
           <div class="text-md mt-2">次の各項目を入力して、登録ボタンを押してください。</div>
         </div>
       </div>
@@ -99,7 +100,7 @@ const submitForm = async () => {
 
             <div class="flex p-3">
               <label for="email" class="block w-32">Email</label>
-              <input-email
+              <InputEmail
                 id="email"
                 class="w-64"
                 placeholder="name@example.com"
@@ -120,8 +121,8 @@ const submitForm = async () => {
           </div>
 
           <div class="flex justify-center p-3">
-            <button-general type="submit" class="me-2">登録</button-general>
-            <button-general class="" @click="toIndex">Topへ戻る</button-general>
+            <ButtonGeneralPrimary type="submit" class="me-2">登録</ButtonGeneralPrimary>
+            <ButtonGeneralSecondary class="" @click="toIndex">Topへ戻る</ButtonGeneralSecondary>
           </div>
         </form>
       </div>

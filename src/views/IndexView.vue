@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router';
 import InputText from '@/components/ui/InputText.vue';
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
 
 const router = useRouter()
 
-const room_hash = ref('56oa-co0j-4wal')
+const room_hash = ref('')
 
 const joinRoom = async () => {
   router.push({ name: 'room', params: { room_hash: room_hash.value }})
@@ -16,28 +16,29 @@ const joinRoom = async () => {
 <template>
   <div class="container mx-auto">
     <div class="border p-3">
-      <div class="text-xs">
-        <h2 class="text-2xl">vc-contact</h2>
+      <div class="">
+        <!-- <h2 class="text-2xl">bc-meeting</h2> -->
         <div class="">
           ビデオ通話、および、テキストチャット Webアプリです。
         </div>
 
-        <div class="my-5">
-          <h3 class="font-bold">参加者</h3>
-          <div class="">ビデオ通話、および、テキストチャットへのRoomハッシュを入力して参加ボタンを押下してください。</div>
-          <InputText class="" v-model="room_hash" /> <ButtonGeneral class="" @click="joinRoom">参加</ButtonGeneral>
+        <div class="my-3">
+          <h3 class="text-base font-bold">Meeting Room に参加</h3>
+          <InputText class="p-1 m-2 text-base" placeholder="例: fe2j-o4f1-qo8h" v-model="room_hash" />
+          <ButtonGeneralPrimary class="" @click="joinRoom">参加</ButtonGeneralPrimary>
+          <div class="px-2 pt-1 pb-2 text-xs">ビデオ通話、および、テキストチャットへのRoomハッシュを入力して参加ボタンを押下してください。</div>
         </div>
 
-        <div class="my-5">
-          <h3 class="font-bold">Room作成するには・・・</h3>
-          <div class="">
-            ビデオ通話、および、テキストチャットをするための Room を作成するには、アカウントを作成して、
-            <RouterLink :to="{ name: 'sign-in' }">サインイン</RouterLink> する必要があります。
+        <div class="my-3">
+          <h3 class="text-base font-bold">Meeting Room の作成</h3>
+          <div class="mx-2 my-1">
+            <ButtonGeneralPrimary class="" @click="router.push({ name: 'mypage' })">
+              サインイン
+            </ButtonGeneralPrimary>
           </div>
-          <div class="my-3">
-            <ButtonGeneral class="" @click="router.push({ name: 'mypage' })">
-              my page へ進む
-            </ButtonGeneral>
+          <div class="px-2 pt-1 pb-2 text-xs">
+            ビデオ通話をする場である Room を作成するには、アカウントを作成して、
+            <RouterLink class="text-blue-700 underline" :to="{ name: 'sign-in' }">サインイン</RouterLink> する必要があります。
           </div>
         </div>
       </div>

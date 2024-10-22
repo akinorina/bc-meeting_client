@@ -5,7 +5,7 @@ import { useImageStore } from '@/stores/image'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import InputText from '@/components/ui/InputText.vue'
 
 // //@ts-ignore
@@ -46,7 +46,7 @@ const updateImage = async () => {
   modalUpdateSuccess.value.open()
   setTimeout(() => {
     modalUpdateSuccess.value.close()
-  }, 3000)
+  }, 2000)
 }
 const deleteImage = async () => {
   modalDeleteConfirm.value.close()
@@ -56,7 +56,7 @@ const deleteImage = async () => {
   setTimeout(() => {
     modalDeleteSuccess.value.close()
     router.push({ name: 'mypage_images', params: {} })
-  }, 3000)
+  }, 2000)
 }
 </script>
 
@@ -81,11 +81,11 @@ const deleteImage = async () => {
         </div>
 
         <div class="mt-3">
-          <button-general type="button" class="me-2" @click="toList">戻る</button-general>
-          <button-general type="submit" class="me-2"> 更新 </button-general>
-          <button-general type="button" class="" @click="modalDeleteConfirm.open()">
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toList">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="submit" class="me-2"> 更新 </ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="button" class="" @click="modalDeleteConfirm.open()">
             削除
-          </button-general>
+          </ButtonGeneralPrimary>
         </div>
       </div>
     </form>
@@ -98,8 +98,8 @@ const deleteImage = async () => {
         <div class="m-3">更新してよろしいですか？</div>
       </div>
       <div class="text-center">
-        <button-general class="me-2" @click="updateImage">はい</button-general>
-        <button-general class="" @click="modalUpdateConfirm.close()">いいえ</button-general>
+        <ButtonGeneralPrimary class="me-2" @click="updateImage">はい</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
@@ -120,8 +120,8 @@ const deleteImage = async () => {
         <div class="m-3">削除してよろしいですか？</div>
       </div>
       <div class="text-center">
-        <button-general class="me-2" @click="deleteImage">はい</button-general>
-        <button-general class="" @click="modalDeleteConfirm.close()">いいえ</button-general>
+        <ButtonGeneralPrimary class="me-2" @click="deleteImage">はい</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click="modalDeleteConfirm.close()">いいえ</ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 // stores
 const router = useRouter()
@@ -13,13 +13,13 @@ const toSignin = () => {
 
 <template>
   <div class="container mx-auto">
-    <div class="border p-3">
-      <h1 class="">ユーザー登録</h1>
-      <p class="">ユーザー登録が完了しました。</p>
+    <div class="mt-2 border p-3">
+      <h2 class="text-lg font-bold">ユーザー登録</h2>
+      <p class="text-base">ユーザー登録が完了しました。</p>
     </div>
 
-    <div class="mt-2 border p-3">
-      <button-general class="" @click="toSignin">サインイン</button-general>
+    <div class="mt-2 border p-3 w-full text-center">
+      <ButtonGeneralPrimary class="" @click="toSignin">サインイン</ButtonGeneralPrimary>
     </div>
   </div>
 </template>
