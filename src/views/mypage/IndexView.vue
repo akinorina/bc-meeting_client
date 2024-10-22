@@ -22,13 +22,13 @@ onMounted(() => {
   roomStore.getRooms()
 })
 
-// Room新樹作成 init()
+// Room新規作成 init()
 const createRoomInit = async () => {
   await roomStore.newRoom()
   modal1status.value = 'input'
   modal1.value.open()
 }
-// Room新樹作成 submit()
+// Room新規作成 submit()
 const createRoomSubmit = async () => {
   await roomStore.createRoom()
   modal1status.value = 'complete'
@@ -135,10 +135,10 @@ const contactRoom = async (roomHash: string) => {
   </div>
   <!-- // menu -->
 
-  <!-- Modal:Room新樹作成 -->
+  <!-- Modal:Room新規作成 -->
   <ModalGeneral ref="modal1" :is-close-modal-back="true" :close-modal-back-callback="clearTimeoutModal1">
     <div class="w-80 h-40 p-0" v-if="modal1status === 'input'">
-      <h3 class="m-3 font-bold">Room 新樹作成</h3>
+      <h3 class="m-3 font-bold">Room 新規作成</h3>
       <div class="mx-3 my-4">
         <div class="py-0">
           <div class="">Room 名称</div>
@@ -147,7 +147,7 @@ const contactRoom = async (roomHash: string) => {
       </div>
       <div class="m-3 text-center">
         <ButtonGeneralSecondary class="me-3" @click="modal1.close()">中止</ButtonGeneralSecondary>
-        <ButtonGeneralPrimary class="me-0" @click="createRoomSubmit">新樹作成</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="me-0" @click="createRoomSubmit">新規作成</ButtonGeneralPrimary>
       </div>
     </div>
     <div class="w-80 h-40 p-0" v-else-if="modal1status === 'complete'">
@@ -156,7 +156,7 @@ const contactRoom = async (roomHash: string) => {
       </div>
     </div>
   </ModalGeneral>
-  <!-- // Modal:Room新樹作成 -->
+  <!-- // Modal:Room新規作成 -->
 
   <!-- Modal:Room編集 -->
   <ModalGeneral ref="modal2" :is-close-modal-back="true" :close-modal-back-callback="clearTimeoutModal2">
