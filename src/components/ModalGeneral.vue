@@ -7,13 +7,15 @@ export interface Props {
   classFg?: string
   styleBg?: string
   styleFg?: string
+  closeModalBackCallback?: Function
 }
 const {
   isCloseModalBack = true,
   classBg = '',
   classFg = '',
   styleBg = '',
-  styleFg = ''
+  styleFg = '',
+  closeModalBackCallback = (() => { })
 } = defineProps<Props>()
 
 const status = ref(false)
@@ -28,6 +30,7 @@ const closeModalBack = () => {
   if (isCloseModalBack) {
     status.value = false
   }
+  closeModalBackCallback()
 }
 
 defineExpose({

@@ -3,7 +3,9 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRoomStore } from '@/stores/rooms';
 import ModalGeneral from '@/components/ModalGeneral.vue';
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
 import InputText from '@/components/ui/InputText.vue';
 
 const router = useRouter()
@@ -11,8 +13,10 @@ const roomStore = useRoomStore()
 
 const modal1 = ref()
 const modal1status = ref('')
+const modal1tid = ref('')
 const modal2 = ref()
 const modal2status = ref('')
+const modal2tid = ref('')
 
 onMounted(() => {
   roomStore.getRooms()
@@ -30,9 +34,13 @@ const createRoomSubmit = async () => {
   modal1status.value = 'complete'
 
   await roomStore.getRooms()
-  setTimeout(() => {
+  modal1tid.value = setTimeout(() => {
     modal1.value.close()
-  }, 3000)
+  }, 2000)
+}
+const clearTimeoutModal1 = () => {
+  clearTimeout(modal1tid.value);
+  return false;
 }
 
 // Room編集 init()
@@ -48,10 +56,15 @@ const editRoomSubmit = async () => {
   modal2status.value = 'complete'
 
   await roomStore.getRooms()
-  setTimeout(() => {
+  modal2tid.value = setTimeout(() => {
     modal2.value.close()
-  }, 3000)
+  }, 2000)
 }
+const clearTimeoutModal2 = () => {
+  clearTimeout(modal2tid.value);
+  return false;
+}
+
 // Room編集 delete_confirm()
 const deleteRoomConfirm = async () => {
   modal2status.value = 'delete_confirm'
@@ -62,9 +75,9 @@ const deleteRoomSubmit = async () => {
   modal2status.value = 'delete_complete'
 
   await roomStore.getRooms()
-  setTimeout(() => {
+  modal2tid.value = setTimeout(() => {
     modal2.value.close()
-  }, 3000)
+  }, 2000)
 }
 //
 const contactRoom = async (roomHash: string) => {
@@ -93,8 +106,8 @@ const contactRoom = async (roomHash: string) => {
         <div class="flex justify-between items-end">
           <div class="">{{ item.room_hash }}</div>
           <div class="flex">
-            <ButtonGeneral class="me-2" @click="contactRoom(item.room_hash)">詳細</ButtonGeneral>
-            <ButtonGeneral class="me-0" @click="editRoomInit(item.id)">編集</ButtonGeneral>
+            <ButtonGeneralPrimary class="me-2" @click="contactRoom(item.room_hash)">詳細</ButtonGeneralPrimary>
+            <ButtonGeneralPrimary class="me-0" @click="editRoomInit(item.id)">編集</ButtonGeneralPrimary>
           </div>
         </div>
       </div>
@@ -107,23 +120,23 @@ const contactRoom = async (roomHash: string) => {
   <!-- menu -->
   <div class="fixed bottom-0 w-screen bg-slate-200 p-3">
     <div class="flex justify-between">
-      <ButtonGeneral class="border rounded-3xl p-2" @click="createRoomInit">
+      <ButtonGeneralPrimary class="border rounded-3xl p-2" @click="createRoomInit">
         <div class="flex flex-col items-center">
           <div class="font-bold">Room作成</div>
         </div>
-      </ButtonGeneral>
+      </ButtonGeneralPrimary>
 
-      <ButtonGeneral class="border rounded-3xl p-2" @click="router.push({ name: 'mypage_settings' })">
+      <ButtonGeneralPrimary class="border rounded-3xl p-2" @click="router.push({ name: 'mypage_settings' })">
         <div class="flex flex-col items-center">
           <div class="font-bold">設定</div>
         </div>
-      </ButtonGeneral>
+      </ButtonGeneralPrimary>
     </div>
   </div>
   <!-- // menu -->
 
   <!-- Modal:Room新樹作成 -->
-  <ModalGeneral ref="modal1" :is-close-modal-back="true">
+  <ModalGeneral ref="modal1" :is-close-modal-back="true" :close-modal-back-callback="clearTimeoutModal1">
     <div class="w-80 h-40 p-0" v-if="modal1status === 'input'">
       <h3 class="m-3 font-bold">Room 新樹作成</h3>
       <div class="mx-3 my-4">
@@ -133,8 +146,8 @@ const contactRoom = async (roomHash: string) => {
         </div>
       </div>
       <div class="m-3 text-center">
-        <ButtonGeneral class="me-3" @click="modal1.close()">中止</ButtonGeneral>
-        <ButtonGeneral class="me-0" @click="createRoomSubmit">新樹作成</ButtonGeneral>
+        <ButtonGeneralSecondary class="me-3" @click="modal1.close()">中止</ButtonGeneralSecondary>
+        <ButtonGeneralPrimary class="me-0" @click="createRoomSubmit">新樹作成</ButtonGeneralPrimary>
       </div>
     </div>
     <div class="w-80 h-40 p-0" v-else-if="modal1status === 'complete'">
@@ -146,7 +159,7 @@ const contactRoom = async (roomHash: string) => {
   <!-- // Modal:Room新樹作成 -->
 
   <!-- Modal:Room編集 -->
-  <ModalGeneral ref="modal2" :is-close-modal-back="true">
+  <ModalGeneral ref="modal2" :is-close-modal-back="true" :close-modal-back-callback="clearTimeoutModal2">
     <div class="w-80 h-58 p-0" v-if="modal2status === 'input'">
       <h3 class="m-3 font-bold">Room 編集</h3>
       <div class="m-3">
@@ -160,9 +173,9 @@ const contactRoom = async (roomHash: string) => {
         </div>
       </div>
       <div class="m-3 text-center">
-        <ButtonGeneral class="me-3 bg-back-300 hover:bg-back-400 text-black" @click.prevent="modal2.close()">中止</ButtonGeneral>
-        <ButtonGeneral class="me-3" @click.prevent="editRoomSubmit">更新</ButtonGeneral>
-        <ButtonGeneral class="me-0 bg-danger-400 hover:bg-danger-500" @click.prevent="deleteRoomConfirm">削除</ButtonGeneral>
+        <ButtonGeneralSecondary class="me-3" @click.prevent="modal2.close()">中止</ButtonGeneralSecondary>
+        <ButtonGeneralPrimary class="me-3" @click.prevent="editRoomSubmit">更新</ButtonGeneralPrimary>
+        <ButtonGeneralDanger class="me-0" @click.prevent="deleteRoomConfirm">削除</ButtonGeneralDanger>
       </div>
     </div>
     <div class="w-80 h-58 p-0" v-if="modal2status === 'delete_confirm'">
@@ -171,8 +184,8 @@ const contactRoom = async (roomHash: string) => {
         削除しますか？
       </div>
       <div class="m-3 text-center">
-        <ButtonGeneral class="me-3 bg-back-300 hover:bg-back-400 text-black" @click="modal2status = 'input'">戻る</ButtonGeneral>
-        <ButtonGeneral class="me-0 bg-danger-300 hover:bg-danger-400 text-black" @click.prevent="deleteRoomSubmit">削除</ButtonGeneral>
+        <ButtonGeneralSecondary class="me-3" @click="modal2status = 'input'">戻る</ButtonGeneralSecondary>
+        <ButtonGeneralDanger class="me-0" @click.prevent="deleteRoomSubmit">削除</ButtonGeneralDanger>
       </div>
     </div>
     <div class="w-80 h-40 p-0" v-else-if="modal2status === 'complete'">

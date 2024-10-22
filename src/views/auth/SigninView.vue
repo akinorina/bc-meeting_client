@@ -6,7 +6,7 @@ import { digestMessage } from '@/lib/Functions'
 
 import InputText from '@/components/ui/InputText.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -31,7 +31,7 @@ const submitSignin = async () => {
       showErrorMessage.value = true
       setTimeout(() => {
         showErrorMessage.value = false
-      }, 3000)
+      }, 2000)
     } else {
       throw err
     }
@@ -82,9 +82,9 @@ const signInGoogle = () => {
               </div>
             </div>
             <div class="flex justify-center">
-              <ButtonGeneral type="submit" class="rounded-md border px-3 py-1">
+              <ButtonGeneralPrimary type="submit" class="rounded-md border px-3 py-1">
                 サインイン
-              </ButtonGeneral>
+              </ButtonGeneralPrimary>
             </div>
           </div>
         </div>

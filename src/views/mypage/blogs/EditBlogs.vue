@@ -5,7 +5,7 @@ import { useBlogStore } from '@/stores/blog'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import CkeditorBalloon from '@/components/CkeditorBalloon.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import InputText from '@/components/ui/InputText.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 
@@ -43,7 +43,7 @@ const updateBlog = async () => {
   modalUpdateSuccess.value.open()
   setTimeout(() => {
     modalUpdateSuccess.value.close()
-  }, 3000)
+  }, 2000)
 }
 const deleteBlog = async () => {
   modalDeleteConfirm.value.close()
@@ -54,7 +54,7 @@ const deleteBlog = async () => {
   modalDeleteSuccess.value.open()
   setTimeout(() => {
     modalDeleteSuccess.value.close()
-  }, 3000)
+  }, 2000)
 }
 </script>
 
@@ -85,11 +85,11 @@ const deleteBlog = async () => {
           </div>
         </div>
         <div class="p-2">
-          <ButtonGeneral type="button" class="me-2" @click="toIndex">戻る</ButtonGeneral>
-          <ButtonGeneral type="submit" class="me-2">更新</ButtonGeneral>
-          <ButtonGeneral type="button" class="" @click="modalDeleteConfirm.open()">
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="submit" class="me-2">更新</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="button" class="" @click="modalDeleteConfirm.open()">
             削除
-          </ButtonGeneral>
+          </ButtonGeneralPrimary>
         </div>
       </form>
     </div>
@@ -102,8 +102,8 @@ const deleteBlog = async () => {
         <div class="m-3">更新してよろしいですか？</div>
       </div>
       <div class="text-center">
-        <ButtonGeneral class="me-2" @click="updateBlog">はい</ButtonGeneral>
-        <ButtonGeneral class="" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneral>
+        <ButtonGeneralPrimary class="me-2" @click="updateBlog">はい</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
@@ -124,8 +124,8 @@ const deleteBlog = async () => {
         <div class="m-3">削除してよろしいですか？</div>
       </div>
       <div class="text-center">
-        <ButtonGeneral class="me-2" @click.stop="deleteBlog">はい</ButtonGeneral>
-        <ButtonGeneral class="" @click.stop="modalDeleteConfirm.close()">いいえ</ButtonGeneral>
+        <ButtonGeneralPrimary class="me-2" @click.stop="deleteBlog">はい</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click.stop="modalDeleteConfirm.close()">いいえ</ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>

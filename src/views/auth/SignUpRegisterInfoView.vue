@@ -8,7 +8,8 @@ import { digestMessage } from '@/lib/Functions'
 import InputText from '@/components/ui/InputText.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 
 // stores
 const router = useRouter()
@@ -46,7 +47,7 @@ const submitForm = async () => {
       showErrorAlert.value = true
       setTimeout(() => {
         showErrorAlert.value = false
-      }, 3000)
+      }, 2000)
     }
   }
 }
@@ -120,8 +121,8 @@ const submitForm = async () => {
           </div>
 
           <div class="flex justify-center p-3">
-            <ButtonGeneral type="submit" class="me-2">登録</ButtonGeneral>
-            <ButtonGeneral class="bg-back-200 hover:bg-back-300 text-black" @click="toIndex">Topへ戻る</ButtonGeneral>
+            <ButtonGeneralPrimary type="submit" class="me-2">登録</ButtonGeneralPrimary>
+            <ButtonGeneralSecondary class="" @click="toIndex">Topへ戻る</ButtonGeneralSecondary>
           </div>
         </form>
       </div>

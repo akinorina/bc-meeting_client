@@ -3,7 +3,8 @@ import { onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { AxiosError } from 'axios'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import InputEmail from '@/components/ui/InputEmail.vue'
 
 // stores
@@ -30,7 +31,7 @@ const submitForm = async () => {
       showErrorAlert.value = true
       setTimeout(() => {
         showErrorAlert.value = false
-      }, 3000)
+      }, 2000)
     }
   }
 }
@@ -69,12 +70,12 @@ const submitForm = async () => {
         </div>
 
         <div class="">
-          <ButtonGeneral type="submit" class="m-2 rounded-md border px-2 py-1">
+          <ButtonGeneralPrimary type="submit" class="m-2 rounded-md border px-2 py-1">
             メールアドレス送信
-          </ButtonGeneral>
-          <ButtonGeneral type="button" class="m-2 rounded-md border px-2 py-1 bg-back-200 hover:bg-back-300 text-black" @click="toIndex">
+          </ButtonGeneralPrimary>
+          <ButtonGeneralSecondary type="button" class="m-2 rounded-md border px-2 py-1" @click="toIndex">
             Topへ戻る
-          </ButtonGeneral>
+          </ButtonGeneralSecondary>
         </div>
       </form>
     </div>

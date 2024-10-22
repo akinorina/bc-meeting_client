@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router';
 import InputText from '@/components/ui/InputText.vue';
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
 
 const router = useRouter()
 
@@ -25,16 +25,16 @@ const joinRoom = async () => {
         <div class="my-3">
           <h3 class="text-base font-bold">Meeting Room に参加</h3>
           <InputText class="p-1 m-2 text-base" placeholder="例: fe2j-o4f1-qo8h" v-model="room_hash" />
-          <ButtonGeneral class="" @click="joinRoom">参加</ButtonGeneral>
+          <ButtonGeneralPrimary class="" @click="joinRoom">参加</ButtonGeneralPrimary>
           <div class="px-2 pt-1 pb-2 text-xs">ビデオ通話、および、テキストチャットへのRoomハッシュを入力して参加ボタンを押下してください。</div>
         </div>
 
         <div class="my-3">
           <h3 class="text-base font-bold">Meeting Room の作成</h3>
           <div class="mx-2 my-1">
-            <ButtonGeneral class="" @click="router.push({ name: 'mypage' })">
+            <ButtonGeneralPrimary class="" @click="router.push({ name: 'mypage' })">
               サインイン
-            </ButtonGeneral>
+            </ButtonGeneralPrimary>
           </div>
           <div class="px-2 pt-1 pb-2 text-xs">
             ビデオ通話をする場である Room を作成するには、アカウントを作成して、

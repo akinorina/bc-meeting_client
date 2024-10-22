@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 import { AxiosError } from 'axios'
 import { useBlogStore } from '@/stores/blog'
 import CkeditorBalloon from '@/components/CkeditorBalloon.vue'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import InputText from '@/components/ui/InputText.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 
@@ -33,21 +33,20 @@ const createBlog = async () => {
   try {
     modalCreateConfirm.value.close()
     // ブログ作成
-    const blog = await blogStore.createBlog()
-    console.log('blog', blog)
+    await blogStore.createBlog()
 
     modalCreateSuccess.value.open()
     setTimeout(() => {
       modalCreateSuccess.value.close()
       //
       router.push({ name: 'mypage_blogs', params: {} })
-    }, 3000)
+    }, 2000)
   } catch (err) {
     if (err instanceof AxiosError) {
       showErrorAlert.value = true
       setTimeout(() => {
         showErrorAlert.value = false
-      }, 3000)
+      }, 2000)
     }
   }
 }
@@ -80,8 +79,8 @@ const createBlog = async () => {
         </div>
 
         <div class="">
-          <ButtonGeneral type="button" class="me-2" @click="toIndex">戻る</ButtonGeneral>
-          <ButtonGeneral type="submit" class="">作成</ButtonGeneral>
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="submit" class="">作成</ButtonGeneralPrimary>
         </div>
       </form>
     </div>
@@ -94,8 +93,8 @@ const createBlog = async () => {
         <div class="m-3">作成します。よろしいですか？</div>
       </div>
       <div class="text-center">
-        <ButtonGeneral class="me-2" @click.stop="createBlog">はい</ButtonGeneral>
-        <ButtonGeneral class="" @click.stop="modalCreateConfirm.close()">いいえ</ButtonGeneral>
+        <ButtonGeneralPrimary class="me-2" @click.stop="createBlog">はい</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click.stop="modalCreateConfirm.close()">いいえ</ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>

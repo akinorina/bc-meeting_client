@@ -4,7 +4,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { AxiosError } from 'axios'
 import { digestMessage } from '@/lib/Functions'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import InputEmail from '@/components/ui/InputEmail.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 
@@ -44,7 +45,7 @@ const submitForm = async () => {
       showErrorAlert.value = true
       setTimeout(() => {
         showErrorAlert.value = false
-      }, 3000)
+      }, 2000)
     }
   }
 }
@@ -89,12 +90,12 @@ const submitForm = async () => {
         </div>
 
         <div class="">
-          <ButtonGeneral type="submit" class="m-2 rounded-md border">
+          <ButtonGeneralPrimary type="submit" class="m-2 rounded-md border">
             パスワード更新
-          </ButtonGeneral>
-          <ButtonGeneral class="m-2 rounded-md border bg-back-200 hover:bg-back-300 text-black" @click="toIndex">
+          </ButtonGeneralPrimary>
+          <ButtonGeneralSecondary class="m-2 rounded-md border" @click="toIndex">
             Topへ戻る
-          </ButtonGeneral>
+          </ButtonGeneralSecondary>
         </div>
       </form>
     </div>

@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useImageStore } from '@/stores/image'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 // stores
 const router = useRouter()
@@ -32,7 +32,7 @@ const toEdit = (iid: number) => {
     </div>
 
     <div class="my-2">
-      <ButtonGeneral class="" @click="toNew">新規作成</ButtonGeneral>
+      <ButtonGeneralPrimary class="" @click="toNew">新規作成</ButtonGeneralPrimary>
     </div>
 
     <div class="">

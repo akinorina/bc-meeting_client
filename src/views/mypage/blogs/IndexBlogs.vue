@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores/blog'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 
 // stores
 const router = useRouter()
@@ -29,7 +29,7 @@ const toEdit = (iid: number) => {
     </div>
 
     <div class="m-2">
-      <ButtonGeneral type="button" class="" @click.stop="toNew">新規作成</ButtonGeneral>
+      <ButtonGeneralPrimary type="button" class="" @click.stop="toNew">新規作成</ButtonGeneralPrimary>
     </div>
 
     <div class="m-2 grid grid-cols-1 gap-2">

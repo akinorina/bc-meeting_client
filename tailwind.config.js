@@ -1,8 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 import colors from 'tailwindcss/colors';
 
-console.log('colors', colors)
-
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
@@ -36,7 +34,7 @@ export default {
       rose: colors.rose,
 
       primary: colors.blue,
-      secondary: colors.amber,
+      secondary: colors.slate,
       back: colors.slate,
       danger: colors.red,
     },

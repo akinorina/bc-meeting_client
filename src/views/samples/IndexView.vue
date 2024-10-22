@@ -13,9 +13,20 @@
     <div class="mt-3 border p-3">
       <div class="">
         <div class="">
+          <router-link :to="{ name: 'samples_buttons' }" class="">
+            <div class="">
+              <div class="border p-3 m-3 rounded-lg hover:bg-slate-200">
+                <h5 class="">Buttons</h5>
+                <p class="">ボタン</p>
+              </div>
+            </div>
+          </router-link>
+        </div>
+
+        <div class="">
           <router-link :to="{ name: 'samples_generalmodal' }" class="">
             <div class="">
-              <div class="">
+              <div class="border p-3 m-3 rounded-lg hover:bg-slate-200">
                 <h5 class="">General modal</h5>
                 <p class="">General モーダルダイアログのサンプルです。</p>
               </div>
