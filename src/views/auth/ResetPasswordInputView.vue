@@ -55,7 +55,7 @@ const submitForm = async () => {
   <div class="container mx-auto">
     <div class="border p-3">
       <div class="">
-        <h1 class="">vc-contact ユーザー登録</h1>
+        <h1 class="">bc-meeting ユーザー登録</h1>
         <p class="">ユーザー登録ページです。 次の各項目を入力して登録ボタンを押してください。</p>
       </div>
     </div>

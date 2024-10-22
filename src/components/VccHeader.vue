@@ -23,14 +23,14 @@ const signUp = () => {
     <div class="flex-auto" v-if="authStore.isAuthenticated()">
       <div class="m-1 px-2 py-1">
         <router-link :to="{ name: 'mypage' }">
-          <h1 class="text-3xl">vc-contact</h1>
+          <h1 class="text-3xl">bc-meeting</h1>
         </router-link>
       </div>
     </div>
     <div class="flex-auto" v-else>
       <div class="m-1 px-2 py-1">
         <router-link :to="{ name: 'index' }">
-          <h1 class="text-3xl">vc-contact</h1>
+          <h1 class="text-3xl">bc-meeting</h1>
         </router-link>
       </div>
     </div>

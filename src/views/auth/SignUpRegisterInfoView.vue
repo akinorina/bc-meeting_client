@@ -58,7 +58,7 @@ const submitForm = async () => {
     <div class="mt-3 border p-2">
       <div class="flex justify-center">
         <div>
-          <div class="text-xl font-bold">vc-contact ユーザー登録</div>
+          <div class="text-xl font-bold">bc-meeting ユーザー登録</div>
           <div class="text-md mt-2">次の各項目を入力して、登録ボタンを押してください。</div>
         </div>
       </div>

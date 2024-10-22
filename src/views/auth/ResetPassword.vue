@@ -41,7 +41,7 @@ const submitForm = async () => {
   <div class="container mx-auto">
     <div class="mt-5 rounded-md border p-3">
       <div class="">
-        <h1 class="text-lg font-bold">vc-contact パスワードのリセット</h1>
+        <h1 class="text-lg font-bold">bc-meeting パスワードのリセット</h1>
         <p class="text-base">
           パスワードのリセット手続きに入ります。<br />
           メールアドレスを入力して、［メールアドレス送信］ボタンを押してください。

@@ -9,7 +9,7 @@ import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
 <template>
   <div class="container mx-auto">
     <div class="border p-3">
-      <h2 class="font-bold">vc-contact - Samples</h2>
+      <h2 class="font-bold">bc-meeting - Samples</h2>
       <p class="text-xs">
         Web アプリケーション テンプレート ver.4 のサンプルページです。<br />
         種々の機能をサンプルとして実現しています。

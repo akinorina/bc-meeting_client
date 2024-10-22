@@ -17,7 +17,7 @@ const joinRoom = async () => {
   <div class="container mx-auto">
     <div class="border p-3">
       <div class="">
-        <!-- <h2 class="text-2xl">vc-contact</h2> -->
+        <!-- <h2 class="text-2xl">bc-meeting</h2> -->
         <div class="">
           ビデオ通話、および、テキストチャット Webアプリです。
         </div>
