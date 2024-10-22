@@ -20,9 +20,9 @@ const toSignin = () => {
     </div>
 
     <div class="p-2">
-      <button-general type="submit" class="rounded-md border px-2 py-1" @click="toSignin">
-        Sign-in ページへ戻る
-      </button-general>
+      <ButtonGeneral class="rounded-md border px-2 py-1" @click="toSignin">
+        サインイン ページへ戻る
+      </ButtonGeneral>
     </div>
   </div>
 </template>

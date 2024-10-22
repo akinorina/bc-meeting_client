@@ -86,7 +86,7 @@ const submitForm = async () => {
 
           <div class="flex p-3">
             <label for="email" class="block w-3/12">Email</label>
-            <input-email class="w-9/12" id="email" v-model="user.email" />
+            <InputEmail class="w-9/12" id="email" v-model="user.email" />
           </div>
 
           <div class="flex p-3">
@@ -96,8 +96,8 @@ const submitForm = async () => {
         </div>
 
         <div class="flex justify-center p-3">
-          <button-general type="button" class="me-2" @click="toList">戻る</button-general>
-          <button-general type="submit" class="">作成</button-general>
+          <ButtonGeneral type="button" class="me-2" @click="toList">戻る</ButtonGeneral>
+          <ButtonGeneral type="submit" class="">作成</ButtonGeneral>
         </div>
       </form>
     </div>

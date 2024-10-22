@@ -31,7 +31,7 @@ const toTop = async () => {
         </div>
 
         <div class="border p-3 text-center">
-          <button-general class="" @click="toUserPage">Userページ</button-general>
+          <ButtonGeneral class="" @click="toUserPage">Userページ</ButtonGeneral>
         </div>
       </div>
       <div v-else>
@@ -41,7 +41,7 @@ const toTop = async () => {
         </div>
 
         <div class="">
-          <button-general class="" @click="toTop">Topページ</button-general>
+          <ButtonGeneral class="" @click="toTop">Topページ</ButtonGeneral>
         </div>
       </div>
     </div>

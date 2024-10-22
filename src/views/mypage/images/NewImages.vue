@@ -64,8 +64,8 @@ const submitForm = async () => {
         </div>
 
         <div class="">
-          <button-general type="button" class="me-2" @click="toList">戻る</button-general>
-          <button-general type="submit" class="">作成</button-general>
+          <ButtonGeneral type="button" class="me-2" @click="toList">戻る</ButtonGeneral>
+          <ButtonGeneral type="submit" class="">作成</ButtonGeneral>
         </div>
       </form>
     </div>

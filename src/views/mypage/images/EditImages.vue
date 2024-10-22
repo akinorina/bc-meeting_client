@@ -81,11 +81,11 @@ const deleteImage = async () => {
         </div>
 
         <div class="mt-3">
-          <button-general type="button" class="me-2" @click="toList">戻る</button-general>
-          <button-general type="submit" class="me-2"> 更新 </button-general>
-          <button-general type="button" class="" @click="modalDeleteConfirm.open()">
+          <ButtonGeneral type="button" class="me-2" @click="toList">戻る</ButtonGeneral>
+          <ButtonGeneral type="submit" class="me-2"> 更新 </ButtonGeneral>
+          <ButtonGeneral type="button" class="" @click="modalDeleteConfirm.open()">
             削除
-          </button-general>
+          </ButtonGeneral>
         </div>
       </div>
     </form>
@@ -98,8 +98,8 @@ const deleteImage = async () => {
         <div class="m-3">更新してよろしいですか？</div>
       </div>
       <div class="text-center">
-        <button-general class="me-2" @click="updateImage">はい</button-general>
-        <button-general class="" @click="modalUpdateConfirm.close()">いいえ</button-general>
+        <ButtonGeneral class="me-2" @click="updateImage">はい</ButtonGeneral>
+        <ButtonGeneral class="" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneral>
       </div>
     </div>
   </ModalGeneral>
@@ -120,8 +120,8 @@ const deleteImage = async () => {
         <div class="m-3">削除してよろしいですか？</div>
       </div>
       <div class="text-center">
-        <button-general class="me-2" @click="deleteImage">はい</button-general>
-        <button-general class="" @click="modalDeleteConfirm.close()">いいえ</button-general>
+        <ButtonGeneral class="me-2" @click="deleteImage">はい</ButtonGeneral>
+        <ButtonGeneral class="" @click="modalDeleteConfirm.close()">いいえ</ButtonGeneral>
       </div>
     </div>
   </ModalGeneral>

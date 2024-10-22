@@ -114,7 +114,7 @@ const goBack = () => {
       </form>
     </div>
     <div class="w-100 text-center p-3">
-      <ButtonGeneral type="button" class="me-2" @click="toMypage">戻る</ButtonGeneral>
+      <ButtonGeneral type="button" class="me-2 bg-back-300 hover:bg-back-400 text-black" @click="toMypage">戻る</ButtonGeneral>
     </div>
   </div>
 </template>

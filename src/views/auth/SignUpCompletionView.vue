@@ -20,7 +20,7 @@ const toSignin = () => {
       </div>
 
       <div class="p-3 text-center">
-        <button-general class="" @click="toSignin">サインイン</button-general>
+        <ButtonGeneral class="" @click="toSignin">サインイン</ButtonGeneral>
       </div>
     </div>
   </div>

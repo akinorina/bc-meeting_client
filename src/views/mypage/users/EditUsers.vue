@@ -100,16 +100,16 @@ const deleteUser = async () => {
 
           <div class="flex p-3">
             <label for="email" class="block w-3/12">Email</label>
-            <input-email class="w-9/12" id="email" v-model="user.email" />
+            <InputEmail class="w-9/12" id="email" v-model="user.email" />
           </div>
         </div>
 
         <div class="flex justify-center p-3">
-          <button-general type="button" class="me-2" @click="toIndex">戻る</button-general>
-          <button-general type="submit" class="me-2">更新</button-general>
-          <button-general type="button" class="" @click="modalDeleteConfirm.open()">
+          <ButtonGeneral type="button" class="me-2" @click="toIndex">戻る</ButtonGeneral>
+          <ButtonGeneral type="submit" class="me-2">更新</ButtonGeneral>
+          <ButtonGeneral type="button" class="" @click="modalDeleteConfirm.open()">
             削除
-          </button-general>
+          </ButtonGeneral>
         </div>
       </form>
     </div>
@@ -122,8 +122,8 @@ const deleteUser = async () => {
         <div class="">更新してよろしいですか？</div>
       </div>
       <div class="mb-3 text-center">
-        <button-general class="me-2 w-24" @click="updateUser">はい</button-general>
-        <button-general class="w-24" @click="modalUpdateConfirm.close()">いいえ</button-general>
+        <ButtonGeneral class="me-2 w-24" @click="updateUser">はい</ButtonGeneral>
+        <ButtonGeneral class="w-24" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneral>
       </div>
     </div>
   </ModalGeneral>
@@ -144,8 +144,8 @@ const deleteUser = async () => {
         <div class="">削除してよろしいですか？</div>
       </div>
       <div class="mb-3 text-center">
-        <button-general class="me-2 w-24" @click="deleteUser">はい</button-general>
-        <button-general class="w-24" @click="modalDeleteConfirm.close()">いいえ</button-general>
+        <ButtonGeneral class="me-2 w-24" @click="deleteUser">はい</ButtonGeneral>
+        <ButtonGeneral class="w-24" @click="modalDeleteConfirm.close()">いいえ</ButtonGeneral>
       </div>
     </div>
   </ModalGeneral>

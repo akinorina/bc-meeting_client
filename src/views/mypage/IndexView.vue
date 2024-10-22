@@ -160,9 +160,9 @@ const contactRoom = async (roomHash: string) => {
         </div>
       </div>
       <div class="m-3 text-center">
-        <ButtonGeneral class="me-3" @click.prevent="modal2.close()">中止</ButtonGeneral>
+        <ButtonGeneral class="me-3 bg-back-300 hover:bg-back-400 text-black" @click.prevent="modal2.close()">中止</ButtonGeneral>
         <ButtonGeneral class="me-3" @click.prevent="editRoomSubmit">更新</ButtonGeneral>
-        <ButtonGeneral class="me-0" @click.prevent="deleteRoomConfirm">削除</ButtonGeneral>
+        <ButtonGeneral class="me-0 bg-danger-400 hover:bg-danger-500" @click.prevent="deleteRoomConfirm">削除</ButtonGeneral>
       </div>
     </div>
     <div class="w-80 h-58 p-0" v-if="modal2status === 'delete_confirm'">
@@ -171,8 +171,8 @@ const contactRoom = async (roomHash: string) => {
         削除しますか？
       </div>
       <div class="m-3 text-center">
-        <ButtonGeneral class="me-3" @click="modal2status = 'input'">戻る</ButtonGeneral>
-        <ButtonGeneral class="me-0" @click.prevent="deleteRoomSubmit">削除</ButtonGeneral>
+        <ButtonGeneral class="me-3 bg-back-300 hover:bg-back-400 text-black" @click="modal2status = 'input'">戻る</ButtonGeneral>
+        <ButtonGeneral class="me-0 bg-danger-300 hover:bg-danger-400 text-black" @click.prevent="deleteRoomSubmit">削除</ButtonGeneral>
       </div>
     </div>
     <div class="w-80 h-40 p-0" v-else-if="modal2status === 'complete'">

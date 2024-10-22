@@ -32,7 +32,7 @@ const toEdit = (iid: number) => {
     </div>
 
     <div class="my-2">
-      <button-general class="" @click="toNew">新規作成</button-general>
+      <ButtonGeneral class="" @click="toNew">新規作成</ButtonGeneral>
     </div>
 
     <div class="">

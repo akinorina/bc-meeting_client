@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue';
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { digestMessage } from '@/lib/Functions'
@@ -15,6 +15,11 @@ const showErrorMessage = ref(false)
 const passwordRaw = ref('')
 watch(passwordRaw, async (newPasswordRaw) => {
   authStore.password = await digestMessage(newPasswordRaw)
+})
+
+onMounted(() => {
+  passwordRaw.value = ''
+  authStore.password = ''
 })
 
 const submitSignin = async () => {
@@ -77,9 +82,9 @@ const signInGoogle = () => {
               </div>
             </div>
             <div class="flex justify-center">
-              <button-general type="submit" class="rounded-md border px-3 py-1">
-                sign-in
-              </button-general>
+              <ButtonGeneral type="submit" class="rounded-md border px-3 py-1">
+                サインイン
+              </ButtonGeneral>
             </div>
           </div>
         </div>

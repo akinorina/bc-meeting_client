@@ -194,9 +194,9 @@ const sendInviteMail = async () => {
               </div>
 
               <div class="my-3 flex justify-center items-center">
-                <ButtonGeneral class="w-20 h-12 me-1" @click="toTopPage">Topへ</ButtonGeneral>
+                <ButtonGeneral class="w-20 h-12 me-1 bg-back-300 hover:bg-back-400 text-black" @click="toTopPage">&lt;&lt; 戻る</ButtonGeneral>
                 <ButtonGeneral class="w-20 h-12 me-1" @click="enterRoom">入室</ButtonGeneral>
-                <ButtonGeneral class="w-12 h-12 me-1" @click="toggleVideo">
+                <ButtonGeneral class="w-12 h-12 me-1" :class="{ 'bg-slate-400': !trackStatus.video, 'hover:bg-slate-500': !trackStatus.video }" @click="toggleVideo">
                   <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 20 20" v-if="trackStatus.video">
                     <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"/>
                   </svg>
@@ -204,7 +204,7 @@ const sendInviteMail = async () => {
                     <path fill-rule="evenodd" d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"/>
                   </svg>
                 </ButtonGeneral>
-                <ButtonGeneral class="w-12 h-12 me-0" @click="toggleAudio">
+                <ButtonGeneral class="w-12 h-12 me-0" :class="{ 'bg-slate-400': !trackStatus.audio, 'hover:bg-slate-500': !trackStatus.audio }" @click="toggleAudio">
                   <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 20 20" v-if="trackStatus.audio">
                     <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/>
                     <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
@@ -235,7 +235,7 @@ const sendInviteMail = async () => {
       <div class="" v-else>
         <div class="absolute right-3 bottom-3 z-10 rounded-md p-2 bg-slate-200">
           <div class="flex">
-            <ButtonGeneral class="w-12 h-12 me-1" @click="toggleVideo">
+            <ButtonGeneral class="w-12 h-12 me-1" :class="{ 'bg-slate-400': !trackStatus.video, 'hover:bg-slate-500': !trackStatus.video }" @click="toggleVideo">
               <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-camera-video-fill" viewBox="0 0 20 20" v-if="trackStatus.video">
                 <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"/>
               </svg>
@@ -244,7 +244,7 @@ const sendInviteMail = async () => {
               </svg>
             </ButtonGeneral>
 
-            <ButtonGeneral class="w-12 h-12 me-2" @click="toggleAudio">
+            <ButtonGeneral class="w-12 h-12 me-2" :class="{ 'bg-slate-400': !trackStatus.audio, 'hover:bg-slate-500': !trackStatus.audio }" @click="toggleAudio">
               <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 20 20" v-if="trackStatus.audio">
                 <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/>
                 <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
@@ -255,7 +255,7 @@ const sendInviteMail = async () => {
               </svg>
             </ButtonGeneral>
 
-            <ButtonGeneral class="me-0" @click="exitRoom">退室</ButtonGeneral>
+            <ButtonGeneral class="me-0 bg-danger-100 hover:bg-danger-200 text-red-400 hover:text-red-500 border-2 border-danger-400 hover:border-danger-500" @click="exitRoom">退室</ButtonGeneral>
           </div>
         </div>
 

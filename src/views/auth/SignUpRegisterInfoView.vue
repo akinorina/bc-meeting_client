@@ -99,7 +99,7 @@ const submitForm = async () => {
 
             <div class="flex p-3">
               <label for="email" class="block w-32">Email</label>
-              <input-email
+              <InputEmail
                 id="email"
                 class="w-64"
                 placeholder="name@example.com"
@@ -120,8 +120,8 @@ const submitForm = async () => {
           </div>
 
           <div class="flex justify-center p-3">
-            <button-general type="submit" class="me-2">登録</button-general>
-            <button-general class="" @click="toIndex">Topへ戻る</button-general>
+            <ButtonGeneral type="submit" class="me-2">登録</ButtonGeneral>
+            <ButtonGeneral class="bg-back-200 hover:bg-back-300 text-black" @click="toIndex">Topへ戻る</ButtonGeneral>
           </div>
         </form>
       </div>

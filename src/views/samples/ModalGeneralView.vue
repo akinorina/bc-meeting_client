@@ -16,7 +16,7 @@ const gmodal2 = ref()
 
     <!-- モーダル 1 -->
     <div class="m-3 border p-3">
-      <button-general type="button" class="" @click="gmodal.open()">open modal 1</button-general>
+      <ButtonGeneral type="button" class="" @click="gmodal.open()">open modal 1</ButtonGeneral>
 
       <modal-general ref="gmodal" :is-close-modal-back="true">
         <div class="">
@@ -25,7 +25,7 @@ const gmodal2 = ref()
             ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。
           </div>
           <div class="mb-3 text-center">
-            <button-general class="" @click="gmodal.close()">close</button-general>
+            <ButtonGeneral class="" @click="gmodal.close()">close</ButtonGeneral>
           </div>
         </div>
       </modal-general>
@@ -33,7 +33,7 @@ const gmodal2 = ref()
 
     <!-- モーダル 2 -->
     <div class="m-3 border p-3">
-      <button-general type="button" class="" @click="gmodal2.open()">open modal 2</button-general>
+      <ButtonGeneral type="button" class="" @click="gmodal2.open()">open modal 2</ButtonGeneral>
 
       <modal-general
         ref="gmodal2"
@@ -49,7 +49,7 @@ const gmodal2 = ref()
             ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。ここに本文を書きます。
           </div>
           <div class="mb-3 text-center">
-            <button-general class="" @click="gmodal2.close()">close</button-general>
+            <ButtonGeneral class="" @click="gmodal2.close()">close</ButtonGeneral>
           </div>
         </div>
       </modal-general>

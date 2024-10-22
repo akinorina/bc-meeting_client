@@ -16,7 +16,7 @@ const toTop = async () => {
     </div>
 
     <div class="p-3 text-center">
-      <button-general class="" @click="toTop">Topページへ</button-general>
+      <ButtonGeneral class="" @click="toTop">Topページへ</ButtonGeneral>
     </div>
   </div>
 </template>

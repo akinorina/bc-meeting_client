@@ -67,7 +67,7 @@ const submitForm = async () => {
           <div class="">
             <div class="">
               <label for="email" class="">Email</label>
-              <input-email
+              <InputEmail
                 id="email"
                 class="w-64"
                 placeholder="name@example.com"
@@ -77,12 +77,12 @@ const submitForm = async () => {
           </div>
 
           <div class="">
-            <button-general type="submit" class="m-2 rounded-md border px-2 py-1">
+            <ButtonGeneral type="submit" class="m-2 rounded-md border px-2 py-1">
               メールアドレス送信
-            </button-general>
-            <button-general type="button" class="m-2 rounded-md border px-2 py-1" @click="toIndex">
+            </ButtonGeneral>
+            <ButtonGeneral type="button" class="m-2 rounded-md bg-back-200 hover:bg-back-300 text-black border px-2 py-1" @click="toIndex">
               Topへ戻る
-            </button-general>
+            </ButtonGeneral>
           </div>
         </form>
       </div>
