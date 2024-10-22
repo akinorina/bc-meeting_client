@@ -13,10 +13,10 @@ const roomStore = useRoomStore()
 
 const modal1 = ref()
 const modal1status = ref('')
-const modal1tid = ref('')
+const modal1tid = ref<any>()
 const modal2 = ref()
 const modal2status = ref('')
-const modal2tid = ref('')
+const modal2tid = ref<any>()
 
 onMounted(() => {
   roomStore.getRooms()
