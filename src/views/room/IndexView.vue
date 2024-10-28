@@ -235,6 +235,9 @@ const sendInviteMail = async () => {
         <!-- // 入室前状態 -->
       </div>
       <div class="" v-else>
+        <!-- 入室(meeting)状態 -->
+
+        <!-- UI -->
         <div class="absolute right-3 bottom-3 z-10 rounded-md p-2 bg-slate-200">
           <div class="flex">
             <ButtonGeneralPrimary class="w-12 h-12 me-1" :class="{ 'bg-slate-400': !trackStatus.video, 'hover:bg-slate-500': !trackStatus.video }" @click="toggleVideo">
@@ -260,33 +263,13 @@ const sendInviteMail = async () => {
             <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
           </div>
         </div>
+        <!-- // UI -->
 
         <div class="sm:hidden">
           <!-- smart phone view -->
 
           <div class="w-screen h-svh flex flex-wrap justify-center">
-            <div
-              class="relative bg-slate-500 border flex items-center"
-              :class="{
-                'w-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
-                'w-1/2': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
-                'w-1/3': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14),
-                'w-1/4': (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23),
-                'w-1/5': (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
-                'h-full': Object.keys(webrtcStore.peerMedias).length == 0,
-                'h-1/2': ((1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1)),
-                'h-1/3': ((2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 2) || (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5)),
-                'h-1/4': ((3 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3) || (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 7) || (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15)),
-                'h-1/5': ((8 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 9) || (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14) || (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19) || (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)),
-                'h-1/6': ((10 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11) || (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23)),
-              }"
-            >
-              <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
-              <div class="absolute right-2 bottom-2">
-                {{ webrtcStore.myPeerId }}
-              </div>
-            </div>
-
+            <!-- remote -->
             <div
               class="relative bg-slate-500 border flex items-center"
               :class="{
@@ -310,6 +293,31 @@ const sendInviteMail = async () => {
                 {{ peerId }}
               </div>
             </div>
+            <!-- // remote -->
+
+            <!-- local -->
+            <div
+              class="relative bg-slate-500 border flex items-center"
+              :class="{
+                'w-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
+                'w-1/2': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
+                'w-1/3': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14),
+                'w-1/4': (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23),
+                'w-1/5': (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
+                'h-full': Object.keys(webrtcStore.peerMedias).length == 0,
+                'h-1/2': ((1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1)),
+                'h-1/3': ((2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 2) || (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5)),
+                'h-1/4': ((3 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3) || (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 7) || (15 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15)),
+                'h-1/5': ((8 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 9) || (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 14) || (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19) || (24 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)),
+                'h-1/6': ((10 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11) || (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 23)),
+              }"
+            >
+              <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
+              <div class="absolute right-2 bottom-2">
+                {{ webrtcStore.myPeerId }}
+              </div>
+            </div>
+            <!-- // local -->
           </div>
 
           <!-- // smart phone view -->
@@ -318,28 +326,6 @@ const sendInviteMail = async () => {
           <!-- tablet & PC view -->
 
           <div class="w-screen h-svh flex flex-wrap justify-center">
-            <!-- local -->
-            <div
-              class="relative bg-slate-500 border flex items-center"
-              :class="{
-                'w-full': (Object.keys(webrtcStore.peerMedias).length === 0),
-                'w-1/2': (1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
-                'w-1/3': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8),
-                'w-1/4': (9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15),
-                'w-1/5': (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
-                'h-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1),
-                'h-1/2': (2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5),
-                'h-1/3': (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
-                'h-1/4': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19),
-                'h-1/5': (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)
-              }"
-            >
-              <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
-              <div class="absolute right-2 bottom-2">
-                {{ webrtcStore.myPeerId }}
-              </div>
-            </div>
-
             <!-- remotes -->
             <div
               class="relative bg-slate-500 border flex items-center"
@@ -363,11 +349,36 @@ const sendInviteMail = async () => {
                 {{ peerId }}
               </div>
             </div>
+            <!-- // remotes -->
+
+            <!-- local -->
+            <div
+              class="relative bg-slate-500 border flex items-center"
+              :class="{
+                'w-full': (Object.keys(webrtcStore.peerMedias).length === 0),
+                'w-1/2': (1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3),
+                'w-1/3': (4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8),
+                'w-1/4': (9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15),
+                'w-1/5': (16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24),
+                'h-full': (0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1),
+                'h-1/2': (2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5),
+                'h-1/3': (6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11),
+                'h-1/4': (12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19),
+                'h-1/5': (20 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 24)
+              }"
+            >
+              <video class="w-full h-full" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>
+              <div class="absolute right-2 bottom-2">
+                {{ webrtcStore.myPeerId }}
+              </div>
+            </div>
+            <!-- // local -->
           </div>
 
           <!-- // tablet & PC view -->
         </div>
 
+        <!-- // 入室(meeting)状態 -->
       </div>
     </template>
   </div>
