@@ -68,6 +68,15 @@ export const useUserStore = defineStore('user', () => {
     await axios.post('/api/users/verifing-email', options)
   }
 
+  async function checkVerifyingEmail(email: string, hash: string) {
+    // options
+    const options = {
+      email: email,
+      hash: hash
+    }
+    await axios.post('/api/users/check_verifying_email', options)
+  }
+
   async function registerUser() {
     // ユーザー登録
     await axios.post('/api/users/register-user', user.value)
@@ -99,6 +108,7 @@ export const useUserStore = defineStore('user', () => {
     deleteUser,
     changePassword,
     verifyingEmail,
+    checkVerifyingEmail,
     registerUser,
     resetPassword
   }
