@@ -9,8 +9,8 @@ const authStore = useAuthStore()
 const signIn = () => {
   router.push({ name: 'sign-in' })
 }
-const signOut = () => {
-  authStore.signOut()
+const signOut = async () => {
+  await authStore.signOut()
   router.push({ name: 'sign-out' })
 }
 const signUp = () => {
