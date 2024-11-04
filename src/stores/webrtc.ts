@@ -202,12 +202,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
 
     // on: error
-    peer.value.on('error', (error: any) => {
-      throw error
-    })
+    peer.value.on('error', () => {})
   }
 
-  // Media Coonection 発信
+  // Media 接続
   async function connectMedia(remotePeerId: string) {
     if (!peer.value || !myMediaStream.value) {
       return false
@@ -240,6 +238,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     return true
   }
 
+  // Media 切断
   function disconnectMedia() {
     // PeerMediaすべてを停止、Close、削除
     Object.keys(peerMedias.value).forEach(async (key) => {
@@ -256,7 +255,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
   }
 
-  // // Data Connection 発信
+  // // Data 接続
   // function connectData(remoteId) {
   //   dataConn.value = peer.value.connect(remoteId)
 
@@ -275,13 +274,14 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   //   })
   // }
 
-  // // Data Connection メッセージの送信
+  // // Data メッセージの送信
   // function sendData(sendText) {
   //   const sendData = { who: myName.value, message: sendText }
   //   dataConn.value.send(sendData)
   //   messageData.value.push(sendData)
   // }
 
+  // // Data 切断
   // function disconnectData() {
   //   dataConn.value.close()
   // }
