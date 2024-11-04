@@ -18,14 +18,15 @@ const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
 const roomStore = useRoomStore()
 
-const roomHash = computed({
+const roomHashParam = computed({
   get() {
     return route.params.room_hash.toString() ?? ''
   },
-  set(roomHash) {
-    router.replace({ params: { room_hash: roomHash } })
+  set(roomHashParam) {
+    router.replace({ params: { room_hash: roomHashParam } })
   }
 })
+const roomHash = ref(roomHashParam.value)
 
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
@@ -141,16 +142,19 @@ const checkStatusPeerConn = async () => {
   webrtcStore.checkMedias(peerIds)
 }
 
+// video on/off
 const toggleVideo = () => {
   webrtcStore.setVideoEnabled(!trackStatus.value.video)
   trackStatus.value.video = !trackStatus.value.video
 }
 
+// Audio on/off
 const toggleAudio = () => {
   webrtcStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
 }
 
+// 招待メール送信
 const sendInviteMail = async () => {
   // サインインユーザー情報取得
   const profile = await authStore.getProfile()
