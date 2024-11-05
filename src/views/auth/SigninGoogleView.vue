@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import VccHeader from '@/components/VccHeader.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -23,6 +24,8 @@ const toTop = async () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="border">
       <div v-if="resultStatus">
         <div class="border p-3">

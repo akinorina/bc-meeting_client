@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import VccHeader from '@/components/VccHeader.vue';
 
 const gmodal = ref()
 const gmodal2 = ref()
@@ -9,6 +10,8 @@ const gmodal2 = ref()
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="border p-3">
       <h2 class="font-bold">bc-meeting - Samples</h2>
       <div class="">sample of general modal</div>

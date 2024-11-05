@@ -5,7 +5,6 @@ import VccHeader from './components/VccHeader.vue'
 
 <template>
   <div class="h-screen">
-    <VccHeader />
     <router-view />
   </div>
 </template>

@@ -10,6 +10,7 @@ import InputEmail from '@/components/ui/InputEmail.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import VccHeader from '@/components/VccHeader.vue'
 
 // stores
 const router = useRouter()
@@ -66,6 +67,8 @@ const submitForm = async () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="mt-3 border p-2" v-if="showErrorUrlInvalid">
       このメールアドレスへの登録は有効期限切れ、または、既に登録されたため無効です。
     </div>

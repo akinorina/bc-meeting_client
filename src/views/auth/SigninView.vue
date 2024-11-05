@@ -7,6 +7,7 @@ import { digestMessage } from '@/lib/Functions'
 import InputText from '@/components/ui/InputText.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import VccHeader from '@/components/VccHeader.vue';
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -45,6 +46,8 @@ const signInGoogle = () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <form @submit.prevent="submitSignin">
       <div class="my-3 border p-3">
         <div class="m-3 flex justify-center">Please sign in</div>

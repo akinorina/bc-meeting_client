@@ -6,7 +6,7 @@ import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import InputPassword from '@/components/ui/InputPassword.vue'
 import { digestMessage } from '@/lib/Functions'
-import GoBack from '@/components/GoBack.vue'
+import VccHeader from '@/components/VccHeader.vue';
 
 // stores
 const router = useRouter()
@@ -51,20 +51,15 @@ const submitForm = async () => {
     }, 2000)
   }
 }
-const goBack = () => {
-  router.push({ name: 'mypage' });
-}
 </script>
 
 <template>
   <div class="container mx-auto h-screen bg-slate-100">
+    <VccHeader />
+
     <div class="border p-3">
       <div class="font-bold">設定</div>
     </div>
-
-    <GoBack
-      @click="goBack"
-    />
 
     <div class="border p-3">
       <div class="">

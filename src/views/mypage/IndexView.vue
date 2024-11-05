@@ -7,6 +7,7 @@ import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
 import InputText from '@/components/ui/InputText.vue';
+import VccHeader from '@/components/VccHeader.vue';
 
 const router = useRouter()
 const roomStore = useRoomStore()
@@ -87,6 +88,8 @@ const contactRoom = async (roomHash: string) => {
 
 <template>
   <div class="container mx-auto w-screen bg-inherit">
+    <VccHeader />
+
     <div class="h-18 p-1">
       <div class="font-bold">Contact Rooms</div>
       <div class="text-sm">ビデオチャット、テキストチャットのRoom一覧</div>
@@ -141,8 +144,7 @@ const contactRoom = async (roomHash: string) => {
       <h3 class="m-3 font-bold">Room 新規作成</h3>
       <div class="mx-3 my-4">
         <div class="py-0">
-          <div class="">Room 名称</div>
-          <InputText class="border" style="width: 90%" v-model="roomStore.room.room_name" />
+          <InputText class="border" style="width: 90%" placeholder="Room 名称" v-model="roomStore.room.room_name" />
         </div>
       </div>
       <div class="m-3 text-center">
@@ -164,8 +166,7 @@ const contactRoom = async (roomHash: string) => {
       <h3 class="m-3 font-bold">Room 編集</h3>
       <div class="m-3">
         <div class="m-3">
-          <div class="font-bold">Room 名称</div>
-          <InputText class="" style="width: 100%" v-model="roomStore.room.room_name" />
+          <InputText class="" style="width: 100%" placeholder="Room 名称" v-model="roomStore.room.room_name" />
         </div>
         <div class="m-3">
           <div class="font-bold">Room hash</div>

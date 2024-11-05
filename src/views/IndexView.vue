@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router';
 import InputText from '@/components/ui/InputText.vue';
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
+import VccHeader from '@/components/VccHeader.vue';
 
 const router = useRouter()
 
@@ -15,9 +16,10 @@ const joinRoom = async () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="border p-3">
       <div class="">
-        <!-- <h2 class="text-2xl">bc-meeting</h2> -->
         <div class="">
           ビデオ通話、および、テキストチャット Webアプリです。
         </div>

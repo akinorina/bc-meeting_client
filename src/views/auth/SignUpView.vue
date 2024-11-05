@@ -8,6 +8,7 @@ import { digestMessage } from '@/lib/Functions'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import VccHeader from '@/components/VccHeader.vue'
 
 // stores
 const router = useRouter()
@@ -47,6 +48,8 @@ const submitForm = async () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="mt-3 border p-3">
       <div class="px-2">
         <div class="text-xl">bc-meeting ユーザー登録</div>

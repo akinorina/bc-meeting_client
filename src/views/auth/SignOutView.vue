@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import VccHeader from '@/components/VccHeader.vue';
 
 const router = useRouter()
 
@@ -11,6 +12,8 @@ const toTop = async () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="p-3">
       <h1 class="p-2 text-center">サインアウトしました。</h1>
     </div>
