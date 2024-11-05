@@ -85,7 +85,9 @@ const deleteBlog = async () => {
           </div>
         </div>
         <div class="p-2">
-          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex"
+            >戻る</ButtonGeneralPrimary
+          >
           <ButtonGeneralPrimary type="submit" class="me-2">更新</ButtonGeneralPrimary>
           <ButtonGeneralPrimary type="button" class="" @click="modalDeleteConfirm.open()">
             削除
@@ -103,7 +105,9 @@ const deleteBlog = async () => {
       </div>
       <div class="text-center">
         <ButtonGeneralPrimary class="me-2" @click="updateBlog">はい</ButtonGeneralPrimary>
-        <ButtonGeneralPrimary class="" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click="modalUpdateConfirm.close()"
+          >いいえ</ButtonGeneralPrimary
+        >
       </div>
     </div>
   </ModalGeneral>
@@ -125,7 +129,9 @@ const deleteBlog = async () => {
       </div>
       <div class="text-center">
         <ButtonGeneralPrimary class="me-2" @click.stop="deleteBlog">はい</ButtonGeneralPrimary>
-        <ButtonGeneralPrimary class="" @click.stop="modalDeleteConfirm.close()">いいえ</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click.stop="modalDeleteConfirm.close()"
+          >いいえ</ButtonGeneralPrimary
+        >
       </div>
     </div>
   </ModalGeneral>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
+import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -37,15 +37,24 @@ const signUp = () => {
 
     <div class="flex items-center" v-if="authStore.isAuthenticated()">
       <div class="me-2">{{ authStore.getUsername() }}</div>
-      <ButtonGeneral class="m-2 rounded-2xl bg-slate-50 hover:bg-slate-300 text-slate-900 text-sm" @click="signOut">
+      <ButtonGeneral
+        class="m-2 rounded-2xl bg-slate-50 text-sm text-slate-900 hover:bg-slate-300"
+        @click="signOut"
+      >
         サインアウト
       </ButtonGeneral>
     </div>
     <div class="flex items-center" v-else>
-      <ButtonGeneral class="m-2 rounded-2xl bg-slate-50 hover:bg-slate-300 text-slate-900 text-sm" @click="signIn">
+      <ButtonGeneral
+        class="m-2 rounded-2xl bg-slate-50 text-sm text-slate-900 hover:bg-slate-300"
+        @click="signIn"
+      >
         サインイン
       </ButtonGeneral>
-      <ButtonGeneral class="m-2 rounded-2xl bg-slate-50 hover:bg-slate-300 text-slate-900 text-sm" @click="signUp">
+      <ButtonGeneral
+        class="m-2 rounded-2xl bg-slate-50 text-sm text-slate-900 hover:bg-slate-300"
+        @click="signUp"
+      >
         サインアップ
       </ButtonGeneral>
     </div>

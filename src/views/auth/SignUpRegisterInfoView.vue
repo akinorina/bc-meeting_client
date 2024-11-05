@@ -9,7 +9,7 @@ import InputText from '@/components/ui/InputText.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
 import VccHeader from '@/components/VccHeader.vue'
 import kiyaku from '../../assets/kiyaku.txt?raw'
 

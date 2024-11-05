@@ -7,7 +7,7 @@ import { AxiosError } from 'axios'
 import { digestMessage } from '@/lib/Functions'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
 import VccHeader from '@/components/VccHeader.vue'
 
 // stores
@@ -84,7 +84,11 @@ const submitForm = async () => {
             <ButtonGeneralPrimary type="submit" class="m-2 rounded-md border px-2 py-1">
               メールアドレス送信
             </ButtonGeneralPrimary>
-            <ButtonGeneralSecondary type="button" class="m-2 rounded-md border px-2 py-1" @click="toIndex">
+            <ButtonGeneralSecondary
+              type="button"
+              class="m-2 rounded-md border px-2 py-1"
+              @click="toIndex"
+            >
               Topへ戻る
             </ButtonGeneralSecondary>
           </div>

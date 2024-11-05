@@ -29,7 +29,9 @@ const toEdit = (iid: number) => {
     </div>
 
     <div class="m-2">
-      <ButtonGeneralPrimary type="button" class="" @click.stop="toNew">新規作成</ButtonGeneralPrimary>
+      <ButtonGeneralPrimary type="button" class="" @click.stop="toNew"
+        >新規作成</ButtonGeneralPrimary
+      >
     </div>
 
     <div class="m-2 grid grid-cols-1 gap-2">
