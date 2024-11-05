@@ -1,7 +1,11 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import VccHeader from '@/components/VccHeader.vue';
+</script>
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="border p-3">
       <div class="text-lg font-bold">bc-meeting ユーザー登録</div>
       <div class="text-base">メールアドレスを受け取りました。</div>

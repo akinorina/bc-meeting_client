@@ -3,11 +3,14 @@ import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
+import VccHeader from '@/components/VccHeader.vue';
 
 </script>
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="border p-3">
       <h2 class="font-bold">bc-meeting - Samples</h2>
       <p class="text-xs">

@@ -10,6 +10,7 @@ import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
 import InputEmail from '@/components/ui/InputEmail.vue';
 import ModalGeneral from '@/components/ModalGeneral.vue';
+import VccHeader from '@/components/VccHeader.vue';
 
 const router = useRouter()
 const route = useRoute()
@@ -177,6 +178,8 @@ const sendInviteMail = async () => {
 <template>
   <div>
     <template v-if="isBadRoomHash">
+      <VccHeader />
+
       <div class="container mx-auto h-svh p-3 border rounded-xl bg-slate-100">
         <div class="m-2">room ハッシュに誤りがあります。</div>
         <div class="m-2">
@@ -187,7 +190,7 @@ const sendInviteMail = async () => {
     <template v-else>
       <div class="h-svh bg-slate-100" v-if="statusEnterRoom === false">
         <!-- 入室前状態 -->
-
+        <VccHeader />
         <div class="w-full">
           <div class="w-full flex items-center p-3">
             <video class="w-full max-h-80 bg-slate-100" :srcObject.prop="webrtcStore.myMediaStream" autoplay muted playsinline></video>

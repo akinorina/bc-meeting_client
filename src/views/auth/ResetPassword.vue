@@ -6,6 +6,7 @@ import { AxiosError } from 'axios'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import InputEmail from '@/components/ui/InputEmail.vue'
+import VccHeader from '@/components/VccHeader.vue';
 
 // stores
 const router = useRouter()
@@ -39,6 +40,8 @@ const submitForm = async () => {
 
 <template>
   <div class="container mx-auto">
+    <VccHeader />
+
     <div class="mt-5 rounded-md border p-3">
       <div class="">
         <h1 class="text-lg font-bold">bc-meeting パスワードのリセット</h1>
