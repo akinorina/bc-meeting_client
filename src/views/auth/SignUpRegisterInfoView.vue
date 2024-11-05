@@ -11,6 +11,7 @@ import InputPassword from '@/components/ui/InputPassword.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
 import VccHeader from '@/components/VccHeader.vue'
+import kiyaku from '../../assets/kiyaku.txt?raw'
 
 // stores
 const router = useRouter()
@@ -89,7 +90,7 @@ const submitForm = async () => {
 
       <div class="mt-3 flex justify-center">
         <form class="" novalidate @submit.prevent="submitForm">
-          <div class="flex flex-col">
+          <div class="flex w-full flex-col">
             <div class="flex p-3">
               <label for="username" class="block w-32"> ユーザー表示名 </label>
               <input-text class="w-64" id="username" v-model="user.username" />
@@ -135,10 +136,35 @@ const submitForm = async () => {
                 v-model="passwordRaw"
               />
             </div>
+
+            <div class="flex justify-start p-3">
+              <div class="">
+                <input
+                  type="checkbox"
+                  id="kiyaku"
+                  class="m-2 h-5 w-5"
+                  :true-value="'1'"
+                  :false-value="'0'"
+                  v-model="user.agreeTerms"
+                />
+                <label for="kiyaku">利用規約をすべて読み、同意します。</label>
+              </div>
+            </div>
+            <div class="ms-50 w-full p-3">
+              <div class="w-full">
+                <textarea class="h-40 w-full border p-2 text-xs" v-model="kiyaku"> </textarea>
+              </div>
+            </div>
           </div>
 
           <div class="flex justify-center p-3">
-            <ButtonGeneralPrimary type="submit" class="me-2">登録</ButtonGeneralPrimary>
+            <ButtonGeneralPrimary
+              type="submit"
+              :disabled="user.agreeTerms === '0'"
+              class="me-2"
+              :class="{ 'bg-slate-300 hover:bg-slate-300': user.agreeTerms === '0' }"
+              >登録</ButtonGeneralPrimary
+            >
             <ButtonGeneralSecondary class="" @click="toIndex">Topへ戻る</ButtonGeneralSecondary>
           </div>
         </form>
