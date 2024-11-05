@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import ButtonGeneral from '@/components/ui/ButtonGeneral.vue';
-import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
-import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
-import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
-import VccHeader from '@/components/VccHeader.vue';
-
+import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
+import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue'
+import VccHeader from '@/components/VccHeader.vue'
 </script>
 
 <template>

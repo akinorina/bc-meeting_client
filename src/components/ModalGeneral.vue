@@ -15,7 +15,7 @@ const {
   classFg = '',
   styleBg = '',
   styleFg = '',
-  closeModalBackCallback = (() => { })
+  closeModalBackCallback = () => {}
 } = defineProps<Props>()
 
 const status = ref(false)

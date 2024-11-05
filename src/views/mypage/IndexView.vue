@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRoomStore } from '@/stores/rooms';
-import ModalGeneral from '@/components/ModalGeneral.vue';
-import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
-import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
-import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue';
-import InputText from '@/components/ui/InputText.vue';
-import VccHeader from '@/components/VccHeader.vue';
+import { useRoomStore } from '@/stores/rooms'
+import ModalGeneral from '@/components/ModalGeneral.vue'
+import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
+import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue'
+import InputText from '@/components/ui/InputText.vue'
+import VccHeader from '@/components/VccHeader.vue'
 
 const router = useRouter()
 const roomStore = useRoomStore()
@@ -40,8 +40,8 @@ const createRoomSubmit = async () => {
   }, 2000)
 }
 const clearTimeoutModal1 = () => {
-  clearTimeout(modal1tid.value);
-  return false;
+  clearTimeout(modal1tid.value)
+  return false
 }
 
 // Room編集 init()
@@ -62,8 +62,8 @@ const editRoomSubmit = async () => {
   }, 2000)
 }
 const clearTimeoutModal2 = () => {
-  clearTimeout(modal2tid.value);
-  return false;
+  clearTimeout(modal2tid.value)
+  return false
 }
 
 // Room編集 delete_confirm()
@@ -82,7 +82,7 @@ const deleteRoomSubmit = async () => {
 }
 //
 const contactRoom = async (roomHash: string) => {
-  router.push({ name: 'room', params: { 'room_hash': roomHash }})
+  router.push({ name: 'room', params: { room_hash: roomHash } })
 }
 </script>
 
@@ -96,21 +96,27 @@ const contactRoom = async (roomHash: string) => {
     </div>
 
     <!-- Rooms一覧 -->
-    <div class="py-3 bg-inherit overflow-scroll">
+    <div class="overflow-scroll bg-inherit py-3">
       <div v-if="roomStore.rooms.length === 0">
-        <div class="p-5">
-          あなたの Room はありません。
-        </div>
+        <div class="p-5">あなたの Room はありません。</div>
       </div>
-      <div class="w-100 border rounded-lg p-3 mx-3 mb-3 bg-white" v-for="(item) in roomStore.rooms" :key="item.id">
+      <div
+        class="w-100 mx-3 mb-3 rounded-lg border bg-white p-3"
+        v-for="item in roomStore.rooms"
+        :key="item.id"
+      >
         <div class="my-1">
           <div class="overflow-hidden text-lg font-bold">{{ item.room_name }}</div>
         </div>
-        <div class="flex justify-between items-end">
+        <div class="flex items-end justify-between">
           <div class="">{{ item.room_hash }}</div>
           <div class="flex">
-            <ButtonGeneralPrimary class="me-2" @click="contactRoom(item.room_hash)">詳細</ButtonGeneralPrimary>
-            <ButtonGeneralPrimary class="me-0" @click="editRoomInit(item.id)">編集</ButtonGeneralPrimary>
+            <ButtonGeneralPrimary class="me-2" @click="contactRoom(item.room_hash)"
+              >詳細</ButtonGeneralPrimary
+            >
+            <ButtonGeneralPrimary class="me-0" @click="editRoomInit(item.id)"
+              >編集</ButtonGeneralPrimary
+            >
           </div>
         </div>
       </div>
@@ -123,13 +129,16 @@ const contactRoom = async (roomHash: string) => {
   <!-- menu -->
   <div class="fixed bottom-0 w-screen bg-slate-200 p-3">
     <div class="flex justify-between">
-      <ButtonGeneralPrimary class="border rounded-3xl p-2" @click="createRoomInit">
+      <ButtonGeneralPrimary class="rounded-3xl border p-2" @click="createRoomInit">
         <div class="flex flex-col items-center">
           <div class="font-bold">Room作成</div>
         </div>
       </ButtonGeneralPrimary>
 
-      <ButtonGeneralPrimary class="border rounded-3xl p-2" @click="router.push({ name: 'mypage_settings' })">
+      <ButtonGeneralPrimary
+        class="rounded-3xl border p-2"
+        @click="router.push({ name: 'mypage_settings' })"
+      >
         <div class="flex flex-col items-center">
           <div class="font-bold">設定</div>
         </div>
@@ -139,12 +148,21 @@ const contactRoom = async (roomHash: string) => {
   <!-- // menu -->
 
   <!-- Modal:Room新規作成 -->
-  <ModalGeneral ref="modal1" :is-close-modal-back="true" :close-modal-back-callback="clearTimeoutModal1">
-    <div class="w-80 h-40 p-0" v-if="modal1status === 'input'">
+  <ModalGeneral
+    ref="modal1"
+    :is-close-modal-back="true"
+    :close-modal-back-callback="clearTimeoutModal1"
+  >
+    <div class="h-40 w-80 p-0" v-if="modal1status === 'input'">
       <h3 class="m-3 font-bold">Room 新規作成</h3>
       <div class="mx-3 my-4">
         <div class="py-0">
-          <InputText class="border" style="width: 90%" placeholder="Room 名称" v-model="roomStore.room.room_name" />
+          <InputText
+            class="border"
+            style="width: 90%"
+            placeholder="Room 名称"
+            v-model="roomStore.room.room_name"
+          />
         </div>
       </div>
       <div class="m-3 text-center">
@@ -152,52 +170,68 @@ const contactRoom = async (roomHash: string) => {
         <ButtonGeneralPrimary class="me-0" @click="createRoomSubmit">新規作成</ButtonGeneralPrimary>
       </div>
     </div>
-    <div class="w-80 h-40 p-0" v-else-if="modal1status === 'complete'">
-      <div class="p-3 flex justify-center items-center h-full border">
-        Room 新規作成完了
-      </div>
+    <div class="h-40 w-80 p-0" v-else-if="modal1status === 'complete'">
+      <div class="flex h-full items-center justify-center border p-3">Room 新規作成完了</div>
     </div>
   </ModalGeneral>
   <!-- // Modal:Room新規作成 -->
 
   <!-- Modal:Room編集 -->
-  <ModalGeneral ref="modal2" :is-close-modal-back="true" :close-modal-back-callback="clearTimeoutModal2">
-    <div class="w-80 h-58 p-0" v-if="modal2status === 'input'">
+  <ModalGeneral
+    ref="modal2"
+    :is-close-modal-back="true"
+    :close-modal-back-callback="clearTimeoutModal2"
+  >
+    <div class="h-58 w-80 p-0" v-if="modal2status === 'input'">
       <h3 class="m-3 font-bold">Room 編集</h3>
       <div class="m-3">
         <div class="m-3">
-          <InputText class="" style="width: 100%" placeholder="Room 名称" v-model="roomStore.room.room_name" />
+          <InputText
+            class=""
+            style="width: 100%"
+            placeholder="Room 名称"
+            v-model="roomStore.room.room_name"
+          />
         </div>
         <div class="m-3">
           <div class="font-bold">Room hash</div>
-          <InputText class="border-0" style="width: 100%" readonly v-model="roomStore.room.room_hash" />
+          <InputText
+            class="border-0"
+            style="width: 100%"
+            readonly
+            v-model="roomStore.room.room_hash"
+          />
         </div>
       </div>
       <div class="m-3 text-center">
-        <ButtonGeneralSecondary class="me-3" @click.prevent="modal2.close()">中止</ButtonGeneralSecondary>
-        <ButtonGeneralPrimary class="me-3" @click.prevent="editRoomSubmit">更新</ButtonGeneralPrimary>
-        <ButtonGeneralDanger class="me-0" @click.prevent="deleteRoomConfirm">削除</ButtonGeneralDanger>
+        <ButtonGeneralSecondary class="me-3" @click.prevent="modal2.close()"
+          >中止</ButtonGeneralSecondary
+        >
+        <ButtonGeneralPrimary class="me-3" @click.prevent="editRoomSubmit"
+          >更新</ButtonGeneralPrimary
+        >
+        <ButtonGeneralDanger class="me-0" @click.prevent="deleteRoomConfirm"
+          >削除</ButtonGeneralDanger
+        >
       </div>
     </div>
-    <div class="w-80 h-58 p-0" v-if="modal2status === 'delete_confirm'">
+    <div class="h-58 w-80 p-0" v-if="modal2status === 'delete_confirm'">
       <h3 class="m-3 font-bold">Room 編集</h3>
-      <div class="m-3">
-        削除しますか？
-      </div>
+      <div class="m-3">削除しますか？</div>
       <div class="m-3 text-center">
-        <ButtonGeneralSecondary class="me-3" @click="modal2status = 'input'">戻る</ButtonGeneralSecondary>
-        <ButtonGeneralDanger class="me-0" @click.prevent="deleteRoomSubmit">削除</ButtonGeneralDanger>
+        <ButtonGeneralSecondary class="me-3" @click="modal2status = 'input'"
+          >戻る</ButtonGeneralSecondary
+        >
+        <ButtonGeneralDanger class="me-0" @click.prevent="deleteRoomSubmit"
+          >削除</ButtonGeneralDanger
+        >
       </div>
     </div>
-    <div class="w-80 h-40 p-0" v-else-if="modal2status === 'complete'">
-      <div class="p-3 flex justify-center items-center h-full border">
-        Room 更新完了
-      </div>
+    <div class="h-40 w-80 p-0" v-else-if="modal2status === 'complete'">
+      <div class="flex h-full items-center justify-center border p-3">Room 更新完了</div>
     </div>
-    <div class="w-80 h-40 p-0" v-else-if="modal2status === 'delete_complete'">
-      <div class="p-3 flex justify-center items-center h-full border">
-        Room 削除完了
-      </div>
+    <div class="h-40 w-80 p-0" v-else-if="modal2status === 'delete_complete'">
+      <div class="flex h-full items-center justify-center border p-3">Room 削除完了</div>
     </div>
   </ModalGeneral>
   <!-- // Modal:Room編集 -->

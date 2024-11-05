@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/user'
 import { AxiosError } from 'axios'
 import { digestMessage } from '@/lib/Functions'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 import VccHeader from '@/components/VccHeader.vue'

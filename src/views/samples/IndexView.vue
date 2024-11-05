@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
 </script>
 
 <template>
@@ -19,7 +19,7 @@ import VccHeader from '@/components/VccHeader.vue';
         <div class="">
           <router-link :to="{ name: 'samples_buttons' }" class="">
             <div class="">
-              <div class="border p-3 m-3 rounded-lg hover:bg-slate-200">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
                 <h5 class="">Buttons</h5>
                 <p class="">ボタン</p>
               </div>
@@ -30,7 +30,7 @@ import VccHeader from '@/components/VccHeader.vue';
         <div class="">
           <router-link :to="{ name: 'samples_generalmodal' }" class="">
             <div class="">
-              <div class="border p-3 m-3 rounded-lg hover:bg-slate-200">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
                 <h5 class="">General modal</h5>
                 <p class="">General モーダルダイアログのサンプルです。</p>
               </div>

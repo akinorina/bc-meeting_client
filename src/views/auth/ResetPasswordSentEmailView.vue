@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
 </script>
 
 <template>

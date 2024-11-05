@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { digestMessage } from '@/lib/Functions'
 
 import InputText from '@/components/ui/InputText.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
+import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
+import googleIcon from '@/assets/images/google.png'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -94,16 +96,23 @@ const signInGoogle = () => {
       </div>
     </form>
 
-    <div class="my-3 border">
-      <div class="p-3 text-center">
+    <div class="my-3">
+      <ButtonGeneral
+        class="w-full rounded-lg bg-slate-200 py-3 text-black hover:bg-slate-300"
+        @click="router.push({ name: 'reset-password' })"
+      >
         <router-link :to="{ name: 'reset-password' }"> パスワードを忘れた場合 </router-link>
-      </div>
+      </ButtonGeneral>
     </div>
 
-    <div class="my-3 border">
-      <div class="p-3 text-center">
-        <button class="" @click="signInGoogle">googleアカウントでログイン</button>
-      </div>
+    <div class="my-3">
+      <ButtonGeneralPrimary
+        class="flex w-full items-center justify-center rounded-lg py-3 text-white"
+        @click="signInGoogle"
+      >
+        <img :src="googleIcon" class="me-2 w-6" />
+        googleアカウントでサインイン
+      </ButtonGeneralPrimary>
     </div>
   </div>
 </template>

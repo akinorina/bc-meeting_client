@@ -12,12 +12,7 @@ const type = ref('password')
 </script>
 
 <template>
-  <input
-    :type="type"
-    :placeholder="placeholder"
-    class="border px-2 mx-1"
-    v-model="model"
-  />
+  <input :type="type" :placeholder="placeholder" class="mx-1 border px-2" v-model="model" />
 </template>
 
 <style lang="scss" scoped></style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
 
 // stores
 const router = useRouter()
@@ -21,7 +21,7 @@ const toSignin = () => {
       <p class="text-base">ユーザー登録が完了しました。</p>
     </div>
 
-    <div class="mt-2 border p-3 w-full text-center">
+    <div class="mt-2 w-full border p-3 text-center">
       <ButtonGeneralPrimary class="" @click="toSignin">サインイン</ButtonGeneralPrimary>
     </div>
   </div>

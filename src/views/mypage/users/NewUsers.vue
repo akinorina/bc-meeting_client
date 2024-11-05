@@ -96,7 +96,9 @@ const submitForm = async () => {
         </div>
 
         <div class="flex justify-center p-3">
-          <ButtonGeneralPrimary type="button" class="me-2" @click="toList">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toList"
+            >戻る</ButtonGeneralPrimary
+          >
           <ButtonGeneralPrimary type="submit" class="">作成</ButtonGeneralPrimary>
         </div>
       </form>

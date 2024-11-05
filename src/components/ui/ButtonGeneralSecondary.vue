@@ -8,7 +8,7 @@ const { type = 'button' } = defineProps<Props>()
 <template>
   <button
     :type="type"
-    class="rounded-md bg-secondary-400 hover:bg-secondary-500 px-3 py-1 text-slate-50"
+    class="rounded-md bg-secondary-400 px-3 py-1 text-slate-50 hover:bg-secondary-500"
   >
     <slot></slot>
   </button>

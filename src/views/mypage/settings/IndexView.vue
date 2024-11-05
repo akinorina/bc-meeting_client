@@ -3,10 +3,10 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue';
+import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
 import InputPassword from '@/components/ui/InputPassword.vue'
 import { digestMessage } from '@/lib/Functions'
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
 
 // stores
 const router = useRouter()
@@ -34,7 +34,7 @@ onMounted(() => {
 
 // functions - パスワード変更
 const toMypage = () => {
-  router.push({ name: 'mypage'})
+  router.push({ name: 'mypage' })
 }
 const submitForm = async () => {
   try {
@@ -63,7 +63,7 @@ const submitForm = async () => {
 
     <div class="border p-3">
       <div class="">
-        <h3 class="font-bold pb-3">パスワード変更</h3>
+        <h3 class="pb-3 font-bold">パスワード変更</h3>
       </div>
 
       <div class="mb-3 bg-green-300 p-3" v-if="resultSuccess">パスワードが変更されました。</div>
@@ -87,8 +87,10 @@ const submitForm = async () => {
         </div>
       </form>
     </div>
-    <div class="w-100 text-center p-3">
-      <ButtonGeneralSecondary type="button" class="me-2" @click="toMypage">戻る</ButtonGeneralSecondary>
+    <div class="w-100 p-3 text-center">
+      <ButtonGeneralSecondary type="button" class="me-2" @click="toMypage"
+        >戻る</ButtonGeneralSecondary
+      >
     </div>
   </div>
 </template>

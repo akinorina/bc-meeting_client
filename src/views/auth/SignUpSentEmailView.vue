@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
 
 // stores
 const router = useRouter()

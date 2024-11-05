@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import VccHeader from '@/components/VccHeader.vue';
+import VccHeader from '@/components/VccHeader.vue'
 
 const gmodal = ref()
 const gmodal2 = ref()
@@ -19,7 +19,9 @@ const gmodal2 = ref()
 
     <!-- モーダル 1 -->
     <div class="m-3 border p-3">
-      <ButtonGeneralPrimary type="button" class="" @click="gmodal.open()">open modal 1</ButtonGeneralPrimary>
+      <ButtonGeneralPrimary type="button" class="" @click="gmodal.open()"
+        >open modal 1</ButtonGeneralPrimary
+      >
 
       <modal-general ref="gmodal" :is-close-modal-back="true">
         <div class="">
@@ -36,7 +38,9 @@ const gmodal2 = ref()
 
     <!-- モーダル 2 -->
     <div class="m-3 border p-3">
-      <ButtonGeneralPrimary type="button" class="" @click="gmodal2.open()">open modal 2</ButtonGeneralPrimary>
+      <ButtonGeneralPrimary type="button" class="" @click="gmodal2.open()"
+        >open modal 2</ButtonGeneralPrimary
+      >
 
       <modal-general
         ref="gmodal2"

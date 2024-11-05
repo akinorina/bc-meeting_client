@@ -105,7 +105,9 @@ const deleteUser = async () => {
         </div>
 
         <div class="flex justify-center p-3">
-          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex"
+            >戻る</ButtonGeneralPrimary
+          >
           <ButtonGeneralPrimary type="submit" class="me-2">更新</ButtonGeneralPrimary>
           <ButtonGeneralPrimary type="button" class="" @click="modalDeleteConfirm.open()">
             削除
@@ -123,7 +125,9 @@ const deleteUser = async () => {
       </div>
       <div class="mb-3 text-center">
         <ButtonGeneralPrimary class="me-2 w-24" @click="updateUser">はい</ButtonGeneralPrimary>
-        <ButtonGeneralPrimary class="w-24" @click="modalUpdateConfirm.close()">いいえ</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="w-24" @click="modalUpdateConfirm.close()"
+          >いいえ</ButtonGeneralPrimary
+        >
       </div>
     </div>
   </ModalGeneral>
@@ -145,7 +149,9 @@ const deleteUser = async () => {
       </div>
       <div class="mb-3 text-center">
         <ButtonGeneralPrimary class="me-2 w-24" @click="deleteUser">はい</ButtonGeneralPrimary>
-        <ButtonGeneralPrimary class="w-24" @click="modalDeleteConfirm.close()">いいえ</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="w-24" @click="modalDeleteConfirm.close()"
+          >いいえ</ButtonGeneralPrimary
+        >
       </div>
     </div>
   </ModalGeneral>

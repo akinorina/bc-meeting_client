@@ -79,7 +79,9 @@ const createBlog = async () => {
         </div>
 
         <div class="">
-          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex">戻る</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary type="button" class="me-2" @click="toIndex"
+            >戻る</ButtonGeneralPrimary
+          >
           <ButtonGeneralPrimary type="submit" class="">作成</ButtonGeneralPrimary>
         </div>
       </form>
@@ -94,7 +96,9 @@ const createBlog = async () => {
       </div>
       <div class="text-center">
         <ButtonGeneralPrimary class="me-2" @click.stop="createBlog">はい</ButtonGeneralPrimary>
-        <ButtonGeneralPrimary class="" @click.stop="modalCreateConfirm.close()">いいえ</ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click.stop="modalCreateConfirm.close()"
+          >いいえ</ButtonGeneralPrimary
+        >
       </div>
     </div>
   </ModalGeneral>
