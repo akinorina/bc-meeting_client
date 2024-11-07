@@ -52,10 +52,11 @@ export const useRoomStore = defineStore('room', () => {
     return res.data
   }
 
-  async function enterRoom(roomHash: string, peerId: string) {
+  async function enterRoom(roomHash: string, peerId: string, displayName: string) {
     const options = {
       room_hash: roomHash,
-      peer_id: peerId
+      peer_id: peerId,
+      display_name: displayName
     }
     const res = await axios.post('/api/rooms/enter', options)
     return res.data

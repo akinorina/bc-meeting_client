@@ -73,6 +73,10 @@ onMounted(async () => {
     port: import.meta.env.VITE_PEER_SERVER_PORT,
     path: import.meta.env.VITE_PEER_SERVER_PATH
   })
+
+  // Profile表示名を表示名初期値に設定
+  const resProfile = await authStore.getProfile()
+  myDisplayName.value = resProfile.data.username
 })
 
 onBeforeUnmount(async () => {
@@ -103,14 +107,14 @@ const toTopPage = () => {
 // Roomへの入室
 const enterRoom = async () => {
   // 入室APIアクセス
-  await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId)
+  await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId, myDisplayName.value)
 
   // 入室状態を取得
   const res2 = await roomStore.statusRoom(roomHash.value)
   res2.attenders.forEach(async (item: any) => {
     if (item.peer_id !== webrtcStore.myPeerId) {
       // 現在の参加者それぞれへメディア接続
-      webrtcStore.connectMedia(item.peer_id)
+      webrtcStore.connectMedia(item.peer_id, item.display_name)
     }
   })
 
@@ -143,10 +147,7 @@ const exitRoom = async () => {
 const checkStatusPeerConn = async () => {
   // status
   const res = await roomStore.statusRoom(roomHash.value)
-  const peerIds: Array<string> = res.attenders.map((item: any) => {
-    return item.peer_id
-  })
-  webrtcStore.checkMedias(peerIds)
+  webrtcStore.checkMedias(res)
 }
 
 // video on/off
@@ -499,8 +500,10 @@ const sendInviteMail = async () => {
                 playsinline
               ></video>
               <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
-              <div class="absolute bottom-2 right-2">
-                {{ peerId }}
+              <div class="absolute bottom-0 left-0 rounded-md bg-black text-white font-bold text-xl p-3">
+                <div class="">
+                  {{ pm.displayName }}
+                </div>
               </div>
             </div>
             <!-- // remote -->
@@ -568,9 +571,6 @@ const sendInviteMail = async () => {
                 <div class="">
                   {{ myDisplayName }}
                 </div>
-                <div class="hidden">
-                  {{ webrtcStore.myPeerId }}
-                </div>
               </div>
             </div>
             <!-- // local -->
@@ -625,8 +625,10 @@ const sendInviteMail = async () => {
                 playsinline
               ></video>
               <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
-              <div class="absolute bottom-2 right-2">
-                {{ peerId }}
+              <div class="absolute bottom-0 left-0 rounded-md bg-black text-white font-bold text-xl p-3">
+                <div class="">
+                  {{ pm.displayName }}
+                </div>
               </div>
             </div>
             <!-- // remotes -->
@@ -676,9 +678,6 @@ const sendInviteMail = async () => {
               <div class="absolute bottom-0 left-0 rounded-md bg-black text-white font-bold text-xl p-3">
                 <div class="">
                   {{ myDisplayName }}
-                </div>
-                <div class="hidden">
-                  {{ webrtcStore.myPeerId }}
                 </div>
               </div>
             </div>
