@@ -199,6 +199,7 @@ const sendInviteMail = async () => {
     <template v-else>
       <div class="h-svh bg-slate-100" v-if="statusEnterRoom === false">
         <!-- 入室前状態 -->
+
         <VccHeader />
         <div class="w-full">
           <div class="p-3">
@@ -444,51 +445,15 @@ const sendInviteMail = async () => {
             <div
               class="relative flex items-center border bg-slate-500"
               :class="{
-                'w-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/2':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'w-1/3':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 14,
-                'w-1/4':
-                  15 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 23,
-                'w-1/5':
-                  24 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 24,
-                'h-full': Object.keys(webrtcStore.peerMedias).length == 0,
-                'h-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'h-1/3':
-                  (2 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 2) ||
-                  (4 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 5),
-                'h-1/4':
-                  (3 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 3) ||
-                  (6 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 7) ||
-                  (15 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 15),
-                'h-1/5':
-                  (8 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 9) ||
-                  (12 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 14) ||
-                  (16 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 19) ||
-                  (24 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 24),
-                'h-1/6':
-                  (10 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 11) ||
-                  (20 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 23)
+                'w-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1,
+                'w-1/2': 2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3,
+                'w-1/3': 4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11,
+                'w-1/4': 12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
+                'h-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 0,
+                'h-1/2': 1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5,
+                'h-1/3': 6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8,
+                'h-1/4': 9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15,
+                'h-1/5': 16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
               }"
               v-for="(pm, peerId) in webrtcStore.peerMedias"
               :key="peerId"
@@ -512,51 +477,15 @@ const sendInviteMail = async () => {
             <div
               class="relative flex items-center border bg-slate-500"
               :class="{
-                'w-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/2':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'w-1/3':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 14,
-                'w-1/4':
-                  15 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 23,
-                'w-1/5':
-                  24 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 24,
-                'h-full': Object.keys(webrtcStore.peerMedias).length == 0,
-                'h-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'h-1/3':
-                  (2 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 2) ||
-                  (4 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 5),
-                'h-1/4':
-                  (3 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 3) ||
-                  (6 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 7) ||
-                  (15 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 15),
-                'h-1/5':
-                  (8 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 9) ||
-                  (12 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 14) ||
-                  (16 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 19) ||
-                  (24 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 24),
-                'h-1/6':
-                  (10 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 11) ||
-                  (20 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 23)
+                'w-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1,
+                'w-1/2': 2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3,
+                'w-1/3': 4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11,
+                'w-1/4': 12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
+                'h-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 0,
+                'h-1/2': 1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5,
+                'h-1/3': 6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8,
+                'h-1/4': 9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15,
+                'h-1/5': 16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
               }"
             >
               <video
@@ -586,34 +515,15 @@ const sendInviteMail = async () => {
             <div
               class="relative flex items-center border bg-slate-500"
               :class="{
-                'w-full': Object.keys(webrtcStore.peerMedias).length === 0,
-                'w-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/3':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 8,
-                'w-1/4':
-                  9 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 15,
-                'w-1/5':
-                  16 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 24,
-                'h-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'h-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 5,
-                'h-1/3':
-                  6 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'h-1/4':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19,
-                'h-1/5':
-                  20 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 24
+                'w-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1,
+                'w-1/2': 2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3,
+                'w-1/3': 4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11,
+                'w-1/4': 12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
+                'h-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 0,
+                'h-1/2': 1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5,
+                'h-1/3': 6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8,
+                'h-1/4': 9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15,
+                'h-1/5': 16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
               }"
               v-for="(pm, peerId) in webrtcStore.peerMedias"
               :key="peerId"
@@ -637,34 +547,15 @@ const sendInviteMail = async () => {
             <div
               class="relative flex items-center border bg-slate-500"
               :class="{
-                'w-full': Object.keys(webrtcStore.peerMedias).length === 0,
-                'w-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/3':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 8,
-                'w-1/4':
-                  9 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 15,
-                'w-1/5':
-                  16 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 24,
-                'h-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'h-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 5,
-                'h-1/3':
-                  6 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'h-1/4':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19,
-                'h-1/5':
-                  20 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 24
+                'w-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 1,
+                'w-1/2': 2 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 3,
+                'w-1/3': 4 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 11,
+                'w-1/4': 12 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
+                'h-full': 0 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 0,
+                'h-1/2': 1 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 5,
+                'h-1/3': 6 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 8,
+                'h-1/4': 9 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 15,
+                'h-1/5': 16 <= Object.keys(webrtcStore.peerMedias).length && Object.keys(webrtcStore.peerMedias).length <= 19,
               }"
             >
               <video
