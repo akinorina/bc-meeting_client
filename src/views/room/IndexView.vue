@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
 import { useRoomStore } from '@/stores/rooms'
 import { axios } from '@/lib/Axios'
+import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
 import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue'
@@ -31,6 +32,9 @@ const roomHash = ref(roomHashParam.value)
 
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
+
+// my display name
+const myDisplayName = ref('')
 
 // 招待メール送信先メールアドレス
 const invitedEmailAddress = ref<string>('')
@@ -178,7 +182,7 @@ const sendInviteMail = async () => {
 </script>
 
 <template>
-  <div>
+  <div class="h-full bg-slate-100">
     <template v-if="isBadRoomHash">
       <VccHeader />
 
@@ -196,7 +200,7 @@ const sendInviteMail = async () => {
         <!-- 入室前状態 -->
         <VccHeader />
         <div class="w-full">
-          <div class="flex w-full items-center p-3">
+          <div class="p-3">
             <video
               class="max-h-80 w-full bg-slate-100"
               :srcObject.prop="webrtcStore.myMediaStream"
@@ -204,21 +208,16 @@ const sendInviteMail = async () => {
               muted
               playsinline
             ></video>
-          </div>
-          <div class="flex w-full justify-center p-3">
-            <div class="w-80 rounded-md border p-3 text-center">
-              <div class="my-3">
-                <div class="text-xl font-semibold">{{ roomStore.room.room_name }}</div>
-                <div class="">{{ roomStore.room.room_hash }}</div>
+
+            <div class="w-full flex justify-between">
+              <div class="my-3 flex items-center justify-center">
+                <ButtonGeneralSecondary class="h-12 w-20" @click="toTopPage">
+                  &lt;&lt; 戻る
+                </ButtonGeneralSecondary>
               </div>
 
               <div class="my-3 flex items-center justify-center">
-                <ButtonGeneralSecondary class="me-1 h-12 w-20" @click="toTopPage"
-                  >&lt;&lt; 戻る</ButtonGeneralSecondary
-                >
-                <ButtonGeneralPrimary class="me-1 h-12 w-20" @click="enterRoom"
-                  >入室</ButtonGeneralPrimary
-                >
+                <!-- video on/off -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12"
                   :class="{
@@ -256,6 +255,9 @@ const sendInviteMail = async () => {
                     />
                   </svg>
                 </ButtonGeneralPrimary>
+                <!-- // video on/off -->
+
+                <!-- mic on/off -->
                 <ButtonGeneralPrimary
                   class="me-0 h-12 w-12"
                   :class="{
@@ -295,6 +297,31 @@ const sendInviteMail = async () => {
                     />
                   </svg>
                 </ButtonGeneralPrimary>
+                <!-- // mic on/off -->
+              </div>
+
+              <div class="w-20"></div>
+            </div>
+          </div>
+          <div class="flex w-full justify-center">
+            <div class="w-full mx-3 rounded-md border p-3 text-center">
+              <div class="my-3">
+                <div class="text-xl font-semibold">{{ roomStore.room.room_name }}</div>
+                <div class="">{{ roomStore.room.room_hash }}</div>
+              </div>
+
+              <div class="">
+                <div class="flex my-3">
+                  <InputEmail class="w-full h-10 me-2" placeholder="表示名" v-model="myDisplayName" />
+                  <ButtonGeneralPrimary
+                    class="me-0 h-10 w-20"
+                    :class="{'bg-slate-400 hover:bg-slate-400': myDisplayName === ''}"
+                    @click="enterRoom"
+                    :disabled="myDisplayName === ''"
+                  >
+                    入室
+                  </ButtonGeneralPrimary>
+                </div>
               </div>
 
               <div class="my-3 text-left" v-if="authStore.isAuthenticated()">
@@ -302,14 +329,15 @@ const sendInviteMail = async () => {
                 <div class="">
                   <p class="text-xs">メールアドレスを入力後［送信］を押してください。</p>
                 </div>
-                <div class="mx-0 my-2 w-full">
-                  <InputEmail class="w-3/4 py-1" v-model="invitedEmailAddress" />
-                  <ButtonGeneralPrimary
-                    class=""
+                <div class="flex my-3">
+                  <InputEmail class="w-full h-10 me-2" v-model="invitedEmailAddress" />
+                  <ButtonGeneral
+                    class="me-0 h-10 w-20 bg-green-500 hover:bg-green-600"
                     :disabled="invitedEmailAddress.length === 0"
                     @click="sendInviteMail"
-                    >送信</ButtonGeneralPrimary
                   >
+                    送信
+                  </ButtonGeneral>
                 </div>
               </div>
             </div>
@@ -535,8 +563,14 @@ const sendInviteMail = async () => {
                 muted
                 playsinline
               ></video>
-              <div class="absolute bottom-2 right-2">
-                {{ webrtcStore.myPeerId }}
+
+              <div class="absolute bottom-0 left-0 rounded-md bg-black text-white font-bold text-xl p-3">
+                <div class="">
+                  {{ myDisplayName }}
+                </div>
+                <div class="hidden">
+                  {{ webrtcStore.myPeerId }}
+                </div>
               </div>
             </div>
             <!-- // local -->
@@ -638,8 +672,14 @@ const sendInviteMail = async () => {
                 muted
                 playsinline
               ></video>
-              <div class="absolute bottom-2 right-2">
-                {{ webrtcStore.myPeerId }}
+
+              <div class="absolute bottom-0 left-0 rounded-md bg-black text-white font-bold text-xl p-3">
+                <div class="">
+                  {{ myDisplayName }}
+                </div>
+                <div class="hidden">
+                  {{ webrtcStore.myPeerId }}
+                </div>
               </div>
             </div>
             <!-- // local -->
