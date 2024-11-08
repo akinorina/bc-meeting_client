@@ -207,6 +207,21 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   }
 
   // Media 接続
+  async function connectMediaMyself(displayName: string) {
+    if (!peer.value || !myMediaStream.value) {
+      return false
+    }
+
+    peerMedias.value[myPeerId.value] = new PeerMedia()
+    peerMedias.value[myPeerId.value].peerId = myPeerId.value
+    peerMedias.value[myPeerId.value].displayName = displayName
+    peerMedias.value[myPeerId.value].mediaConn = null
+    peerMedias.value[myPeerId.value].mediaStream = myMediaStream.value
+
+    return true
+  }
+
+  // Media 接続
   async function connectMedia(remotePeerId: string, displayName: string) {
     if (!peer.value || !myMediaStream.value) {
       return false
@@ -243,17 +258,19 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // Media 切断
   function disconnectMedia() {
     // PeerMediaすべてを停止、Close、削除
-    Object.keys(peerMedias.value).forEach(async (key) => {
-      // MediaStream停止
-      await peerMedias.value[key].mediaStream
-        ?.getTracks()
-        .forEach((track: MediaStreamTrack) => track.stop())
+    Object.keys(peerMedias.value).forEach(async (peerId) => {
+      if (peerId !== myPeerId.value) {
+        // MediaStream停止
+        await peerMedias.value[peerId].mediaStream
+          ?.getTracks()
+          .forEach((track: MediaStreamTrack) => track.stop())
 
-      // MediaConnection CLOSE
-      await peerMedias.value[key].mediaConn?.close()
+        // MediaConnection CLOSE
+        await peerMedias.value[peerId].mediaConn?.close()
+      }
 
       // peerMedia 削除
-      delete peerMedias.value[key]
+      delete peerMedias.value[peerId]
     })
   }
 
@@ -345,6 +362,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     openMyMediaStream,
     closeMyMediaStream,
     connectMedia,
+    connectMediaMyself,
     disconnectMedia,
     checkMedias
     // connectData,
