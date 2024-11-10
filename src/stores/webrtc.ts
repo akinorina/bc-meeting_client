@@ -37,58 +37,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // // data connection
   // const dataConn = ref<DataConnection>()
 
-  // UserMedia
-  const getUserMedia = navigator.mediaDevices.getUserMedia
-
-  // open my MediaStream
-  async function openMyMediaStream(trackStatus: object = { video: true, audio: true }) {
-    // local stream 取得
-    try {
-      myMediaStream.value = await getUserMedia(trackStatus)
-    } catch (err: any) {
-      console.error('Failed to get local stream', err)
-
-      // log to console first
-      console.error(err) /* handle the error */
-      if (err.name == 'NotFoundError' || err.name == 'DevicesNotFoundError') {
-        // required track is missing
-        console.error('Required track is missing')
-      } else if (err.name == 'NotReadableError' || err.name == 'TrackStartError') {
-        // webcam or mic are already in use
-        console.error('Webcam or mic are already in use')
-      } else if (err.name == 'OverconstrainedError' || err.name == 'ConstraintNotSatisfiedError') {
-        // constraints can not be satisfied by avb. devices
-        console.error('Constraints can not be satisfied by available devices')
-      } else if (err.name == 'NotAllowedError' || err.name == 'PermissionDeniedError') {
-        // permission denied in browser
-        console.error('Permission Denied.')
-      } else if (err.name == 'TypeError' || err.name == 'TypeError') {
-        // empty constraints object
-        console.error('Both audio and video are FALSE')
-      } else {
-        // other errors
-        console.error('Sorry! Another error occurred.')
-      }
-    }
-  }
-
-  function setVideoEnabled(value: boolean) {
-    myMediaStream.value?.getVideoTracks().forEach((track) => {
-      track.enabled = value
-    })
-  }
-  function setAudioEnabled(value: boolean) {
-    myMediaStream.value?.getAudioTracks().forEach((track) => {
-      track.enabled = value
-    })
-  }
-
-  // close my MediaStream
-  function closeMyMediaStream() {
-    myMediaStream.value?.getTracks().forEach(async (track) => await track.stop())
-    myMediaStream.value = null
-  }
-
   async function open(options: PeerOptions) {
     // Peerサーバー接続
     peer.value = new Peer(myPeerId.value, {
@@ -309,9 +257,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     // stream の全Trackをstop, 削除
     disconnectMedia()
 
-    // myMediaStream stops.
-    closeMyMediaStream()
-
     // Peer切断
     peer.value?.disconnect()
     myPeerId.value = ''
@@ -357,10 +302,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     open,
     close,
-    setVideoEnabled,
-    setAudioEnabled,
-    openMyMediaStream,
-    closeMyMediaStream,
     connectMedia,
     connectMediaMyself,
     disconnectMedia,

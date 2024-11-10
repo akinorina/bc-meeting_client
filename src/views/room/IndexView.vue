@@ -3,6 +3,7 @@ import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
+import { useMediaStore } from '@/stores/media'
 import { useRoomStore } from '@/stores/rooms'
 import { axios } from '@/lib/Axios'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
@@ -18,6 +19,7 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
+const mediaStore = useMediaStore()
 const roomStore = useRoomStore()
 
 const roomHashParam = computed({
@@ -65,7 +67,8 @@ onMounted(async () => {
   }
 
   // open my MediaStream
-  await webrtcStore.openMyMediaStream(trackStatus.value)
+  await mediaStore.openMediaStream(trackStatus.value)
+  webrtcStore.myMediaStream = mediaStore.mediaStream
 
   // open Peer
   await webrtcStore.open({
@@ -86,7 +89,7 @@ onBeforeUnmount(async () => {
 
   await webrtcStore.close()
 
-  webrtcStore.closeMyMediaStream()
+  mediaStore.closeMediaStream()
 })
 
 // top page へ遷移
@@ -149,13 +152,13 @@ const checkStatusPeerConn = async () => {
 
 // video on/off
 const toggleVideo = () => {
-  webrtcStore.setVideoEnabled(!trackStatus.value.video)
+  mediaStore.setVideoEnabled(!trackStatus.value.video)
   trackStatus.value.video = !trackStatus.value.video
 }
 
 // Audio on/off
 const toggleAudio = () => {
-  webrtcStore.setAudioEnabled(!trackStatus.value.audio)
+  mediaStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
 }
 
