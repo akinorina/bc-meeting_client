@@ -30,6 +30,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
   // (remote) PeerMedia
   const peerMedias = ref<PeerMediaObject>({})
+  const peerMediasNum = ref(Object.keys(peerMedias.value).length)
 
   // // 送受信メッセージデータ
   // const messageData = ref<any[]>([])
@@ -142,12 +143,16 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
         // closeした peerMedia 削除
         delete peerMedias.value[remotePeerId]
+
+        peerMediasNum.value = Object.keys(peerMedias.value).length
       })
 
       // on media: error
       peerMedias.value[remotePeerId].mediaConn?.on('error', (error: any) => {
         throw error
       })
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     // on: error
@@ -165,6 +170,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     peerMedias.value[myPeerId.value].displayName = displayName
     peerMedias.value[myPeerId.value].mediaConn = null
     peerMedias.value[myPeerId.value].mediaStream = myMediaStream.value
+
+    peerMediasNum.value = Object.keys(peerMedias.value).length
 
     return true
   }
@@ -185,6 +192,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: any) {
       peerMedias.value[remotePeerId].mediaStream = remoteStream
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
@@ -198,6 +207,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // closeした peerMedia 削除
       delete peerMedias.value[remotePeerId]
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     return true
@@ -219,6 +230,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // peerMedia 削除
       delete peerMedias.value[peerId]
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
   }
 
@@ -289,6 +302,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
         // peerMedia 削除
         delete peerMedias.value[peerId]
+
+        peerMediasNum.value = Object.keys(peerMedias.value).length
       }
     })
   }
@@ -298,6 +313,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     myPeerId,
     myMediaStream,
     peerMedias,
+    peerMediasNum,
     // messageData,
 
     open,
