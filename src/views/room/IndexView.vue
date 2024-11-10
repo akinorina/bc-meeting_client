@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
+import { useMediaStore } from '@/stores/media'
 import { useRoomStore } from '@/stores/rooms'
 import { axios } from '@/lib/Axios'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
@@ -18,6 +19,7 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
+const mediaStore = useMediaStore()
 const roomStore = useRoomStore()
 
 const roomHashParam = computed({
@@ -33,6 +35,9 @@ const roomHash = ref(roomHashParam.value)
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
 
+// view mode (speaker|matrix)
+const viewMode = ref('speaker')
+
 // my display name
 const myDisplayName = ref('')
 
@@ -42,6 +47,9 @@ const invitedEmailAddress = ref<string>('')
 // 状態: 入室 / 退室
 const statusEnterRoom = ref(false)
 
+// Speaker View - 現在のスピーカーの Peer ID.
+const targetSpeakerPeerId = ref('')
+
 // check interval ID.
 let cIId: any = null
 
@@ -50,6 +58,41 @@ const isBadRoomHash = ref<boolean>(false)
 
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
+
+const speakerLength = ref(webrtcStore.peerMediasNum)
+watch(webrtcStore.peerMedias, async () => {
+  if (speakerLength.value > webrtcStore.peerMediasNum) {
+    if (webrtcStore.peerMediasNum <= 1) {
+      targetSpeakerPeerId.value = webrtcStore.myPeerId
+    } else {
+      const aryPeerIds = Object.keys(webrtcStore.peerMedias)
+      console.log('aryPeerIds', aryPeerIds)
+      let iidx = aryPeerIds.length - 1
+      targetSpeakerPeerId.value = aryPeerIds[iidx]
+      while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
+        iidx--
+        targetSpeakerPeerId.value = aryPeerIds[iidx]
+      }
+      console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
+    }
+  }
+  if (speakerLength.value < webrtcStore.peerMediasNum) {
+    if (webrtcStore.peerMediasNum === 1) {
+      targetSpeakerPeerId.value = webrtcStore.myPeerId
+    } else {
+      const aryPeerIds = Object.keys(webrtcStore.peerMedias)
+      console.log('aryPeerIds', aryPeerIds)
+      let iidx = aryPeerIds.length - 1
+      targetSpeakerPeerId.value = aryPeerIds[iidx]
+      while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
+        iidx--
+        targetSpeakerPeerId.value = aryPeerIds[iidx]
+      }
+      console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
+    }
+  }
+  speakerLength.value = webrtcStore.peerMediasNum
+})
 
 onMounted(async () => {
   // 状態: 退室
@@ -65,7 +108,8 @@ onMounted(async () => {
   }
 
   // open my MediaStream
-  await webrtcStore.openMyMediaStream(trackStatus.value)
+  await mediaStore.openMediaStream(trackStatus.value)
+  webrtcStore.myMediaStream = mediaStore.mediaStream
 
   // open Peer
   await webrtcStore.open({
@@ -80,18 +124,13 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(async () => {
-  if (cIId !== null) {
-    clearInterval(cIId)
-    cIId = null
-  }
-
   if (statusEnterRoom.value) {
     await exitRoom()
   }
 
   await webrtcStore.close()
 
-  webrtcStore.closeMyMediaStream()
+  mediaStore.closeMediaStream()
 })
 
 // top page へ遷移
@@ -106,13 +145,17 @@ const toTopPage = () => {
 
 // Roomへの入室
 const enterRoom = async () => {
+  targetSpeakerPeerId.value = webrtcStore.myPeerId
+
   // 入室APIアクセス
   await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId, myDisplayName.value)
 
   // 入室状態を取得
   const res2 = await roomStore.statusRoom(roomHash.value)
   res2.attenders.forEach(async (item: any) => {
-    if (item.peer_id !== webrtcStore.myPeerId) {
+    if (item.peer_id === webrtcStore.myPeerId) {
+      webrtcStore.connectMediaMyself(item.display_name)
+    } else {
       // 現在の参加者それぞれへメディア接続
       webrtcStore.connectMedia(item.peer_id, item.display_name)
     }
@@ -134,6 +177,8 @@ const exitRoom = async () => {
     cIId = null
   }
 
+  targetSpeakerPeerId.value = ''
+
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
   // 退室APIアクセス
@@ -152,14 +197,23 @@ const checkStatusPeerConn = async () => {
 
 // video on/off
 const toggleVideo = () => {
-  webrtcStore.setVideoEnabled(!trackStatus.value.video)
+  mediaStore.setVideoEnabled(!trackStatus.value.video)
   trackStatus.value.video = !trackStatus.value.video
 }
 
 // Audio on/off
 const toggleAudio = () => {
-  webrtcStore.setAudioEnabled(!trackStatus.value.audio)
+  mediaStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
+}
+
+//
+const changeViewMode = () => {
+  if (viewMode.value === 'speaker') {
+    viewMode.value = 'matrix'
+  } else if (viewMode.value === 'matrix') {
+    viewMode.value = 'speaker'
+  }
 }
 
 // 招待メール送信
@@ -180,6 +234,10 @@ const sendInviteMail = async () => {
     modalSendInvitaionSuccess.value.close()
   }, 2000)
 }
+
+const chooseSpeaker = (peerId: string) => {
+  targetSpeakerPeerId.value = peerId
+}
 </script>
 
 <template>
@@ -187,7 +245,7 @@ const sendInviteMail = async () => {
     <template v-if="isBadRoomHash">
       <VccHeader />
 
-      <div class="container mx-auto h-svh rounded-xl border bg-slate-100 p-3">
+      <div class="container mx-auto h-full rounded-xl border bg-slate-100 p-3">
         <div class="m-2">room ハッシュに誤りがあります。</div>
         <div class="m-2">
           <ButtonGeneralPrimary class="" @click="router.push({ name: 'index' })"
@@ -197,7 +255,7 @@ const sendInviteMail = async () => {
       </div>
     </template>
     <template v-else>
-      <div class="h-svh bg-slate-100" v-if="statusEnterRoom === false">
+      <div class="h-full bg-slate-100" v-if="statusEnterRoom === false">
         <!-- 入室前状態 -->
 
         <VccHeader />
@@ -355,127 +413,298 @@ const sendInviteMail = async () => {
       <div class="" v-else>
         <!-- 入室(meeting)状態 -->
 
-        <!-- UI -->
-        <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
-          <div class="flex">
-            <ButtonGeneralPrimary
-              class="me-1 h-12 w-12"
-              :class="{
-                'bg-slate-400': !trackStatus.video,
-                'hover:bg-slate-500': !trackStatus.video
-              }"
-              @click="toggleVideo"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="30"
-                height="24"
-                fill="currentColor"
-                class="bi bi-camera-video-fill"
-                viewBox="0 0 20 20"
-                v-if="trackStatus.video"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"
-                />
-              </svg>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="30"
-                height="24"
-                fill="currentColor"
-                class="bi bi-camera-video-off-fill"
-                viewBox="0 0 20 20"
-                v-else
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
-                />
-              </svg>
-            </ButtonGeneralPrimary>
+        <div v-if="viewMode === 'speaker'">
+          <div class="relative h-screen bg-slate-500">
+            <!-- UI -->
+            <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
+              <div class="flex">
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-18"
+                  @click="changeViewMode"
+                >
+                  <div v-if="viewMode === 'speaker'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                    </svg>
+                  </div>
+                  <div v-else>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-3x3" viewBox="0 0 16 16">
+                      <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"/>
+                    </svg>
+                  </div>
+                </ButtonGeneralPrimary>
 
-            <ButtonGeneralPrimary
-              class="me-2 h-12 w-12"
-              :class="{
-                'bg-slate-400': !trackStatus.audio,
-                'hover:bg-slate-500': !trackStatus.audio
-              }"
-              @click="toggleAudio"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="30"
-                height="24"
-                fill="currentColor"
-                class="bi bi-mic-fill"
-                viewBox="0 0 20 20"
-                v-if="trackStatus.audio"
-              >
-                <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
-                <path
-                  d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"
-                />
-              </svg>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="30"
-                height="24"
-                fill="currentColor"
-                class="bi bi-mic-mute-fill"
-                viewBox="0 0 20 20"
-                v-else
-              >
-                <path
-                  d="M13 8c0 .564-.094 1.107-.266 1.613l-.814-.814A4.02 4.02 0 0 0 12 8V7a.5.5 0 0 1 1 0v1zm-5 4c.818 0 1.578-.245 2.212-.667l.718.719a4.973 4.973 0 0 1-2.43.923V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 1 0v1a4 4 0 0 0 4 4zm3-9v4.879L5.158 2.037A3.001 3.001 0 0 1 11 3z"
-                />
-                <path
-                  d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
-                />
-              </svg>
-            </ButtonGeneralPrimary>
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-12"
+                  :class="{
+                    'bg-slate-400': !trackStatus.video,
+                    'hover:bg-slate-500': !trackStatus.video
+                  }"
+                  @click="toggleVideo"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-camera-video-fill"
+                    viewBox="0 0 20 20"
+                    v-if="trackStatus.video"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"
+                    />
+                  </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-camera-video-off-fill"
+                    viewBox="0 0 20 20"
+                    v-else
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
+                    />
+                  </svg>
+                </ButtonGeneralPrimary>
 
-            <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+                <ButtonGeneralPrimary
+                  class="me-2 h-12 w-12"
+                  :class="{
+                    'bg-slate-400': !trackStatus.audio,
+                    'hover:bg-slate-500': !trackStatus.audio
+                  }"
+                  @click="toggleAudio"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-mic-fill"
+                    viewBox="0 0 20 20"
+                    v-if="trackStatus.audio"
+                  >
+                    <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
+                    <path
+                      d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"
+                    />
+                  </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-mic-mute-fill"
+                    viewBox="0 0 20 20"
+                    v-else
+                  >
+                    <path
+                      d="M13 8c0 .564-.094 1.107-.266 1.613l-.814-.814A4.02 4.02 0 0 0 12 8V7a.5.5 0 0 1 1 0v1zm-5 4c.818 0 1.578-.245 2.212-.667l.718.719a4.973 4.973 0 0 1-2.43.923V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 1 0v1a4 4 0 0 0 4 4zm3-9v4.879L5.158 2.037A3.001 3.001 0 0 1 11 3z"
+                    />
+                    <path
+                      d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
+                    />
+                  </svg>
+                </ButtonGeneralPrimary>
+
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+              </div>
+            </div>
+            <!-- // UI -->
+
+            <!-- speakers list -->
+            <div class="absolute z-20 top-3 left-0 max-w-screen bg-slate-300 border border-slate-500 rounded-sm overflow-x-hidden">
+              <div class="speakers flex flex-nowrap justify-start">
+                <div
+                  class="relative w-32 h-24 flex items-center"
+                  v-for="(pm) in webrtcStore.peerMedias"
+                  :key="pm.peerId"
+                  @click="chooseSpeaker(pm.peerId)"
+                >
+                  <video
+                    class="h-full w-full"
+                    :srcObject.prop="pm.mediaStream"
+                    autoplay
+                    muted
+                    playsinline
+                  ></video>
+                  <audio
+                    class=""
+                    :srcObject.prop="pm.mediaStream"
+                    autoplay
+                    v-if="pm.peerId !== webrtcStore.myPeerId"
+                  ></audio>
+                  <div
+                    class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-1 text-xs font-bold text-white"
+                  >
+                    <div class="">
+                      {{ pm.displayName }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- // speakers list -->
+
+            <!-- current speaker -->
+            <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500" v-if="targetSpeakerPeerId !== ''">
+              <video
+                class="h-full w-full"
+                :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
+                autoplay
+                muted
+                playsinline
+              ></video>
+              <div
+                class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-1 text-xs font-bold text-white"
+              >
+                <div class="">
+                  {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                </div>
+              </div>
+            </div>
+            <!-- // current speaker -->
           </div>
         </div>
-        <!-- // UI -->
+        <div class="" v-else>
+          <div class="h-screen w-screen flex flex-wrap justify-center items-center">
+            <!-- UI -->
+            <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
+              <div class="flex">
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-18"
+                  @click="changeViewMode"
+                >
+                  <div v-if="viewMode === 'speaker'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                    </svg>
+                  </div>
+                  <div v-else>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-3x3" viewBox="0 0 16 16">
+                      <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"/>
+                    </svg>
+                  </div>
+                </ButtonGeneralPrimary>
 
-        <div class="sm:hidden">
-          <!-- smart phone view -->
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-12"
+                  :class="{
+                    'bg-slate-400': !trackStatus.video,
+                    'hover:bg-slate-500': !trackStatus.video
+                  }"
+                  @click="toggleVideo"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-camera-video-fill"
+                    viewBox="0 0 20 20"
+                    v-if="trackStatus.video"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"
+                    />
+                  </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-camera-video-off-fill"
+                    viewBox="0 0 20 20"
+                    v-else
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
+                    />
+                  </svg>
+                </ButtonGeneralPrimary>
 
-          <div class="flex h-svh w-screen flex-wrap justify-center">
-            <!-- remote -->
+                <ButtonGeneralPrimary
+                  class="me-2 h-12 w-12"
+                  :class="{
+                    'bg-slate-400': !trackStatus.audio,
+                    'hover:bg-slate-500': !trackStatus.audio
+                  }"
+                  @click="toggleAudio"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-mic-fill"
+                    viewBox="0 0 20 20"
+                    v-if="trackStatus.audio"
+                  >
+                    <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
+                    <path
+                      d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"
+                    />
+                  </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-mic-mute-fill"
+                    viewBox="0 0 20 20"
+                    v-else
+                  >
+                    <path
+                      d="M13 8c0 .564-.094 1.107-.266 1.613l-.814-.814A4.02 4.02 0 0 0 12 8V7a.5.5 0 0 1 1 0v1zm-5 4c.818 0 1.578-.245 2.212-.667l.718.719a4.973 4.973 0 0 1-2.43.923V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 1 0v1a4 4 0 0 0 4 4zm3-9v4.879L5.158 2.037A3.001 3.001 0 0 1 11 3z"
+                    />
+                    <path
+                      d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
+                    />
+                  </svg>
+                </ButtonGeneralPrimary>
+
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+              </div>
+            </div>
+            <!-- // UI -->
+
             <div
               class="relative flex items-center border bg-slate-500"
               :class="{
                 'w-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'w-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/3':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'w-1/4':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19,
-                'h-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 0,
-                'h-1/2':
                   1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 5,
+                  Object.keys(webrtcStore.peerMedias).length <= 2,
+                'w-1/2':
+                  3 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 4,
+                'w-1/3':
+                  5 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 12,
+                'w-1/4':
+                  13 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 20,
+                'h-full':
+                  1 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 1,
+                'h-1/2':
+                  2 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 6,
                 'h-1/3':
-                  6 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 8,
+                  7 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 9,
                 'h-1/4':
-                  9 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 15,
+                  10 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 16,
                 'h-1/5':
-                  16 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19
+                  17 <= Object.keys(webrtcStore.peerMedias).length &&
+                  Object.keys(webrtcStore.peerMedias).length <= 20
               }"
               v-for="(pm, peerId) in webrtcStore.peerMedias"
               :key="peerId"
@@ -484,182 +713,24 @@ const sendInviteMail = async () => {
                 class="h-full w-full"
                 :srcObject.prop="pm.mediaStream"
                 autoplay
-                playsinline
-              ></video>
-              <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
-              <div
-                class="absolute bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
-              >
-                <div class="">
-                  {{ pm.displayName }}
-                </div>
-              </div>
-            </div>
-            <!-- // remote -->
-
-            <!-- local -->
-            <div
-              class="relative flex items-center border bg-slate-500"
-              :class="{
-                'w-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'w-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/3':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'w-1/4':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19,
-                'h-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 0,
-                'h-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 5,
-                'h-1/3':
-                  6 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 8,
-                'h-1/4':
-                  9 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 15,
-                'h-1/5':
-                  16 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19
-              }"
-            >
-              <video
-                class="h-full w-full"
-                :srcObject.prop="webrtcStore.myMediaStream"
-                autoplay
                 muted
                 playsinline
               ></video>
-
-              <div
-                class="absolute bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
-              >
-                <div class="">
-                  {{ myDisplayName }}
-                </div>
-              </div>
-            </div>
-            <!-- // local -->
-          </div>
-
-          <!-- // smart phone view -->
-        </div>
-        <div class="hidden sm:block">
-          <!-- tablet & PC view -->
-
-          <div class="flex h-svh w-screen flex-wrap justify-center">
-            <!-- remotes -->
-            <div
-              class="relative flex items-center border bg-slate-500"
-              :class="{
-                'w-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'w-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/3':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'w-1/4':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19,
-                'h-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 0,
-                'h-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 5,
-                'h-1/3':
-                  6 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 8,
-                'h-1/4':
-                  9 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 15,
-                'h-1/5':
-                  16 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19
-              }"
-              v-for="(pm, peerId) in webrtcStore.peerMedias"
-              :key="peerId"
-            >
-              <video
-                class="h-full w-full"
+              <audio
+                class=""
                 :srcObject.prop="pm.mediaStream"
                 autoplay
-                playsinline
-              ></video>
-              <audio class="" :srcObject.prop="pm.mediaStream" autoplay playsinline></audio>
+                v-if="pm.peerId !== webrtcStore.myPeerId"
+              ></audio>
               <div
-                class="absolute bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
+                class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
               >
                 <div class="">
                   {{ pm.displayName }}
                 </div>
               </div>
             </div>
-            <!-- // remotes -->
-
-            <!-- local -->
-            <div
-              class="relative flex items-center border bg-slate-500"
-              :class="{
-                'w-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'w-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 3,
-                'w-1/3':
-                  4 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 11,
-                'w-1/4':
-                  12 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19,
-                'h-full':
-                  0 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 0,
-                'h-1/2':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 5,
-                'h-1/3':
-                  6 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 8,
-                'h-1/4':
-                  9 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 15,
-                'h-1/5':
-                  16 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 19
-              }"
-            >
-              <video
-                class="h-full w-full"
-                :srcObject.prop="webrtcStore.myMediaStream"
-                autoplay
-                muted
-                playsinline
-              ></video>
-
-              <div
-                class="absolute bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
-              >
-                <div class="">
-                  {{ myDisplayName }}
-                </div>
-              </div>
-            </div>
-            <!-- // local -->
           </div>
-
-          <!-- // tablet & PC view -->
         </div>
 
         <!-- // 入室(meeting)状態 -->
@@ -677,4 +748,12 @@ const sendInviteMail = async () => {
   </ModalGeneral>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.speakers {
+  width: calc(8rem * v-bind(speakerLength));
+}
+
+.main-speaker-view {
+  height: calc(100vh - 100px);
+}
+</style>

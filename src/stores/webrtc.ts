@@ -30,64 +30,13 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
   // (remote) PeerMedia
   const peerMedias = ref<PeerMediaObject>({})
+  const peerMediasNum = ref(Object.keys(peerMedias.value).length)
 
   // // 送受信メッセージデータ
   // const messageData = ref<any[]>([])
 
   // // data connection
   // const dataConn = ref<DataConnection>()
-
-  // UserMedia
-  const getUserMedia = navigator.mediaDevices.getUserMedia
-
-  // open my MediaStream
-  async function openMyMediaStream(trackStatus: object = { video: true, audio: true }) {
-    // local stream 取得
-    try {
-      myMediaStream.value = await getUserMedia(trackStatus)
-    } catch (err: any) {
-      console.error('Failed to get local stream', err)
-
-      // log to console first
-      console.error(err) /* handle the error */
-      if (err.name == 'NotFoundError' || err.name == 'DevicesNotFoundError') {
-        // required track is missing
-        console.error('Required track is missing')
-      } else if (err.name == 'NotReadableError' || err.name == 'TrackStartError') {
-        // webcam or mic are already in use
-        console.error('Webcam or mic are already in use')
-      } else if (err.name == 'OverconstrainedError' || err.name == 'ConstraintNotSatisfiedError') {
-        // constraints can not be satisfied by avb. devices
-        console.error('Constraints can not be satisfied by available devices')
-      } else if (err.name == 'NotAllowedError' || err.name == 'PermissionDeniedError') {
-        // permission denied in browser
-        console.error('Permission Denied.')
-      } else if (err.name == 'TypeError' || err.name == 'TypeError') {
-        // empty constraints object
-        console.error('Both audio and video are FALSE')
-      } else {
-        // other errors
-        console.error('Sorry! Another error occurred.')
-      }
-    }
-  }
-
-  function setVideoEnabled(value: boolean) {
-    myMediaStream.value?.getVideoTracks().forEach((track) => {
-      track.enabled = value
-    })
-  }
-  function setAudioEnabled(value: boolean) {
-    myMediaStream.value?.getAudioTracks().forEach((track) => {
-      track.enabled = value
-    })
-  }
-
-  // close my MediaStream
-  function closeMyMediaStream() {
-    myMediaStream.value?.getTracks().forEach(async (track) => await track.stop())
-    myMediaStream.value = null
-  }
 
   async function open(options: PeerOptions) {
     // Peerサーバー接続
@@ -194,16 +143,37 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
         // closeした peerMedia 削除
         delete peerMedias.value[remotePeerId]
+
+        peerMediasNum.value = Object.keys(peerMedias.value).length
       })
 
       // on media: error
       peerMedias.value[remotePeerId].mediaConn?.on('error', (error: any) => {
         throw error
       })
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     // on: error
     peer.value.on('error', () => {})
+  }
+
+  // Media 接続
+  async function connectMediaMyself(displayName: string) {
+    if (!peer.value || !myMediaStream.value) {
+      return false
+    }
+
+    peerMedias.value[myPeerId.value] = new PeerMedia()
+    peerMedias.value[myPeerId.value].peerId = myPeerId.value
+    peerMedias.value[myPeerId.value].displayName = displayName
+    peerMedias.value[myPeerId.value].mediaConn = null
+    peerMedias.value[myPeerId.value].mediaStream = myMediaStream.value
+
+    peerMediasNum.value = Object.keys(peerMedias.value).length
+
+    return true
   }
 
   // Media 接続
@@ -222,6 +192,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: any) {
       peerMedias.value[remotePeerId].mediaStream = remoteStream
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
@@ -235,6 +207,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // closeした peerMedia 削除
       delete peerMedias.value[remotePeerId]
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     return true
@@ -243,17 +217,21 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // Media 切断
   function disconnectMedia() {
     // PeerMediaすべてを停止、Close、削除
-    Object.keys(peerMedias.value).forEach(async (key) => {
-      // MediaStream停止
-      await peerMedias.value[key].mediaStream
-        ?.getTracks()
-        .forEach((track: MediaStreamTrack) => track.stop())
+    Object.keys(peerMedias.value).forEach(async (peerId) => {
+      if (peerId !== myPeerId.value) {
+        // MediaStream停止
+        await peerMedias.value[peerId].mediaStream
+          ?.getTracks()
+          .forEach((track: MediaStreamTrack) => track.stop())
 
-      // MediaConnection CLOSE
-      await peerMedias.value[key].mediaConn?.close()
+        // MediaConnection CLOSE
+        await peerMedias.value[peerId].mediaConn?.close()
+      }
 
       // peerMedia 削除
-      delete peerMedias.value[key]
+      delete peerMedias.value[peerId]
+
+      peerMediasNum.value = Object.keys(peerMedias.value).length
     })
   }
 
@@ -292,9 +270,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     // stream の全Trackをstop, 削除
     disconnectMedia()
 
-    // myMediaStream stops.
-    closeMyMediaStream()
-
     // Peer切断
     peer.value?.disconnect()
     myPeerId.value = ''
@@ -327,6 +302,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
         // peerMedia 削除
         delete peerMedias.value[peerId]
+
+        peerMediasNum.value = Object.keys(peerMedias.value).length
       }
     })
   }
@@ -336,15 +313,13 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     myPeerId,
     myMediaStream,
     peerMedias,
+    peerMediasNum,
     // messageData,
 
     open,
     close,
-    setVideoEnabled,
-    setAudioEnabled,
-    openMyMediaStream,
-    closeMyMediaStream,
     connectMedia,
+    connectMediaMyself,
     disconnectMedia,
     checkMedias
     // connectData,
