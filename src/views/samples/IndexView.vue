@@ -37,6 +37,17 @@ import VccHeader from '@/components/VccHeader.vue'
             </div>
           </router-link>
         </div>
+
+        <div class="">
+          <router-link :to="{ name: 'samples_media' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">media</h5>
+                <p class="">Media (video, audio) のサンプルです。</p>
+              </div>
+            </div>
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
