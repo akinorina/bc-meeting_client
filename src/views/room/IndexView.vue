@@ -179,13 +179,14 @@ const exitRoom = async () => {
 
   targetSpeakerPeerId.value = ''
 
-  // WebRTC - 退出
-  webrtcStore.disconnectMedia()
-  // 退室APIアクセス
-  await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
-
   // 状態: 退室
   statusEnterRoom.value = false
+
+  // WebRTC - 退出
+  webrtcStore.disconnectMedia()
+
+  // 退室APIアクセス
+  await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
 }
 
 // PeerConn 状態をチェック、改善処理
@@ -259,7 +260,7 @@ const chooseSpeaker = (peerId: string) => {
         <!-- 入室前状態 -->
 
         <VccHeader />
-        <div class="w-full">
+        <div class="container mx-auto">
           <div class="p-3">
             <video
               class="max-h-80 w-full bg-slate-100"
@@ -379,9 +380,9 @@ const chooseSpeaker = (peerId: string) => {
                   />
                   <ButtonGeneralPrimary
                     class="me-0 h-10 w-20"
-                    :class="{ 'bg-slate-400 hover:bg-slate-400': myDisplayName === '' }"
+                    :class="{ 'bg-slate-400 hover:bg-slate-400': myDisplayName === '' || !mediaStore.mediaStream?.active }"
                     @click="enterRoom"
-                    :disabled="myDisplayName === ''"
+                    :disabled="myDisplayName === '' || !mediaStore.mediaStream?.active"
                   >
                     入室
                   </ButtonGeneralPrimary>
@@ -552,7 +553,7 @@ const chooseSpeaker = (peerId: string) => {
             <!-- // speakers list -->
 
             <!-- current speaker -->
-            <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500" v-if="targetSpeakerPeerId !== ''">
+            <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500">
               <video
                 class="h-full w-full"
                 :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
