@@ -17,12 +17,34 @@ const mediaStreamDef = {
   audio: true
 }
 
+const audioContext = ref()
+const mediaStreamSource = ref()
+const audioDestination = ref()
+const gainNode = ref()
+
+const volume = ref(0)
+
 onMounted(async () => {
-  // open my MediaStream
+  // open the mediastream
   await mediaStore.openMediaStream(mediaStreamDef)
+  console.log('mediaStream', mediaStore.mediaStream)
+
+  audioContext.value = new window.AudioContext()
+  mediaStreamSource.value = audioContext.value.createMediaStreamSource(mediaStore.mediaStream)
+  audioDestination.value = audioContext.value.createMediaStreamDestination()
+  gainNode.value = audioContext.value.createGain()
+
+  mediaStreamSource.value.connect(gainNode.value)
+  gainNode.value.connect(audioDestination.value)
+  gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime);
 })
 
+const changeVolume = () => {
+  gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime);
+}
+
 onBeforeUnmount(async () => {
+  // close the mediastream
   mediaStore.closeMediaStream()
 })
 
@@ -49,7 +71,7 @@ const toggleAudio = () => {
       playsinline
     ></video>
     <audio
-      :srcObject.prop="mediaStore.mediaStream"
+      :srcObject.prop="audioDestination.stream"
       autoplay
     ></audio>
 
@@ -57,7 +79,7 @@ const toggleAudio = () => {
       <div class="my-3 flex items-center justify-center">
         <!-- video on/off -->
         <ButtonGeneralPrimary
-          class="me-1 h-12 w-12"
+          class="me-3 h-12 w-12"
           :class="{
             'bg-slate-400': !trackStatus.video,
             'hover:bg-slate-500': !trackStatus.video
@@ -97,7 +119,7 @@ const toggleAudio = () => {
 
         <!-- mic on/off -->
         <ButtonGeneralPrimary
-          class="me-0 h-12 w-12"
+          class="me-3 h-12 w-12"
           :class="{
             'bg-slate-400': !trackStatus.audio,
             'hover:bg-slate-500': !trackStatus.audio
@@ -136,6 +158,20 @@ const toggleAudio = () => {
           </svg>
         </ButtonGeneralPrimary>
         <!-- // mic on/off -->
+
+        <!-- xxx -->
+        <div class="me-3 px-3 py-1 border-4">
+          <div class="">
+            <input
+              type="range"
+              v-model="volume"
+              @change="changeVolume"
+            />
+          </div>
+          <div class="">
+            {{ volume }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
