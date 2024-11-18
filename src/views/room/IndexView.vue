@@ -293,8 +293,17 @@ const chooseSpeaker = (peerId: string) => {
                   :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
                   @click="changeVideoMirrored"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-symmetry-vertical" viewBox="0 0 20 20">
-                    <path d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-symmetry-vertical"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"
+                    />
                   </svg>
                 </ButtonGeneralPrimary>
                 <!-- // 鏡像反転 on/off -->
@@ -401,7 +410,10 @@ const chooseSpeaker = (peerId: string) => {
                   />
                   <ButtonGeneralPrimary
                     class="me-0 h-10 w-20"
-                    :class="{ 'bg-slate-400 hover:bg-slate-400': myDisplayName === '' || !mediaStore.mediaStream?.active }"
+                    :class="{
+                      'bg-slate-400 hover:bg-slate-400':
+                        myDisplayName === '' || !mediaStore.mediaStream?.active
+                    }"
                     @click="enterRoom"
                     :disabled="myDisplayName === '' || !mediaStore.mediaStream?.active"
                   >
@@ -438,30 +450,54 @@ const chooseSpeaker = (peerId: string) => {
         <div v-if="viewMode === 'speaker'">
           <div class="relative h-screen bg-slate-500">
             <!-- UI -->
-            <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
+            <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
                   :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
                   @click="changeVideoMirrored"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-symmetry-vertical" viewBox="0 0 20 20">
-                    <path d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-symmetry-vertical"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"
+                    />
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-18"
-                  @click="changeViewMode"
-                >
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <div v-if="viewMode === 'speaker'">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
-                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-person-fill"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
+                      />
                     </svg>
                   </div>
                   <div v-else>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-3x3" viewBox="0 0 16 16">
-                      <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-grid-3x3"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
+                      />
                     </svg>
                   </div>
                 </ButtonGeneralPrimary>
@@ -544,23 +580,29 @@ const chooseSpeaker = (peerId: string) => {
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom"
+                  >退室</ButtonGeneralDanger
+                >
               </div>
             </div>
             <!-- // UI -->
 
             <!-- speakers list -->
-            <div class="absolute z-20 top-3 left-0 max-w-screen bg-slate-300 border border-slate-500 rounded-sm overflow-x-hidden">
+            <div
+              class="max-w-screen absolute left-0 top-3 z-20 overflow-x-hidden rounded-sm border border-slate-500 bg-slate-300"
+            >
               <div class="speakers flex flex-nowrap justify-start">
                 <div
-                  class="relative w-32 h-24 flex items-center"
-                  v-for="(pm) in webrtcStore.peerMedias"
+                  class="relative flex h-24 w-32 items-center"
+                  v-for="pm in webrtcStore.peerMedias"
                   :key="pm.peerId"
                   @click="chooseSpeaker(pm.peerId)"
                 >
                   <video
                     class="h-full w-full"
-                    :class="{ 'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId }"
+                    :class="{
+                      'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                    }"
                     :srcObject.prop="pm.mediaStream"
                     autoplay
                     muted
@@ -573,7 +615,7 @@ const chooseSpeaker = (peerId: string) => {
                     v-if="pm.peerId !== webrtcStore.myPeerId"
                   ></audio>
                   <div
-                    class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-1 text-xs font-bold text-white"
+                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
                   >
                     <div class="">
                       {{ pm.displayName }}
@@ -588,14 +630,18 @@ const chooseSpeaker = (peerId: string) => {
             <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500">
               <video
                 class="h-full w-full"
-                :class="{ 'my-video-mirrored': myVideoMirrored && webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId }"
+                :class="{
+                  'my-video-mirrored':
+                    myVideoMirrored &&
+                    webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
+                }"
                 :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
                 autoplay
                 muted
                 playsinline
               ></video>
               <div
-                class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-1 text-xs font-bold text-white"
+                class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
               >
                 <div class="">
                   {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
@@ -606,32 +652,56 @@ const chooseSpeaker = (peerId: string) => {
           </div>
         </div>
         <div class="" v-else>
-          <div class="h-screen w-screen flex flex-wrap justify-center items-center">
+          <div class="flex h-screen w-screen flex-wrap items-center justify-center">
             <!-- UI -->
-            <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
+            <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
                   :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
                   @click="changeVideoMirrored"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-symmetry-vertical" viewBox="0 0 20 20">
-                    <path d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="30"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-symmetry-vertical"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"
+                    />
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-18"
-                  @click="changeViewMode"
-                >
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <div v-if="viewMode === 'speaker'">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
-                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-person-fill"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
+                      />
                     </svg>
                   </div>
                   <div v-else>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-3x3" viewBox="0 0 16 16">
-                      <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="bi bi-grid-3x3"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
+                      />
                     </svg>
                   </div>
                 </ButtonGeneralPrimary>
@@ -714,7 +784,9 @@ const chooseSpeaker = (peerId: string) => {
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom"
+                  >退室</ButtonGeneralDanger
+                >
               </div>
             </div>
             <!-- // UI -->
@@ -755,7 +827,9 @@ const chooseSpeaker = (peerId: string) => {
             >
               <video
                 class="h-full w-full"
-                :class="{ 'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId }"
+                :class="{
+                  'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                }"
                 :srcObject.prop="pm.mediaStream"
                 autoplay
                 muted
@@ -768,7 +842,7 @@ const chooseSpeaker = (peerId: string) => {
                 v-if="pm.peerId !== webrtcStore.myPeerId"
               ></audio>
               <div
-                class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
+                class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
               >
                 <div class="">
                   {{ pm.displayName }}

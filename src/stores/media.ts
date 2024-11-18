@@ -2,14 +2,17 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 export const useMediaStore = defineStore('media', () => {
-  // my Media Stream
+  // local Media Stream
+  const localMediaStream = ref<MediaStream | null>(null)
+  // media stream
   const mediaStream = ref<MediaStream | null>(null)
 
   // open a media-stream
   async function openMediaStream(trackStatus: object = { video: true, audio: true }) {
     // local stream 取得
     try {
-      mediaStream.value = await navigator.mediaDevices.getUserMedia(trackStatus)
+      localMediaStream.value = await navigator.mediaDevices.getUserMedia(trackStatus)
+      mediaStream.value = localMediaStream.value.clone()
     } catch (err: any) {
       console.error('Failed to get local stream', err)
 
@@ -55,11 +58,45 @@ export const useMediaStore = defineStore('media', () => {
     mediaStream.value = null
   }
 
+  function setMediaStream(iMediaStream: MediaStream) {
+    // video tracks を削除
+    const videotracks = mediaStream.value?.getVideoTracks()
+    videotracks?.forEach((tr) => {
+      mediaStream.value?.removeTrack(tr)
+    })
+    // video tracks を追加
+    const vtracks = iMediaStream.getVideoTracks()
+    console.log('vtracks.length', vtracks.length)
+    vtracks.forEach((tr) => {
+      mediaStream.value?.addTrack(tr)
+    })
+  }
+
+  function setLocalMediaStream() {
+    // mediaStream.value = localMediaStream.value
+    // video tracks を削除
+    const videotracks = mediaStream.value?.getVideoTracks()
+    videotracks?.forEach((tr) => {
+      mediaStream.value?.removeTrack(tr)
+    })
+    // video tracks を追加
+    const vtracks = localMediaStream.value?.getVideoTracks()
+    if (vtracks) {
+      console.log('vtracks.length', vtracks.length)
+      vtracks.forEach((tr) => {
+        mediaStream.value?.addTrack(tr)
+      })
+    }
+  }
+
   return {
     mediaStream,
+    localMediaStream,
     setVideoEnabled,
     setAudioEnabled,
     openMediaStream,
-    closeMediaStream
+    closeMediaStream,
+    setMediaStream,
+    setLocalMediaStream
   }
 })

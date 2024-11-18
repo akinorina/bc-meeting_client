@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useMediaStore } from '@/stores/media'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
+import InputText from '@/components/ui/InputText.vue'
 
 const mediaStore = useMediaStore()
 
@@ -24,10 +25,18 @@ const gainNode = ref()
 
 const volume = ref(0)
 
+// const canvas001 = ref<HTMLCanvasElement>()
+const canvas = ref()
+const ctx = ref()
+const canvasStream = ref()
+
 onMounted(async () => {
+  // テキスト Canvas
+  canvas.value = document.createElement('canvas')
+  ctx.value = canvas.value.getContext('2d')
+
   // open the mediastream
   await mediaStore.openMediaStream(mediaStreamDef)
-  console.log('mediaStream', mediaStore.mediaStream)
 
   audioContext.value = new window.AudioContext()
   mediaStreamSource.value = audioContext.value.createMediaStreamSource(mediaStore.mediaStream)
@@ -36,11 +45,11 @@ onMounted(async () => {
 
   mediaStreamSource.value.connect(gainNode.value)
   gainNode.value.connect(audioDestination.value)
-  gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime);
+  gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime)
 })
 
 const changeVolume = () => {
-  gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime);
+  gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime)
 }
 
 onBeforeUnmount(async () => {
@@ -59,10 +68,42 @@ const toggleAudio = () => {
   mediaStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
 }
+
+// your name
+const yourName = ref('お名前')
+// Video Input mode (camera|text)
+const videoInputMode = ref('camera')
+//
+const createTextCanvas = () => {
+  // canvas
+  ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
+  ctx.value.fillStyle = '#ffffff'
+  ctx.value.fillRect(0, 0, canvas.value.width, canvas.value.height)
+  // text
+  ctx.value.font = '24px Hiragino medium'
+  ctx.value.fillStyle = '#000000'
+  ctx.value.fillText(yourName.value, 10, 50)
+  // make the mediastream
+  canvasStream.value = canvas.value.captureStream(30)
+}
+
+// switch video Camera/Text
+const toggleVideoInput = () => {
+  if (videoInputMode.value === 'camera') {
+    // camera -> text
+    videoInputMode.value = 'text'
+    createTextCanvas()
+    mediaStore.setMediaStream(canvasStream.value)
+  } else {
+    // text -> camera
+    videoInputMode.value = 'camera'
+    mediaStore.setLocalMediaStream()
+  }
+}
 </script>
 
 <template>
-  <div class="w-full h-full p-3 bg-slate-100">
+  <div class="h-full w-full bg-slate-100 p-3">
     <video
       class="max-h-80 w-full bg-slate-100"
       :srcObject.prop="mediaStore.mediaStream"
@@ -70,10 +111,7 @@ const toggleAudio = () => {
       muted
       playsinline
     ></video>
-    <audio
-      :srcObject.prop="audioDestination.stream"
-      autoplay
-    ></audio>
+    <audio :srcObject.prop="audioDestination.stream" autoplay></audio>
 
     <div class="flex w-full justify-center">
       <div class="my-3 flex items-center justify-center">
@@ -159,19 +197,27 @@ const toggleAudio = () => {
         </ButtonGeneralPrimary>
         <!-- // mic on/off -->
 
-        <!-- xxx -->
-        <div class="me-3 px-3 py-1 border-4">
+        <!-- volume -->
+        <div class="me-3 border-4 px-3 py-1">
           <div class="">
-            <input
-              type="range"
-              v-model="volume"
-              @change="changeVolume"
-            />
+            <input type="range" v-model="volume" @change="changeVolume" />
           </div>
           <div class="">
             {{ volume }}
           </div>
         </div>
+        <!-- // volume -->
+      </div>
+    </div>
+
+    <div class="flex w-full justify-center">
+      <div class="my-3 flex items-center justify-center">
+        <InputText class="w-3/5 p-3" v-model="yourName" />
+        <!-- video input switch-->
+        <ButtonGeneralPrimary class="me-3 h-12 w-2/5" @click="toggleVideoInput">
+          Viode In
+        </ButtonGeneralPrimary>
+        <!-- // video input switch-->
       </div>
     </div>
   </div>
