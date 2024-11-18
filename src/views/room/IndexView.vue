@@ -38,6 +38,9 @@ const trackStatus = ref({ video: true, audio: true })
 // view mode (speaker|matrix)
 const viewMode = ref('speaker')
 
+// 自身画像の鏡像（左右）反転 on/off
+const myVideoMirrored = ref(true)
+
 // my display name
 const myDisplayName = ref('')
 
@@ -208,13 +211,18 @@ const toggleAudio = () => {
   trackStatus.value.audio = !trackStatus.value.audio
 }
 
-//
+// 画面表示モード 変更
 const changeViewMode = () => {
   if (viewMode.value === 'speaker') {
     viewMode.value = 'matrix'
   } else if (viewMode.value === 'matrix') {
     viewMode.value = 'speaker'
   }
+}
+
+// 自身の画像の鏡像反転 切替
+const changeVideoMirrored = () => {
+  myVideoMirrored.value = !myVideoMirrored.value
 }
 
 // 招待メール送信
@@ -264,6 +272,7 @@ const chooseSpeaker = (peerId: string) => {
           <div class="p-3">
             <video
               class="max-h-80 w-full bg-slate-100"
+              :class="{ 'my-video-mirrored': myVideoMirrored }"
               :srcObject.prop="webrtcStore.myMediaStream"
               autoplay
               muted
@@ -278,6 +287,18 @@ const chooseSpeaker = (peerId: string) => {
               </div>
 
               <div class="my-3 flex items-center justify-center">
+                <!-- 鏡像反転 on/off -->
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
+                  :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
+                  @click="changeVideoMirrored"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-symmetry-vertical" viewBox="0 0 20 20">
+                    <path d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"/>
+                  </svg>
+                </ButtonGeneralPrimary>
+                <!-- // 鏡像反転 on/off -->
+
                 <!-- video on/off -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12"
@@ -420,6 +441,16 @@ const chooseSpeaker = (peerId: string) => {
             <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
               <div class="flex">
                 <ButtonGeneralPrimary
+                  class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
+                  :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
+                  @click="changeVideoMirrored"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-symmetry-vertical" viewBox="0 0 20 20">
+                    <path d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"/>
+                  </svg>
+                </ButtonGeneralPrimary>
+
+                <ButtonGeneralPrimary
                   class="me-1 h-12 w-18"
                   @click="changeViewMode"
                 >
@@ -529,6 +560,7 @@ const chooseSpeaker = (peerId: string) => {
                 >
                   <video
                     class="h-full w-full"
+                    :class="{ 'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId }"
                     :srcObject.prop="pm.mediaStream"
                     autoplay
                     muted
@@ -556,6 +588,7 @@ const chooseSpeaker = (peerId: string) => {
             <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500">
               <video
                 class="h-full w-full"
+                :class="{ 'my-video-mirrored': myVideoMirrored && webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId }"
                 :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
                 autoplay
                 muted
@@ -577,6 +610,16 @@ const chooseSpeaker = (peerId: string) => {
             <!-- UI -->
             <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
               <div class="flex">
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
+                  :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
+                  @click="changeVideoMirrored"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="24" fill="currentColor" class="bi bi-symmetry-vertical" viewBox="0 0 20 20">
+                    <path d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"/>
+                  </svg>
+                </ButtonGeneralPrimary>
+
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-18"
                   @click="changeViewMode"
@@ -712,6 +755,7 @@ const chooseSpeaker = (peerId: string) => {
             >
               <video
                 class="h-full w-full"
+                :class="{ 'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId }"
                 :srcObject.prop="pm.mediaStream"
                 autoplay
                 muted
@@ -756,5 +800,9 @@ const chooseSpeaker = (peerId: string) => {
 
 .main-speaker-view {
   height: calc(100vh - 100px);
+}
+
+.my-video-mirrored {
+  transform: scaleX(-1);
 }
 </style>
