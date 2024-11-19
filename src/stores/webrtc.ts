@@ -160,56 +160,51 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   }
 
   // Media 接続
-  async function connectMediaMyself(displayName: string) {
-    if (!peer.value || !myMediaStream.value) {
-      return false
-    }
-
-    peerMedias.value[myPeerId.value] = new PeerMedia()
-    peerMedias.value[myPeerId.value].peerId = myPeerId.value
-    peerMedias.value[myPeerId.value].displayName = displayName
-    peerMedias.value[myPeerId.value].mediaConn = null
-    peerMedias.value[myPeerId.value].mediaStream = myMediaStream.value
-
-    peerMediasNum.value = Object.keys(peerMedias.value).length
-
-    return true
-  }
-
-  // Media 接続
   async function connectMedia(remotePeerId: string, displayName: string) {
     if (!peer.value || !myMediaStream.value) {
       return false
     }
 
-    peerMedias.value[remotePeerId] = new PeerMedia()
-    peerMedias.value[remotePeerId].peerId = remotePeerId
-    peerMedias.value[remotePeerId].displayName = displayName
-
-    // call
-    const mc = peer.value.call(remotePeerId, myMediaStream.value)
-    peerMedias.value[remotePeerId].mediaConn = mc
-
-    peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: any) {
-      peerMedias.value[remotePeerId].mediaStream = remoteStream
+    if (remotePeerId === myPeerId.value) {
+      // 自分のPeerId
+      peerMedias.value[remotePeerId] = new PeerMedia()
+      peerMedias.value[remotePeerId].peerId = remotePeerId
+      peerMedias.value[remotePeerId].displayName = displayName
+      peerMedias.value[remotePeerId].mediaConn = null
+      peerMedias.value[remotePeerId].mediaStream = myMediaStream.value
 
       peerMediasNum.value = Object.keys(peerMedias.value).length
-    })
+    } else {
+      // 他のPeerId
+      peerMedias.value[remotePeerId] = new PeerMedia()
+      peerMedias.value[remotePeerId].peerId = remotePeerId
+      peerMedias.value[remotePeerId].displayName = displayName
 
-    peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
-      // closeした MediaStream停止
-      await peerMedias.value[remotePeerId].mediaStream
-        .getTracks()
-        .forEach((track: MediaStreamTrack) => track.stop())
+      // call
+      const mc = peer.value.call(remotePeerId, myMediaStream.value)
+      peerMedias.value[remotePeerId].mediaConn = mc
 
-      // closeした MediaConnection CLOSE
-      await peerMedias.value[remotePeerId].mediaConn?.close()
+      peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: any) {
+        peerMedias.value[remotePeerId].mediaStream = remoteStream
 
-      // closeした peerMedia 削除
-      delete peerMedias.value[remotePeerId]
+        peerMediasNum.value = Object.keys(peerMedias.value).length
+      })
 
-      peerMediasNum.value = Object.keys(peerMedias.value).length
-    })
+      peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
+        // closeした MediaStream停止
+        await peerMedias.value[remotePeerId].mediaStream
+          .getTracks()
+          .forEach((track: MediaStreamTrack) => track.stop())
+
+        // closeした MediaConnection CLOSE
+        await peerMedias.value[remotePeerId].mediaConn?.close()
+
+        // closeした peerMedia 削除
+        delete peerMedias.value[remotePeerId]
+
+        peerMediasNum.value = Object.keys(peerMedias.value).length
+      })
+    }
 
     return true
   }
@@ -319,7 +314,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     open,
     close,
     connectMedia,
-    connectMediaMyself,
     disconnectMedia,
     checkMedias
     // connectData,

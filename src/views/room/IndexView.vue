@@ -13,6 +13,7 @@ import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import VccHeader from '@/components/VccHeader.vue'
+import InputCheckbox from '@/components/ui/InputCheckbox.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -62,6 +63,9 @@ const isBadRoomHash = ref<boolean>(false)
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
 
+// Modal: 設定
+const modalSettings = ref()
+
 const speakerLength = ref(webrtcStore.peerMediasNum)
 watch(webrtcStore.peerMedias, async () => {
   if (speakerLength.value > webrtcStore.peerMediasNum) {
@@ -69,14 +73,14 @@ watch(webrtcStore.peerMedias, async () => {
       targetSpeakerPeerId.value = webrtcStore.myPeerId
     } else {
       const aryPeerIds = Object.keys(webrtcStore.peerMedias)
-      console.log('aryPeerIds', aryPeerIds)
+      // console.log('aryPeerIds', aryPeerIds)
       let iidx = aryPeerIds.length - 1
       targetSpeakerPeerId.value = aryPeerIds[iidx]
       while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
         iidx--
         targetSpeakerPeerId.value = aryPeerIds[iidx]
       }
-      console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
+      // console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
     }
   }
   if (speakerLength.value < webrtcStore.peerMediasNum) {
@@ -84,14 +88,14 @@ watch(webrtcStore.peerMedias, async () => {
       targetSpeakerPeerId.value = webrtcStore.myPeerId
     } else {
       const aryPeerIds = Object.keys(webrtcStore.peerMedias)
-      console.log('aryPeerIds', aryPeerIds)
+      // console.log('aryPeerIds', aryPeerIds)
       let iidx = aryPeerIds.length - 1
       targetSpeakerPeerId.value = aryPeerIds[iidx]
       while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
         iidx--
         targetSpeakerPeerId.value = aryPeerIds[iidx]
       }
-      console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
+      // console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
     }
   }
   speakerLength.value = webrtcStore.peerMediasNum
@@ -111,8 +115,7 @@ onMounted(async () => {
   }
 
   // open my MediaStream
-  await mediaStore.openMediaStream(trackStatus.value)
-  webrtcStore.myMediaStream = mediaStore.mediaStream
+  await mediaStore.openMediaStream()
 
   // open Peer
   await webrtcStore.open({
@@ -153,15 +156,14 @@ const enterRoom = async () => {
   // 入室APIアクセス
   await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId, myDisplayName.value)
 
+  // local mediaStream 設定
+  webrtcStore.myMediaStream = mediaStore.mediaStream
+
   // 入室状態を取得
   const res2 = await roomStore.statusRoom(roomHash.value)
   res2.attenders.forEach(async (item: any) => {
-    if (item.peer_id === webrtcStore.myPeerId) {
-      webrtcStore.connectMediaMyself(item.display_name)
-    } else {
-      // 現在の参加者それぞれへメディア接続
-      webrtcStore.connectMedia(item.peer_id, item.display_name)
-    }
+    // 現在の参加者それぞれへメディア接続
+    webrtcStore.connectMedia(item.peer_id, item.display_name)
   })
 
   // 状態: 入室
@@ -220,11 +222,6 @@ const changeViewMode = () => {
   }
 }
 
-// 自身の画像の鏡像反転 切替
-const changeVideoMirrored = () => {
-  myVideoMirrored.value = !myVideoMirrored.value
-}
-
 // 招待メール送信
 const sendInviteMail = async () => {
   // サインインユーザー情報取得
@@ -273,7 +270,7 @@ const chooseSpeaker = (peerId: string) => {
             <video
               class="max-h-80 w-full bg-slate-100"
               :class="{ 'my-video-mirrored': myVideoMirrored }"
-              :srcObject.prop="webrtcStore.myMediaStream"
+              :srcObject.prop="mediaStore.mediaStream"
               autoplay
               muted
               playsinline
@@ -287,26 +284,14 @@ const chooseSpeaker = (peerId: string) => {
               </div>
 
               <div class="my-3 flex items-center justify-center">
-                <!-- 鏡像反転 on/off -->
+                <!-- 設定 -->
                 <ButtonGeneralPrimary
-                  class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
-                  :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
-                  @click="changeVideoMirrored"
+                  class="me-1 h-12"
+                  @click="modalSettings.open()"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-symmetry-vertical"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"
-                    />
-                  </svg>
+                  設定
                 </ButtonGeneralPrimary>
-                <!-- // 鏡像反転 on/off -->
+                <!-- // 設定 -->
 
                 <!-- video on/off -->
                 <ButtonGeneralPrimary
@@ -396,32 +381,35 @@ const chooseSpeaker = (peerId: string) => {
           </div>
           <div class="flex w-full justify-center">
             <div class="mx-3 w-full rounded-md border p-3 text-center">
+              <!-- Room名称 Room Hash -->
               <div class="my-3">
                 <div class="text-xl font-semibold">{{ roomStore.room.room_name }}</div>
                 <div class="">{{ roomStore.room.room_hash }}</div>
               </div>
+              <!-- // Room名称 Room Hash -->
 
-              <div class="">
-                <div class="my-3 flex">
-                  <InputEmail
-                    class="me-2 h-10 w-full"
-                    placeholder="表示名"
-                    v-model="myDisplayName"
-                  />
-                  <ButtonGeneralPrimary
-                    class="me-0 h-10 w-20"
-                    :class="{
-                      'bg-slate-400 hover:bg-slate-400':
-                        myDisplayName === '' || !mediaStore.mediaStream?.active
-                    }"
-                    @click="enterRoom"
-                    :disabled="myDisplayName === '' || !mediaStore.mediaStream?.active"
-                  >
-                    入室
-                  </ButtonGeneralPrimary>
-                </div>
+              <!-- 表示名 設定 -->
+              <div class="my-3 flex">
+                <InputEmail
+                  class="me-2 h-10 w-full"
+                  placeholder="表示名"
+                  v-model="myDisplayName"
+                />
+                <ButtonGeneralPrimary
+                  class="me-0 h-10 w-20"
+                  :class="{
+                    'bg-slate-400 hover:bg-slate-400':
+                      myDisplayName === '' || !mediaStore.mediaStream?.active
+                  }"
+                  @click="enterRoom"
+                  :disabled="myDisplayName === '' || !mediaStore.mediaStream?.active"
+                >
+                  入室
+                </ButtonGeneralPrimary>
               </div>
+              <!-- // 表示名 設定 -->
 
+              <!-- メールで招待する -->
               <div class="my-3 text-left" v-if="authStore.isAuthenticated()">
                 <div class="text-md font-semibold">招待する</div>
                 <div class="">
@@ -438,6 +426,7 @@ const chooseSpeaker = (peerId: string) => {
                   </ButtonGeneral>
                 </div>
               </div>
+              <!-- // メールで招待する -->
             </div>
           </div>
         </div>
@@ -452,54 +441,33 @@ const chooseSpeaker = (peerId: string) => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
-                  :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
-                  @click="changeVideoMirrored"
-                >
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
+                    width="16"
+                    height="16"
                     fill="currentColor"
-                    class="bi bi-symmetry-vertical"
-                    viewBox="0 0 20 20"
+                    class="bi bi-person-fill"
+                    viewBox="0 0 16 16"
+                    v-if="viewMode === 'speaker'"
                   >
                     <path
-                      d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"
+                      d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
                     />
                   </svg>
-                </ButtonGeneralPrimary>
-
-                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
-                  <div v-if="viewMode === 'speaker'">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      class="bi bi-person-fill"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
-                      />
-                    </svg>
-                  </div>
-                  <div v-else>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      class="bi bi-grid-3x3"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
-                      />
-                    </svg>
-                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-grid-3x3"
+                    viewBox="0 0 16 16"
+                    v-else
+                  >
+                    <path
+                      d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
+                    />
+                  </svg>
                 </ButtonGeneralPrimary>
 
                 <ButtonGeneralPrimary
@@ -580,9 +548,9 @@ const chooseSpeaker = (peerId: string) => {
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom"
-                  >退室</ButtonGeneralDanger
-                >
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">
+                  退室
+                </ButtonGeneralDanger>
               </div>
             </div>
             <!-- // UI -->
@@ -656,54 +624,33 @@ const chooseSpeaker = (peerId: string) => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-12 bg-blue-300 hover:bg-blue-300"
-                  :class="{ 'bg-blue-500 hover:bg-blue-500': myVideoMirrored }"
-                  @click="changeVideoMirrored"
-                >
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
+                    width="16"
+                    height="16"
                     fill="currentColor"
-                    class="bi bi-symmetry-vertical"
-                    viewBox="0 0 20 20"
+                    class="bi bi-person-fill"
+                    viewBox="0 0 16 16"
+                    v-if="viewMode === 'speaker'"
                   >
                     <path
-                      d="M7 2.5a.5.5 0 0 0-.939-.24l-6 11A.5.5 0 0 0 .5 14h6a.5.5 0 0 0 .5-.5zm2.376-.484a.5.5 0 0 1 .563.245l6 11A.5.5 0 0 1 15.5 14h-6a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .376-.484M10 4.46V13h4.658z"
+                      d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
                     />
                   </svg>
-                </ButtonGeneralPrimary>
-
-                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
-                  <div v-if="viewMode === 'speaker'">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      class="bi bi-person-fill"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
-                      />
-                    </svg>
-                  </div>
-                  <div v-else>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      class="bi bi-grid-3x3"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
-                      />
-                    </svg>
-                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-grid-3x3"
+                    viewBox="0 0 16 16"
+                    v-else
+                  >
+                    <path
+                      d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
+                    />
+                  </svg>
                 </ButtonGeneralPrimary>
 
                 <ButtonGeneralPrimary
@@ -784,9 +731,9 @@ const chooseSpeaker = (peerId: string) => {
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom"
-                  >退室</ButtonGeneralDanger
-                >
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">
+                  退室
+                </ButtonGeneralDanger>
               </div>
             </div>
             <!-- // UI -->
@@ -862,6 +809,60 @@ const chooseSpeaker = (peerId: string) => {
       <div class="text-center">
         <div class="font-bold">招待メール</div>
         <div class="m-3">送信しました。</div>
+      </div>
+    </div>
+  </ModalGeneral>
+
+  <ModalGeneral ref="modalSettings">
+    <div class="p-5">
+      <div class="text-center font-bold">
+        設定
+      </div>
+      
+      <div class="w-96 px-2 py-5 my-5 border">
+        <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+      </div>
+
+      <div class="w-96 px-2 py-5 my-5 border">
+        <div class="font-bold">映像入力</div>
+        <select class="" v-model="mediaStore.videoInputDeviceId" @change="mediaStore.changeVideoInput">
+          <template v-for="(val, sKey) in mediaStore.deviceVideoInputs" :key="sKey">
+            <option :value="val.deviceId">
+              {{ val.label }}
+            </option>
+          </template>
+        </select>
+      </div>
+
+      <div class="w-96 px-2 py-5 my-5 border">
+        <div class="font-bold">音声入力</div>
+        <select class="" v-model="mediaStore.audioInputDeviceId" @change="mediaStore.changeAudioInput">
+          <template v-for="(val, sKey) in mediaStore.deviceAudioInputs" :key="sKey">
+            <option :value="val.deviceId">
+              {{ val.label }}
+            </option>
+          </template>
+        </select>
+      </div>
+
+      <div class="w-96 px-2 py-5 my-5 border">
+        <div class="font-bold">音声出力</div>
+        <select class="" v-model="mediaStore.audioOutputDeviceId" @change="mediaStore.changeAudioOutput">
+          <template v-for="(val, sKey) in mediaStore.deviceAudioOutputs" :key="sKey">
+            <option :value="val.deviceId">
+              {{ val.label }}
+            </option>
+          </template>
+        </select>
+      </div>
+
+      <div class="">
+        <ButtonGeneralPrimary
+          class=""
+          @click="modalSettings.close()"
+        >
+          close
+        </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
