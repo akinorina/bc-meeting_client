@@ -63,6 +63,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peerサーバー接続確立
     peer.value.on('open', () => {
+      console.log('--- peer on(open) ---')
       myPeerId.value = peer.value ? peer.value.id : ''
       localStorage.setItem('peer_id', myPeerId.value)
     })
@@ -148,15 +149,24 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       })
 
       // on media: error
-      peerMedias.value[remotePeerId].mediaConn?.on('error', (error: any) => {
-        throw error
+      peerMedias.value[remotePeerId].mediaConn?.on('error', (err: any) => {
+        console.error('mediaconn error name', err.name)
+        console.error('mediaconn error type', err.type)
+        console.error('mediaconn error message', err.message)
       })
 
       peerMediasNum.value = Object.keys(peerMedias.value).length
     })
 
     // on: error
-    peer.value.on('error', () => {})
+    peer.value.on('error', (err) => {
+      console.error('peer error', err.type)
+      console.error('peer error', err)
+      console.log('peer id', peer.value?.id)
+      console.log('connections', peer.value?.connections)
+      console.log('disconnect', peer.value?.disconnected)
+      console.log('destroyed', peer.value?.destroyed)
+    })
   }
 
   // Media 接続

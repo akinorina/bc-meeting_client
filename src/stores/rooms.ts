@@ -58,6 +58,7 @@ export const useRoomStore = defineStore('room', () => {
       peer_id: peerId,
       display_name: displayName
     }
+    console.log('enterRoom() . options', options)
     const res = await axios.post('/api/rooms/enter', options)
     return res.data
   }

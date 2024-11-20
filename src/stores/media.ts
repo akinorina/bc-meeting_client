@@ -3,33 +3,37 @@ import { defineStore } from 'pinia'
 
 export const useMediaStore = defineStore('media', () => {
   // local Media Stream
-  const mediaStreamLocal = ref<MediaStream | null>(null)
+  const mediaStreamLocal = ref<MediaStream>(new MediaStream())
   // media stream
-  const mediaStream = ref<MediaStream | null>(null)
-
-  // constraints
-  const supportedConstraints = navigator.mediaDevices.getSupportedConstraints()
-  console.log('supportedConstraints', supportedConstraints)
+  const mediaStream = ref<MediaStream>(new MediaStream())
 
   // mediaStream constraints
-  const mediaStreamConstraints = ref<any>({ video: true, audio: true })
+  const mediaStreamConstraints = ref<any>({
+    video: {
+      deviceId: '',
+      width: 1920,
+      height: 1080,
+      aspectRatio: 1.777777778,
+      frameRate: { max: 30 },
+      facingMode: 'user'
+    },
+    audio: {
+      deviceId: ''
+    }
+  })
+
+  // // constraints
+  // const supportedConstraints = navigator.mediaDevices.getSupportedConstraints()
+  // console.log('supportedConstraints', supportedConstraints)
 
   // devices
   const deviceVideoInputs = ref<MediaDeviceInfo[]>([])
   const deviceAudioInputs = ref<MediaDeviceInfo[]>([])
   const deviceAudioOutputs = ref<MediaDeviceInfo[]>([])
   // device selected
-  const videoInputDeviceId = ref('default')
-  const audioInputDeviceId = ref('default')
-  const audioOutputDeviceId = ref('default')
-
-  // audio
-  const audioContext = ref()
-  const mediaStreamSource = ref()
-  const audioDestination = ref()
-  const gainNode = ref()
-  const volume = ref(100)
-  const isReady = ref(false)
+  const videoInputDeviceId = ref('')
+  const audioInputDeviceId = ref('')
+  const audioOutputDeviceId = ref('')
 
   // device list 作成
   async function makeDeviceList() {
@@ -44,50 +48,45 @@ export const useMediaStore = defineStore('media', () => {
     deviceVideoInputs.value = devices.filter((item) => {
       return item.kind === 'videoinput'
     })
+    if (videoInputDeviceId.value === '' && deviceVideoInputs.value.length > 0) {
+      videoInputDeviceId.value = deviceVideoInputs.value[0].deviceId
+    }
+    if (audioInputDeviceId.value === '' && deviceAudioInputs.value.length > 0) {
+      audioInputDeviceId.value = deviceAudioInputs.value[0].deviceId
+    }
+    if (audioOutputDeviceId.value === '' && deviceAudioOutputs.value.length > 0) {
+      audioOutputDeviceId.value = deviceAudioOutputs.value[0].deviceId
+    }
   }
-  // device 選択値 初期値設定
-  makeDeviceList().then(() => {
-    audioInputDeviceId.value = deviceAudioInputs.value[0].deviceId
-    audioOutputDeviceId.value = deviceAudioOutputs.value[0].deviceId
-    videoInputDeviceId.value = deviceVideoInputs.value[0].deviceId
-  })
+  makeDeviceList()
+  // 制約に deviceId を設定
+  mediaStreamConstraints.value.video.deviceId = videoInputDeviceId.value
+  mediaStreamConstraints.value.audio.deviceId = audioInputDeviceId.value
 
   // device 切替 - Video Input
   async function changeVideoInput() {
-    closeMediaStream()
-    mediaStreamConstraints.value.video = { deviceId: videoInputDeviceId.value }
-    openMediaStream()
+    console.log('--- changeVideoInput() ---')
+    closeMediaStreamLocal()
+    mediaStreamConstraints.value.video.deviceId = videoInputDeviceId.value
+    await openMediaStreamLocal()
+    mediaStream.value = mediaStreamLocal.value
   }
   // device 切替 - Audio Input
   async function changeAudioInput() {
-    closeMediaStream()
-    mediaStreamConstraints.value.audio = { deviceId: audioInputDeviceId.value }
-    openMediaStream()
-  }
-  // device 切替 - Audio Output
-  async function changeAudioOutput() {
-    console.log('--- changeAudioOutput() ---')
+    console.log('--- changeAudioInput() ---')
+    closeMediaStreamLocal()
+    mediaStreamConstraints.value.audio.deviceId = audioInputDeviceId.value
+    await openMediaStreamLocal()
+    mediaStream.value = mediaStreamLocal.value
   }
 
   // open a media-stream
-  async function openMediaStream() {
+  async function openMediaStreamLocal() {
     // local stream 取得
     try {
       mediaStreamLocal.value = await navigator.mediaDevices.getUserMedia(
         mediaStreamConstraints.value
       )
-      mediaStream.value = mediaStreamLocal.value.clone()
-
-      audioContext.value = new window.AudioContext()
-      mediaStreamSource.value = await audioContext.value.createMediaStreamSource(mediaStream.value)
-      audioDestination.value = await audioContext.value.createMediaStreamDestination()
-      gainNode.value = await audioContext.value.createGain()
-
-      await mediaStreamSource.value.connect(gainNode.value)
-      await gainNode.value.connect(audioDestination.value)
-      await gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime)
-
-      isReady.value = true
     } catch (err: any) {
       console.error('Failed to get local stream', err)
 
@@ -117,91 +116,52 @@ export const useMediaStore = defineStore('media', () => {
 
   // 映像入力 on/off
   function setVideoEnabled(value: boolean) {
-    mediaStream.value?.getVideoTracks().forEach((track) => {
+    mediaStream.value.getVideoTracks().forEach((track) => {
       track.enabled = value
     })
   }
 
   // 音声入力 on/off
   function setAudioEnabled(value: boolean) {
-    mediaStream.value?.getAudioTracks().forEach((track) => {
+    mediaStream.value.getAudioTracks().forEach((track) => {
       track.enabled = value
     })
   }
 
   // close the media-stream
+  function closeMediaStreamLocal() {
+    mediaStreamLocal.value.getTracks().forEach((tr) => {
+      tr.stop()
+      mediaStreamLocal.value.removeTrack(tr)
+    })
+  }
+
+  // close the media-stream
   function closeMediaStream() {
-    mediaStream.value?.getTracks().forEach(async (track) => await track.stop())
-    mediaStream.value = null
-    mediaStreamLocal.value?.getTracks().forEach(async (track) => await track.stop())
-    mediaStreamLocal.value = null
-  }
-
-  // MediaStream(video)を差し替える
-  function setMediaStream(iMediaStream: MediaStream) {
-    // video tracks を削除
-    const videotracks = mediaStream.value?.getVideoTracks()
-    videotracks?.forEach((tr) => {
-      mediaStream.value?.removeTrack(tr)
+    mediaStream.value.getTracks().forEach((tr) => {
+      tr.stop()
+      mediaStream.value.removeTrack(tr)
     })
-    // video tracks を追加
-    const vtracks = iMediaStream.getVideoTracks()
-    vtracks.forEach((tr) => {
-      mediaStream.value?.addTrack(tr)
-    })
-  }
-
-  // MediaStream(video)を元の mediaStreamLocal に戻す
-  function setLocalMediaStream() {
-    // video tracks を削除
-    const videotracks = mediaStream.value?.getVideoTracks()
-    videotracks?.forEach((tr) => {
-      mediaStream.value?.removeTrack(tr)
-    })
-    // video tracks を追加
-    const vtracks = mediaStreamLocal.value?.getVideoTracks()
-    if (vtracks) {
-      vtracks.forEach((tr) => {
-        mediaStream.value?.addTrack(tr)
-      })
-    }
-  }
-
-  // change volume
-  function changeVolume() {
-    gainNode.value.gain.setValueAtTime(volume.value / 100, audioContext.value.currentTime)
   }
 
   return {
+    deviceVideoInputs,
     deviceAudioInputs,
     deviceAudioOutputs,
-    deviceVideoInputs,
+    videoInputDeviceId,
     audioInputDeviceId,
     audioOutputDeviceId,
-    videoInputDeviceId,
-
     makeDeviceList,
     changeVideoInput,
     changeAudioInput,
-    changeAudioOutput,
 
     mediaStreamConstraints,
     mediaStream,
     mediaStreamLocal,
+    openMediaStreamLocal,
     setVideoEnabled,
     setAudioEnabled,
-
-    audioContext,
-    mediaStreamSource,
-    audioDestination,
-    gainNode,
-    volume,
-    isReady,
-    changeVolume,
-
-    openMediaStream,
-    closeMediaStream,
-    setMediaStream,
-    setLocalMediaStream
+    closeMediaStreamLocal,
+    closeMediaStream
   }
 })

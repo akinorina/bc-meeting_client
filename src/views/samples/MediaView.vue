@@ -2,7 +2,6 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useMediaStore } from '@/stores/media'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import InputText from '@/components/ui/InputText.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue';
 import InputCheckbox from '@/components/ui/InputCheckbox.vue';
 
@@ -11,79 +10,36 @@ const mediaStore = useMediaStore()
 // video/audio: on/off
 const trackStatus = ref({ video: true, audio: true })
 
-// 映像代替テキスト画像
-const canvas = ref()
-const ctx = ref()
-const canvasStream = ref()
-
-onMounted(async () => {
-  // テキスト Canvas
-  canvas.value = document.createElement('canvas')
-  ctx.value = canvas.value.getContext('2d')
-
-  // open the mediastream
-  await mediaStore.openMediaStream()
-})
-
-onBeforeUnmount(async () => {
-  // close the mediastream
-  mediaStore.closeMediaStream()
-})
-
-// volume 変更
-const changeVolume = () => {
-  mediaStore.changeVolume()
-}
-
-// Video on/off
-const toggleVideo = () => {
-  mediaStore.setVideoEnabled(!trackStatus.value.video)
-  trackStatus.value.video = !trackStatus.value.video
-}
-
-// Audio on/off
-const toggleAudio = () => {
-  mediaStore.setAudioEnabled(!trackStatus.value.audio)
-  trackStatus.value.audio = !trackStatus.value.audio
-}
-
-// your name
-const yourName = ref('お名前')
-// Video Input mode (camera|text)
-const videoInputMode = ref('camera')
-// 映像代替テキスト画像 作成
-const createTextCanvas = () => {
-  // canvas
-  ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
-  ctx.value.fillStyle = '#ffffff'
-  ctx.value.fillRect(0, 0, canvas.value.width, canvas.value.height)
-  // text
-  ctx.value.font = '24px Hiragino medium'
-  ctx.value.fillStyle = '#000000'
-  ctx.value.fillText(yourName.value, 10, 50)
-  // make the mediastream
-  canvasStream.value = canvas.value.captureStream(30)
-}
-// switch video Camera/Text
-const toggleVideoInput = () => {
-  if (videoInputMode.value === 'camera') {
-    // camera -> text
-    videoInputMode.value = 'text'
-    createTextCanvas()
-    mediaStore.setMediaStream(canvasStream.value)
-  } else {
-    // text -> camera
-    videoInputMode.value = 'camera'
-    mediaStore.setLocalMediaStream()
-  }
-}
-
 // 設定ダイアログ
 const modalSettings = ref()
 
 // 鏡映反転 flag
 const myVideoMirrored = ref(true)
 
+onMounted(async () => {
+  // open the mediastream
+  await mediaStore.openMediaStreamLocal()
+  mediaStore.mediaStream = mediaStore.mediaStreamLocal
+})
+
+onBeforeUnmount(async () => {
+  // close the mediastream
+  mediaStore.closeMediaStreamLocal()
+})
+
+// video on/off
+const toggleVideo = () => {
+  mediaStore.setVideoEnabled(!trackStatus.value.video)
+  trackStatus.value.video = !trackStatus.value.video
+}
+
+// audio on/off
+const toggleAudio = () => {
+  mediaStore.setAudioEnabled(!trackStatus.value.audio)
+  trackStatus.value.audio = !trackStatus.value.audio
+}
+
+// open setting dialog
 const openSettings = () => {
   // device list
   mediaStore.makeDeviceList()
@@ -94,16 +50,17 @@ const openSettings = () => {
 
 <template>
   <div class="h-full w-full bg-slate-100 p-3">
-    <video
-      class="max-h-80 w-full bg-slate-100"
-      :class="{ 'video-mirrored': myVideoMirrored && videoInputMode === 'camera' }"
-      :srcObject.prop="mediaStore.mediaStream"
-      autoplay
-      muted
-      playsinline
-      v-if="mediaStore.isReady"
-    ></video>
-    <audio :srcObject.prop="mediaStore.audioDestination.stream" autoplay v-if="mediaStore.isReady"></audio>
+    <div class="flex justify-center">
+      <video
+        class="max-w-full max-h-96 bg-slate-100"
+        :class="{ 'video-mirrored': myVideoMirrored }"
+        :srcObject.prop="mediaStore.mediaStream"
+        autoplay
+        muted
+        playsinline
+      ></video>
+    </div>
+    <!-- <audio :srcObject.prop="mediaStore.mediaStream" autoplay></audio> -->
 
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
@@ -188,30 +145,18 @@ const openSettings = () => {
           </svg>
         </ButtonGeneralPrimary>
         <!-- // mic on/off -->
-
-        <!-- volume -->
-        <div class="me-3 border-4 px-3 py-1">
-          <div class="">
-            <input type="range" v-model="mediaStore.volume" @change="changeVolume" />
-          </div>
-          <div class="">
-            {{ mediaStore.volume }}
-          </div>
-        </div>
-        <!-- // volume -->
       </div>
     </div>
 
+    <!-- mediastream alternative video text -->
+    <!--
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
-        <!-- video input switch-->
-        <InputText class="w-80 p-3" v-model="yourName" />
-        <ButtonGeneralPrimary class="me-3 h-12 w-24" @click="toggleVideoInput">
-          Viode In
-        </ButtonGeneralPrimary>
-        <!-- // video input switch-->
+        <InputText class="w-80 p-3" v-model="mediaStore.alternativeText" />
       </div>
     </div>
+    -->
+    <!-- // mediastream alternative video text-->
 
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
@@ -222,6 +167,7 @@ const openSettings = () => {
         >
           設定
         </ButtonGeneralPrimary>
+        <!-- // setings -->
       </div>
     </div>
   </div>
@@ -236,9 +182,9 @@ const openSettings = () => {
         <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
       </div>
 
-      <div class="w-96 px-2 py-5 my-5 border">
+      <div class="w-96 px-2 py-3 my-5 border" v-if="mediaStore.deviceVideoInputs.length > 0">
         <div class="font-bold">映像入力</div>
-        <select class="" v-model="mediaStore.videoInputDeviceId" @change="mediaStore.changeVideoInput">
+        <select class="w-full p-3 mt-3 border" v-model="mediaStore.videoInputDeviceId" @change="mediaStore.changeVideoInput">
           <template v-for="(val, sKey) in mediaStore.deviceVideoInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
@@ -247,21 +193,10 @@ const openSettings = () => {
         </select>
       </div>
 
-      <div class="w-96 px-2 py-5 my-5 border">
+      <div class="w-96 px-2 py-3 my-5 border" v-if="mediaStore.deviceAudioInputs.length > 0">
         <div class="font-bold">音声入力</div>
-        <select class="" v-model="mediaStore.audioInputDeviceId" @change="mediaStore.changeAudioInput">
+        <select class="w-full p-3 mt-3 border" v-model="mediaStore.audioInputDeviceId" @change="mediaStore.changeAudioInput">
           <template v-for="(val, sKey) in mediaStore.deviceAudioInputs" :key="sKey">
-            <option :value="val.deviceId">
-              {{ val.label }}
-            </option>
-          </template>
-        </select>
-      </div>
-
-      <div class="w-96 px-2 py-5 my-5 border">
-        <div class="font-bold">音声出力</div>
-        <select class="" v-model="mediaStore.audioOutputDeviceId" @change="mediaStore.changeAudioOutput">
-          <template v-for="(val, sKey) in mediaStore.deviceAudioOutputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
             </option>
