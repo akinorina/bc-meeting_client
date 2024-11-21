@@ -83,7 +83,7 @@ watch(webrtcStore.peerMedias, async () => {
   speakerLength.value = webrtcStore.peerMediasNum
 })
 
-onMounted(async () => {
+const startRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
 
@@ -112,9 +112,10 @@ onMounted(async () => {
     const resProfile = await authStore.getProfile()
     myDisplayName.value = resProfile.data.username
   }
-})
+}
+onMounted(startRoom)
 
-onBeforeUnmount(async () => {
+const endRoom = async () => {
   if (statusEnterRoom.value) {
     await exitRoom()
   }
@@ -123,7 +124,14 @@ onBeforeUnmount(async () => {
 
   mediaStore.closeMediaStreamLocal()
   mediaStore.closeMediaStream()
-})
+}
+onBeforeUnmount(endRoom)
+
+webrtcStore.errorCallbackFunc = async () => {
+  console.log('--- webrtcErrCallback() ---')
+  await endRoom()
+  await startRoom()
+}
 
 // top page へ遷移
 const toTopPage = () => {

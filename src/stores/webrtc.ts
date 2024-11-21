@@ -38,6 +38,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // // data connection
   // const dataConn = ref<DataConnection>()
 
+  const errorCallbackFunc = ref<Function>(() => {})
+
   async function open(options: PeerOptions) {
     // Peerサーバー接続
     peer.value = new Peer(myPeerId.value, {
@@ -166,6 +168,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       console.log('connections', peer.value?.connections)
       console.log('disconnect', peer.value?.disconnected)
       console.log('destroyed', peer.value?.destroyed)
+
+      errorCallbackFunc.value()
     })
   }
 
@@ -320,6 +324,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     peerMedias,
     peerMediasNum,
     // messageData,
+    errorCallbackFunc,
 
     open,
     close,
