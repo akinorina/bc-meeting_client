@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useWebrtcStore } from '@/stores/webrtc'
+import { PeerData, useWebrtcStore } from '@/stores/webrtc'
 import { useMediaStore } from '@/stores/media'
 import { useRoomStore } from '@/stores/rooms'
 import { axios } from '@/lib/Axios'
@@ -14,6 +14,8 @@ import InputEmail from '@/components/ui/InputEmail.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import VccHeader from '@/components/VccHeader.vue'
 import InputCheckbox from '@/components/ui/InputCheckbox.vue'
+import ModalessGeneral from '@/components/ModalessGeneral.vue'
+import InputText from '@/components/ui/InputText.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -59,6 +61,9 @@ const targetSpeakerPeerId = ref('')
 
 // check interval ID.
 let cIId: any = null
+
+// Modal: dataConn datalist
+const modalDataConnList = ref()
 
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
@@ -112,6 +117,9 @@ const startRoom = async () => {
     const resProfile = await authStore.getProfile()
     myDisplayName.value = resProfile.data.username
   }
+
+  // open dataConn modal
+  modalDataConnList.value.open()
 }
 onMounted(startRoom)
 
@@ -150,6 +158,7 @@ const toTopPage = () => {
 // Roomへの入室
 const enterRoom = async () => {
   console.log('--- enterRoom() ---')
+  webrtcStore.myName = myDisplayName.value
   targetSpeakerPeerId.value = webrtcStore.myPeerId
 
   // 入室APIアクセス
@@ -163,6 +172,11 @@ const enterRoom = async () => {
   const res2 = await roomStore.statusRoom(roomHash.value)
   res2.attenders.forEach(async (item: any) => {
     console.log('--- enterRoom() --- attenders')
+    console.log('peer_id', item.peer_id)
+    console.log('display_name', item.display_name)
+
+    // 現在の参加者それぞれへデータ接続
+    webrtcStore.connectData(item.peer_id, item.display_name)
     // 現在の参加者それぞれへメディア接続
     await webrtcStore.connectMedia(item.peer_id, item.display_name)
   })
@@ -191,7 +205,8 @@ const exitRoom = async () => {
   statusEnterRoom.value = false
 
   // WebRTC - 退出
-  await webrtcStore.disconnectMedia()
+  webrtcStore.disconnectMedia()
+  // webrtcStore.disconnectData()
 
   // 退室APIアクセス
   await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
@@ -247,6 +262,13 @@ const sendInviteMail = async () => {
 // Speaker mode: Clickしたユーザーを Speaker に設定
 const chooseSpeaker = (peerId: string) => {
   targetSpeakerPeerId.value = peerId
+}
+
+const messageText = ref('')
+
+const sendText = () => {
+  console.log('--- sendText() ---', messageText.value)
+  webrtcStore.sendDataAll(messageText.value)
 }
 </script>
 
@@ -588,7 +610,7 @@ const chooseSpeaker = (peerId: string) => {
                   ></audio>
                   <div class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white">
                     <div class="">
-                      {{ pm.displayName }}
+                      {{ webrtcStore.peerData[pm.peerId].displayName }}
                     </div>
                   </div>
                   <div class="">
@@ -618,7 +640,7 @@ const chooseSpeaker = (peerId: string) => {
                 class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
               >
                 <div class="">
-                  {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                  {{ webrtcStore.peerData[targetSpeakerPeerId].displayName }}
                 </div>
               </div>
             </div>
@@ -784,7 +806,7 @@ const chooseSpeaker = (peerId: string) => {
                 class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
               >
                 <div class="">
-                  {{ pm.displayName }}
+                  {{ webrtcStore.peerData[pm.peerId].displayName }}
                 </div>
               </div>
             </div>
@@ -795,6 +817,28 @@ const chooseSpeaker = (peerId: string) => {
       </div>
     </template>
   </div>
+
+  <ModalessGeneral ref="modalDataConnList" :pos-left="750" :pos-top="100">
+    <div class="w-96 h-fit">
+      <div class="">
+        data conn.
+      </div>
+      <div class="w-full h-fit min-h-80 border border-red-300">
+        <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
+          {{ webrtcStore.peerData[item.senderPeerId].displayName }}: {{ item.message }}
+        </div>
+      </div>
+      <div class="">
+        <InputText class="w-80" v-model="messageText" />
+        <ButtonGeneralPrimary
+          class="w-18"
+          @click="sendText"
+        >
+          送信
+        </ButtonGeneralPrimary>
+      </div>
+    </div>
+  </ModalessGeneral>
 
   <ModalGeneral ref="modalSendInvitaionSuccess">
     <div class="w-64 p-3">

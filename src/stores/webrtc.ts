@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { Peer } from 'peerjs'
-import type { MediaConnection, PeerOptions } from 'peerjs'
+import type { MediaConnection, DataConnection, PeerOptions } from 'peerjs'
 
 export class PeerMedia {
   peerId: string = ''
@@ -9,9 +9,23 @@ export class PeerMedia {
   mediaStream: any = undefined
   displayName: string = ''
 }
-
 interface PeerMediaObject {
   [key: string]: PeerMedia
+}
+
+export class PeerData {
+  peerId: string = ''
+  dataConn: any = undefined
+  displayName: string = ''
+}
+interface PeerDataObject {
+  [key: string]: PeerData
+}
+
+export class DataConnData {
+  senderPeerId: string = ''
+  type: string = ''
+  message: string = ''
 }
 
 export const useWebrtcStore = defineStore('webrtc', () => {
@@ -28,15 +42,15 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // my Media Stream
   const myMediaStream = ref<MediaStream | null>(null)
 
-  // (remote) PeerMedia
+  // PeerMedia
   const peerMedias = ref<PeerMediaObject>({})
   const peerMediasNum = ref(Object.keys(peerMedias.value).length)
 
-  // // 送受信メッセージデータ
-  // const messageData = ref<any[]>([])
+  // PeerData
+  const peerData = ref<PeerDataObject>({})
 
-  // // data connection
-  // const dataConn = ref<DataConnection>()
+  // 送受信メッセージデータ
+  const dataConnData = ref<DataConnData[]>([])
 
   const errorCallbackFunc = ref<Function>(() => {})
 
@@ -81,35 +95,56 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       localStorage.setItem('peer_id', '')
     })
 
-    // // on: Peer Data接続 確立
-    // peer.value.on('connection', (conn: DataConnection) => {
-    //   dataConn.value = conn
+    // on: Peer Data接続 確立
+    peer.value.on('connection', (conn: DataConnection) => {
+      const remotePeerId = conn.peer
+      peerData.value[remotePeerId] = new PeerData()
+      peerData.value[remotePeerId].peerId = remotePeerId
+      peerData.value[remotePeerId].dataConn = conn
+      peerData.value[remotePeerId].displayName = myName.value
 
-    //   // // on data: Data接続確立
-    //   // dataConn.value.on('open', () => {
-    //   //   // 接続されたことの告知 送信
-    //   //   const sendData = { who: '-', message: '接続しました。' }
-    //   //   dataConn.value?.send(sendData)
-    //   // })
+      // on data: Data接続確立
+      peerData.value[remotePeerId].dataConn.on('open', () => {
+        // 接続された先へ表示名を送信
+        const sendName = new DataConnData()
+        sendName.type = 'display_name'
+        sendName.senderPeerId = myPeerId.value
+        sendName.message = myName.value
+        peerData.value[remotePeerId].dataConn.send(sendName)
 
-    //   // // on data: Data受信
-    //   // dataConn.value.on('data', (data: any) => {
-    //   //   // 受信データの表示
-    //   //   messageData.value.push(data)
-    //   // })
+        // 接続されたことの告知 送信
+        const sendData = new DataConnData()
+        sendData.type = 'message'
+        sendData.senderPeerId = myPeerId.value
+        sendData.message = '接続しました。'
+        peerData.value[remotePeerId].dataConn.send(sendData)
+        dataConnData.value.push(sendData)
+      })
 
-    //   // // on data: Data接続を切断された
-    //   // dataConn.value.on('close', () => {
-    //   //   // Data接続 切断 & clean up.
-    //   //   dataConn.value?.close()
-    //   // })
+      // on data: Data受信
+      peerData.value[remotePeerId].dataConn.on('data', (data: DataConnData) => {
+        switch (data.type) {
+          case 'display_name':
+            peerData.value[remotePeerId].displayName = data.message
+            break
+          case 'message':
+            // 受信データの表示
+            dataConnData.value.push(data)
+            break
+        }
+      })
 
-    //   // // on data: error
-    //   // dataConn.value.on('error', (error) => {
-    //   //   throw error
-    //   // })
-    // })
-    /* */
+      // on data: Data接続を切断された
+      peerData.value[remotePeerId].dataConn.on('close', () => {
+        // Data接続 切断 & clean up.
+        peerData.value[remotePeerId].dataConn.close()
+      })
+
+      // on data: error
+      peerData.value[remotePeerId].dataConn.on('error', (err: any) => {
+        console.error('--- dataConn: on error ---', err)
+      })
+    })
 
     // on: Peer Media接続 呼び出しあり
     peer.value.on('call', (call: MediaConnection) => {
@@ -256,40 +291,88 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
   }
 
-  // // Data 接続
-  // function connectData(remoteId) {
-  //   dataConn.value = peer.value.connect(remoteId)
+  // Data 接続
+  function connectData(remotePeerId: string, displayName: string) {
+    if (remotePeerId === myPeerId.value) {
+      // 自分
+      peerData.value[remotePeerId] = new PeerData()
+      peerData.value[remotePeerId].peerId = remotePeerId
+      peerData.value[remotePeerId].dataConn = null
+      peerData.value[remotePeerId].displayName = displayName
+    } else {
+      // 自分以外
+      peerData.value[remotePeerId] = new PeerData()
+      peerData.value[remotePeerId].peerId = remotePeerId
+      peerData.value[remotePeerId].dataConn = peer.value?.connect(remotePeerId, {})
+      peerData.value[remotePeerId].displayName = displayName
 
-  //   dataConn.value.on('open', () => {
-  //     const sendData = { who: '-', message: '接続しました。' }
-  //     dataConn.value.send(sendData)
-  //     messageData.value.push(sendData)
-  //   })
+      peerData.value[remotePeerId].dataConn.on('open', () => {
+        // 接続された先へ表示名を送信
+        const sendName = new DataConnData()
+        sendName.type = 'display_name'
+        sendName.senderPeerId = myPeerId.value
+        sendName.message = myName.value
+        peerData.value[remotePeerId].dataConn.send(sendName)
 
-  //   dataConn.value.on('data', (data) => {
-  //     messageData.value.push(data)
-  //   })
+        // 接続されたことの告知 送信
+        const sendData = new DataConnData()
+        sendData.type = 'message'
+        sendData.senderPeerId = myPeerId.value
+        sendData.message = '接続しました。'
+        peerData.value[remotePeerId].dataConn.send(sendData)
+        dataConnData.value.push(sendData)
+      })
 
-  //   dataConn.value.on('close', () => {
-  //     dataConn.value.close()
-  //   })
-  // }
+      peerData.value[remotePeerId].dataConn.on('data', (data: DataConnData) => {
+        switch (data.type) {
+          case 'display_name':
+            peerData.value[remotePeerId].displayName = data.message
+            break
+          case 'message':
+            // 受信データの表示
+            dataConnData.value.push(data)
+            break
+        }
+      })
 
-  // // Data メッセージの送信
-  // function sendData(sendText) {
-  //   const sendData = { who: myName.value, message: sendText }
-  //   dataConn.value.send(sendData)
-  //   messageData.value.push(sendData)
-  // }
+      peerData.value[remotePeerId].dataConn.on('close', () => {
+        peerData.value[remotePeerId].dataConn.close()
+      })
 
-  // // Data 切断
-  // function disconnectData() {
-  //   dataConn.value.close()
-  // }
+      peerData.value[remotePeerId].dataConn.on('error', (err: any) => {
+        console.log('--- dataConn: peer on(error) ---', err)
+      })
+    }
+  }
+
+  // Data メッセージの送信
+  function sendDataAll(sendText: string) {
+    const sendData = new DataConnData()
+    sendData.type = 'message'
+    sendData.senderPeerId = myPeerId.value
+    sendData.message = sendText
+
+    Object.keys(peerData.value).forEach((remotePeerId) => {
+      if (remotePeerId !== myPeerId.value) {
+        peerData.value[remotePeerId].dataConn.send(sendData)
+      }
+    })
+    dataConnData.value.push(sendData)
+  }
+
+  // Data 切断
+  function disconnectData() {
+    Object.keys(peerData.value).forEach((remotePeerId) => {
+      if (remotePeerId !== myPeerId.value) {
+        peerData.value[remotePeerId].dataConn.close()
+      }
+    })
+  }
 
   async function close() {
     // stream の全Trackをstop, 削除
     disconnectMedia()
+    disconnectData()
 
     // Peer切断
     peer.value?.disconnect()
@@ -298,14 +381,14 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   }
 
   function checkMedias(statusRoomRes: any) {
-    // 表示名の補完
-    statusRoomRes.attenders.forEach((item: any) => {
-      Object.keys(peerMedias.value).forEach((peerId) => {
-        if (peerId === item.peer_id) {
-          peerMedias.value[peerId].displayName = item.display_name
-        }
-      })
-    })
+    // // 表示名の補完
+    // statusRoomRes.attenders.forEach((item: any) => {
+    //   Object.keys(peerMedias.value).forEach((peerId) => {
+    //     if (peerId === item.peer_id) {
+    //       peerMedias.value[peerId].displayName = item.display_name
+    //     }
+    //   })
+    // })
 
     // 相手側から disconnect() されたときの Media close 不良への対応
     const currentPeerIds: Array<string> = statusRoomRes.attenders.map((item: any) => {
@@ -335,16 +418,17 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     myMediaStream,
     peerMedias,
     peerMediasNum,
-    // messageData,
+    peerData,
+    dataConnData,
     errorCallbackFunc,
 
     open,
     close,
     connectMedia,
     disconnectMedia,
-    checkMedias
-    // connectData,
-    // sendData,
-    // disconnectData,
+    checkMedias,
+    connectData,
+    sendDataAll,
+    disconnectData
   }
 })
