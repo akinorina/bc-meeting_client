@@ -7,7 +7,6 @@ export class PeerMedia {
   peerId: string = ''
   mediaConn: any = undefined
   mediaStream: any = undefined
-  displayName: string = ''
 }
 interface PeerMediaObject {
   [key: string]: PeerMedia
@@ -221,7 +220,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   }
 
   // Media 接続
-  async function connectMedia(remotePeerId: string, displayName: string) {
+  async function connectMedia(remotePeerId: string) {
     if (!peer.value || !myMediaStream.value) {
       return false
     }
@@ -230,7 +229,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       // 自分のPeerId
       peerMedias.value[remotePeerId] = new PeerMedia()
       peerMedias.value[remotePeerId].peerId = remotePeerId
-      peerMedias.value[remotePeerId].displayName = displayName
       peerMedias.value[remotePeerId].mediaConn = null
       peerMedias.value[remotePeerId].mediaStream = myMediaStream.value
 
@@ -239,7 +237,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       // 他のPeerId
       peerMedias.value[remotePeerId] = new PeerMedia()
       peerMedias.value[remotePeerId].peerId = remotePeerId
-      peerMedias.value[remotePeerId].displayName = displayName
 
       // call
       const mc = peer.value.call(remotePeerId, myMediaStream.value)
@@ -381,15 +378,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   }
 
   function checkMedias(statusRoomRes: any) {
-    // // 表示名の補完
-    // statusRoomRes.attenders.forEach((item: any) => {
-    //   Object.keys(peerMedias.value).forEach((peerId) => {
-    //     if (peerId === item.peer_id) {
-    //       peerMedias.value[peerId].displayName = item.display_name
-    //     }
-    //   })
-    // })
-
     // 相手側から disconnect() されたときの Media close 不良への対応
     const currentPeerIds: Array<string> = statusRoomRes.attenders.map((item: any) => {
       return item.peer_id

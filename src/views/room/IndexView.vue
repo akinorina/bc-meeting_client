@@ -178,7 +178,7 @@ const enterRoom = async () => {
     // 現在の参加者それぞれへデータ接続
     webrtcStore.connectData(item.peer_id, item.display_name)
     // 現在の参加者それぞれへメディア接続
-    await webrtcStore.connectMedia(item.peer_id, item.display_name)
+    await webrtcStore.connectMedia(item.peer_id)
   })
 
   // 状態: 入室
