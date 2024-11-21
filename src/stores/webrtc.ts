@@ -65,7 +65,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peerサーバー接続確立
     peer.value.on('open', () => {
-      console.log('--- peer on(open) ---')
       myPeerId.value = peer.value ? peer.value.id : ''
       localStorage.setItem('peer_id', myPeerId.value)
     })
@@ -163,13 +162,26 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     // on: error
     peer.value.on('error', (err) => {
       console.error('peer error', err.type)
+      console.error('peer error', err.message)
+      console.error('peer error', err.name)
+      console.error('peer error', err.stack)
       console.error('peer error', err)
-      console.log('peer id', peer.value?.id)
-      console.log('connections', peer.value?.connections)
-      console.log('disconnect', peer.value?.disconnected)
-      console.log('destroyed', peer.value?.destroyed)
+      console.info('peer id', peer.value?.id)
+      console.info('connections', peer.value?.connections)
+      console.info('disconnect', peer.value?.disconnected)
+      console.info('destroyed', peer.value?.destroyed)
 
-      errorCallbackFunc.value()
+      const options: any = {}
+      if (err.type === 'peer-unavailable') {
+        console.info('--- peer-unavailable ---')
+        const ma = err.message.match(/(\w+-\w+-\w+-\w+-\w+)/)
+        if (ma) {
+          console.info('error peer id.', ma[1])
+          options.peer_id = ma[1]
+        }
+
+        errorCallbackFunc.value(options)
+      }
     })
   }
 

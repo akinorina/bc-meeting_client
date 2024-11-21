@@ -127,8 +127,12 @@ const endRoom = async () => {
 }
 onBeforeUnmount(endRoom)
 
-webrtcStore.errorCallbackFunc = async () => {
-  console.log('--- webrtcErrCallback() ---')
+webrtcStore.errorCallbackFunc = async (options: any) => {
+  console.info('--- webrtcErrCallback() ---')
+  if (options.peer_id) {
+    console.info('options.peer_id', options.peer_id)
+    // roomStore.exitRoom(roomHash.value, options.peer_id)
+  }
   await endRoom()
   await startRoom()
 }
