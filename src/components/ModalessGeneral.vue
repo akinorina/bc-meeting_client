@@ -2,8 +2,8 @@
 import { ref } from 'vue'
 
 export interface Props {
-  posLeft: number,
-  posTop: number,
+  posLeft: number
+  posTop: number
   // isCloseModalBack?: Boolean
   // classBg?: string
   classFg?: string
@@ -18,7 +18,7 @@ const {
   // classBg = '',
   classFg = '',
   // styleBg = '',
-  styleFg = '',
+  styleFg = ''
   // closeModalBackCallback = () => {}
 } = defineProps<Props>()
 
@@ -39,7 +39,11 @@ defineExpose({
 
 <template>
   <Teleport to="body">
-    <div v-if="status" class="fixed z-[1000]" :style="'top: ' + posTop + 'px; left:' + posLeft + 'px;' ">
+    <div
+      v-if="status"
+      class="fixed z-[1000]"
+      :style="'top: ' + posTop + 'px; left:' + posLeft + 'px;'"
+    >
       <div
         class="rounded-md border"
         :class="classFg"

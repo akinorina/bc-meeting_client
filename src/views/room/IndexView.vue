@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { PeerData, useWebrtcStore } from '@/stores/webrtc'
+import { useWebrtcStore } from '@/stores/webrtc'
 import { useMediaStore } from '@/stores/media'
 import { useRoomStore } from '@/stores/rooms'
 import { axios } from '@/lib/Axios'
@@ -136,7 +136,6 @@ webrtcStore.errorCallbackFunc = async (options: any) => {
   console.info('--- webrtcErrCallback() ---')
   if (options.peer_id) {
     console.info('options.peer_id', options.peer_id)
-    // roomStore.exitRoom(roomHash.value, options.peer_id)
   }
   await endRoom()
   await startRoom()
@@ -174,9 +173,6 @@ const enterRoom = async () => {
     await webrtcStore.connectMedia(item.peer_id)
   })
 
-  // 状態: 入室
-  statusEnterRoom.value = true
-
   // 相手の disconnect 不良への対応
   cIId = setInterval(() => {
     checkStatusPeerConn()
@@ -184,10 +180,16 @@ const enterRoom = async () => {
 
   // open dataConn modal
   modalDataConnList.value.open()
+
+  // 状態: 入室
+  statusEnterRoom.value = true
 }
 
 // Roomからの退室
 const exitRoom = async () => {
+  // 状態: 退室
+  statusEnterRoom.value = false
+
   if (cIId !== null) {
     await clearInterval(cIId)
     cIId = null
@@ -197,9 +199,6 @@ const exitRoom = async () => {
   modalDataConnList.value.close()
 
   targetSpeakerPeerId.value = ''
-
-  // 状態: 退室
-  statusEnterRoom.value = false
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
@@ -314,18 +313,12 @@ const showInfoLog = () => {
 
               <div class="my-3 flex items-center justify-center">
                 <!-- showInfoLog -->
-                <ButtonGeneralPrimary
-                  class="me-1 h-12"
-                  @click="showInfoLog"
-                >
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
                   Info
                 </ButtonGeneralPrimary>
                 <!-- // showInfoLog -->
                 <!-- 設定 -->
-                <ButtonGeneralPrimary
-                  class="me-1 h-12"
-                  @click="modalSettings.open()"
-                >
+                <ButtonGeneralPrimary class="me-1 h-12" @click="modalSettings.open()">
                   設定
                 </ButtonGeneralPrimary>
                 <!-- // 設定 -->
@@ -428,11 +421,7 @@ const showInfoLog = () => {
 
               <!-- 表示名 設定 -->
               <div class="my-3 flex">
-                <InputEmail
-                  class="me-2 h-10 w-full"
-                  placeholder="表示名"
-                  v-model="myDisplayName"
-                />
+                <InputEmail class="me-2 h-10 w-full" placeholder="表示名" v-model="myDisplayName" />
                 <ButtonGeneralPrimary
                   class="me-0 h-10 w-20"
                   :class="{
@@ -440,7 +429,11 @@ const showInfoLog = () => {
                       myDisplayName === '' || !mediaStore.mediaStream?.active
                   }"
                   @click="enterRoom"
-                  :disabled="myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStore.mediaStream?.active"
+                  :disabled="
+                    myDisplayName === '' ||
+                    webrtcStore.myPeerId === '' ||
+                    !mediaStore.mediaStream?.active
+                  "
                 >
                   入室
                 </ButtonGeneralPrimary>
@@ -620,7 +613,9 @@ const showInfoLog = () => {
                     autoplay
                     v-if="pm.peerId !== webrtcStore.myPeerId"
                   ></audio>
-                  <div class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white">
+                  <div
+                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                  >
                     <div class="">
                       {{ webrtcStore.peerData[pm.peerId].displayName }}
                     </div>
@@ -635,7 +630,10 @@ const showInfoLog = () => {
             <!-- // speakers list -->
 
             <!-- current speaker -->
-            <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500" v-if="targetSpeakerPeerId !== ''">
+            <div
+              class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500"
+              v-if="targetSpeakerPeerId !== ''"
+            >
               <video
                 class="h-full w-full"
                 :class="{
@@ -835,23 +833,17 @@ const showInfoLog = () => {
   </div>
 
   <ModalessGeneral ref="modalDataConnList" :pos-left="750" :pos-top="100">
-    <div class="w-96 h-fit">
-      <div class="">
-        data conn.
-      </div>
-      <div class="w-full h-fit max-h-96 overflow-y-auto min-h-80 border border-red-300">
+    <div class="h-fit w-96">
+      <div class="">data conn.</div>
+      <div class="h-fit max-h-96 min-h-80 w-full overflow-y-auto border border-red-300">
         <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
-          {{ item.type }}: {{ webrtcStore.peerData[item.senderPeerId].displayName }} - {{ item.message }}
+          {{ item.type }}: {{ webrtcStore.peerData[item.senderPeerId].displayName }} -
+          {{ item.message }}
         </div>
       </div>
       <div class="">
         <InputText class="w-80" v-model="messageText" />
-        <ButtonGeneralPrimary
-          class="w-18"
-          @click="sendText"
-        >
-          送信
-        </ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="w-18" @click="sendText"> 送信 </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalessGeneral>
@@ -867,17 +859,19 @@ const showInfoLog = () => {
 
   <ModalGeneral ref="modalSettings">
     <div class="p-5">
-      <div class="text-center font-bold">
-        設定
-      </div>
-      
-      <div class="w-96 px-2 py-5 my-5 border">
+      <div class="text-center font-bold">設定</div>
+
+      <div class="my-5 w-96 border px-2 py-5">
         <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
       </div>
 
-      <div class="w-96 px-2 py-3 my-5 border" v-if="mediaStore.deviceVideoInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStore.deviceVideoInputs.length > 0">
         <div class="font-bold">映像入力</div>
-        <select class="w-full p-3 mt-3 border" v-model="mediaStore.videoInputDeviceId" @change="mediaStore.changeVideoInput">
+        <select
+          class="mt-3 w-full border p-3"
+          v-model="mediaStore.videoInputDeviceId"
+          @change="mediaStore.changeVideoInput"
+        >
           <template v-for="(val, sKey) in mediaStore.deviceVideoInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
@@ -886,9 +880,13 @@ const showInfoLog = () => {
         </select>
       </div>
 
-      <div class="w-96 px-2 py-3 my-5 border" v-if="mediaStore.deviceAudioInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStore.deviceAudioInputs.length > 0">
         <div class="font-bold">音声入力</div>
-        <select class="w-full p-3 mt-3 border" v-model="mediaStore.audioInputDeviceId" @change="mediaStore.changeAudioInput">
+        <select
+          class="mt-3 w-full border p-3"
+          v-model="mediaStore.audioInputDeviceId"
+          @change="mediaStore.changeAudioInput"
+        >
           <template v-for="(val, sKey) in mediaStore.deviceAudioInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
@@ -898,12 +896,7 @@ const showInfoLog = () => {
       </div>
 
       <div class="">
-        <ButtonGeneralPrimary
-          class=""
-          @click="modalSettings.close()"
-        >
-          close
-        </ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>

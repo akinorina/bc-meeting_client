@@ -2,8 +2,8 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useMediaStore } from '@/stores/media'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import ModalGeneral from '@/components/ModalGeneral.vue';
-import InputCheckbox from '@/components/ui/InputCheckbox.vue';
+import ModalGeneral from '@/components/ModalGeneral.vue'
+import InputCheckbox from '@/components/ui/InputCheckbox.vue'
 
 const mediaStore = useMediaStore()
 
@@ -52,7 +52,7 @@ const openSettings = () => {
   <div class="h-full w-full bg-slate-100 p-3">
     <div class="flex justify-center">
       <video
-        class="max-w-full max-h-96 bg-slate-100"
+        class="max-h-96 max-w-full bg-slate-100"
         :class="{ 'video-mirrored': myVideoMirrored }"
         :srcObject.prop="mediaStore.mediaStream"
         autoplay
@@ -161,12 +161,7 @@ const openSettings = () => {
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
         <!-- setings -->
-        <ButtonGeneralPrimary
-          class="w-24"
-          @click="openSettings"
-        >
-          設定
-        </ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="w-24" @click="openSettings"> 設定 </ButtonGeneralPrimary>
         <!-- // setings -->
       </div>
     </div>
@@ -174,17 +169,19 @@ const openSettings = () => {
 
   <ModalGeneral ref="modalSettings">
     <div class="p-5">
-      <div class="text-center font-bold">
-        設定
-      </div>
-      
-      <div class="w-96 px-2 py-5 my-5 border">
+      <div class="text-center font-bold">設定</div>
+
+      <div class="my-5 w-96 border px-2 py-5">
         <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
       </div>
 
-      <div class="w-96 px-2 py-3 my-5 border" v-if="mediaStore.deviceVideoInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStore.deviceVideoInputs.length > 0">
         <div class="font-bold">映像入力</div>
-        <select class="w-full p-3 mt-3 border" v-model="mediaStore.videoInputDeviceId" @change="mediaStore.changeVideoInput">
+        <select
+          class="mt-3 w-full border p-3"
+          v-model="mediaStore.videoInputDeviceId"
+          @change="mediaStore.changeVideoInput"
+        >
           <template v-for="(val, sKey) in mediaStore.deviceVideoInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
@@ -193,9 +190,13 @@ const openSettings = () => {
         </select>
       </div>
 
-      <div class="w-96 px-2 py-3 my-5 border" v-if="mediaStore.deviceAudioInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStore.deviceAudioInputs.length > 0">
         <div class="font-bold">音声入力</div>
-        <select class="w-full p-3 mt-3 border" v-model="mediaStore.audioInputDeviceId" @change="mediaStore.changeAudioInput">
+        <select
+          class="mt-3 w-full border p-3"
+          v-model="mediaStore.audioInputDeviceId"
+          @change="mediaStore.changeAudioInput"
+        >
           <template v-for="(val, sKey) in mediaStore.deviceAudioInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
@@ -205,12 +206,7 @@ const openSettings = () => {
       </div>
 
       <div class="">
-        <ButtonGeneralPrimary
-          class=""
-          @click="modalSettings.close()"
-        >
-          close
-        </ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
@@ -218,6 +214,6 @@ const openSettings = () => {
 
 <style scoped lang="scss">
 .video-mirrored {
-  transform:scaleX(-1);
+  transform: scaleX(-1);
 }
 </style>
