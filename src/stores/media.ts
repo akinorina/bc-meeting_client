@@ -24,7 +24,7 @@ export const useMediaStore = defineStore('media', () => {
 
   // // constraints
   // const supportedConstraints = navigator.mediaDevices.getSupportedConstraints()
-  // console.log('supportedConstraints', supportedConstraints)
+  // console.info('supportedConstraints', supportedConstraints)
 
   // devices
   const deviceVideoInputs = ref<MediaDeviceInfo[]>([])
@@ -65,7 +65,6 @@ export const useMediaStore = defineStore('media', () => {
 
   // device 切替 - Video Input
   async function changeVideoInput() {
-    console.log('--- changeVideoInput() ---')
     closeMediaStreamLocal()
     mediaStreamConstraints.value.video.deviceId = videoInputDeviceId.value
     await openMediaStreamLocal()
@@ -73,7 +72,6 @@ export const useMediaStore = defineStore('media', () => {
   }
   // device 切替 - Audio Input
   async function changeAudioInput() {
-    console.log('--- changeAudioInput() ---')
     closeMediaStreamLocal()
     mediaStreamConstraints.value.audio.deviceId = audioInputDeviceId.value
     await openMediaStreamLocal()

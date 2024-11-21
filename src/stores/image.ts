@@ -49,7 +49,6 @@ export const useImageStore = defineStore('image', () => {
   // async function uploadImage() {
   //   try {
   //     const options = image.value
-  //     console.log('options', options)
   //     await axios.post('/api/images/upload', options)
   //   } catch (err: any) {
   //     console.error(err.message)

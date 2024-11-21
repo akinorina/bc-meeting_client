@@ -117,9 +117,6 @@ const startRoom = async () => {
     const resProfile = await authStore.getProfile()
     myDisplayName.value = resProfile.data.username
   }
-
-  // open dataConn modal
-  modalDataConnList.value.open()
 }
 onMounted(startRoom)
 
@@ -157,8 +154,9 @@ const toTopPage = () => {
 
 // Roomへの入室
 const enterRoom = async () => {
-  console.log('--- enterRoom() ---')
+  // init.
   webrtcStore.myName = myDisplayName.value
+  webrtcStore.dataConnData = []
   targetSpeakerPeerId.value = webrtcStore.myPeerId
 
   // 入室APIアクセス
@@ -166,15 +164,10 @@ const enterRoom = async () => {
 
   // local mediaStream 設定
   webrtcStore.myMediaStream = mediaStore.mediaStream
-  console.log('webrtcStore.myMediaStream', webrtcStore.myMediaStream)
 
   // 入室状態を取得
-  const res2 = await roomStore.statusRoom(roomHash.value)
-  res2.attenders.forEach(async (item: any) => {
-    console.log('--- enterRoom() --- attenders')
-    console.log('peer_id', item.peer_id)
-    console.log('display_name', item.display_name)
-
+  const roomInfo = await roomStore.statusRoom(roomHash.value)
+  roomInfo.attenders.forEach(async (item: any) => {
     // 現在の参加者それぞれへデータ接続
     webrtcStore.connectData(item.peer_id, item.display_name)
     // 現在の参加者それぞれへメディア接続
@@ -189,7 +182,8 @@ const enterRoom = async () => {
     checkStatusPeerConn()
   }, 5000)
 
-  console.log('-- peerMediasNum', webrtcStore.peerMediasNum)
+  // open dataConn modal
+  modalDataConnList.value.open()
 }
 
 // Roomからの退室
@@ -198,6 +192,9 @@ const exitRoom = async () => {
     await clearInterval(cIId)
     cIId = null
   }
+
+  // close dataConn modal
+  modalDataConnList.value.close()
 
   targetSpeakerPeerId.value = ''
 
@@ -266,9 +263,13 @@ const chooseSpeaker = (peerId: string) => {
 
 const messageText = ref('')
 
+// Text-chat: メッセージ送信
 const sendText = () => {
-  console.log('--- sendText() ---', messageText.value)
   webrtcStore.sendDataAll(messageText.value)
+}
+
+const showInfoLog = () => {
+  webrtcStore.showInfoLog()
 }
 </script>
 
@@ -312,6 +313,14 @@ const sendText = () => {
               </div>
 
               <div class="my-3 flex items-center justify-center">
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary
+                  class="me-1 h-12"
+                  @click="showInfoLog"
+                >
+                  Info
+                </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
                 <!-- 設定 -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12"
@@ -473,6 +482,9 @@ const sendText = () => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="showInfoLog">
+                  Info
+                </ButtonGeneralPrimary>
                 <!-- 表示切替 -->
                 <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
@@ -652,6 +664,10 @@ const sendText = () => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="showInfoLog">
+                  Info
+                </ButtonGeneralPrimary>
+
                 <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -823,9 +839,9 @@ const sendText = () => {
       <div class="">
         data conn.
       </div>
-      <div class="w-full h-fit min-h-80 border border-red-300">
+      <div class="w-full h-fit max-h-96 overflow-y-auto min-h-80 border border-red-300">
         <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
-          {{ webrtcStore.peerData[item.senderPeerId].displayName }}: {{ item.message }}
+          {{ item.type }}: {{ webrtcStore.peerData[item.senderPeerId].displayName }} - {{ item.message }}
         </div>
       </div>
       <div class="">

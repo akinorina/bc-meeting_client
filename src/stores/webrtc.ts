@@ -141,7 +141,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // on data: error
       peerData.value[remotePeerId].dataConn.on('error', (err: any) => {
-        console.error('--- dataConn: on error ---', err)
+        console.error('--- dataConn: peer on(error) connection ---', err)
       })
     })
 
@@ -195,6 +195,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: error
     peer.value.on('error', (err) => {
+      console.error('=== Peer on(error) connection ===', err)
       console.error('peer error', err.type)
       console.error('peer error', err.message)
       console.error('peer error', err.name)
@@ -242,25 +243,31 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       const mc = peer.value.call(remotePeerId, myMediaStream.value)
       peerMedias.value[remotePeerId].mediaConn = mc
 
-      peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: any) {
+      peerMedias.value[remotePeerId].mediaConn.on('stream', function (remoteStream: any) {
         peerMedias.value[remotePeerId].mediaStream = remoteStream
 
         peerMediasNum.value = Object.keys(peerMedias.value).length
       })
 
-      peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
+      peerMedias.value[remotePeerId].mediaConn.on('close', async () => {
         // closeした MediaStream停止
         await peerMedias.value[remotePeerId].mediaStream
           .getTracks()
           .forEach((track: MediaStreamTrack) => track.stop())
 
         // closeした MediaConnection CLOSE
-        await peerMedias.value[remotePeerId].mediaConn?.close()
+        await peerMedias.value[remotePeerId].mediaConn.close()
 
         // closeした peerMedia 削除
         delete peerMedias.value[remotePeerId]
 
         peerMediasNum.value = Object.keys(peerMedias.value).length
+      })
+
+      peerMedias.value[remotePeerId].mediaConn.on('error', async (err: any) => {
+        console.error('--- mediaConn: peer on(error) ---', err)
+        await peerMedias.value[remotePeerId].mediaConn.close()
+        delete peerMedias.value[remotePeerId]
       })
     }
 
@@ -288,8 +295,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
   }
 
-  // Data 接続
-  function connectData(remotePeerId: string, displayName: string) {
+  // Peer DataConn 接続
+  async function connectData(remotePeerId: string, displayName: string) {
     if (remotePeerId === myPeerId.value) {
       // 自分
       peerData.value[remotePeerId] = new PeerData()
@@ -303,6 +310,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       peerData.value[remotePeerId].dataConn = peer.value?.connect(remotePeerId, {})
       peerData.value[remotePeerId].displayName = displayName
 
+      // Peer DataConn 接続確立
       peerData.value[remotePeerId].dataConn.on('open', () => {
         // 接続された先へ表示名を送信
         const sendName = new DataConnData()
@@ -320,6 +328,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         dataConnData.value.push(sendData)
       })
 
+      // Peer DataConn データ受信
       peerData.value[remotePeerId].dataConn.on('data', (data: DataConnData) => {
         switch (data.type) {
           case 'display_name':
@@ -332,23 +341,29 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         }
       })
 
+      // Peer DataConn 切断
       peerData.value[remotePeerId].dataConn.on('close', () => {
         peerData.value[remotePeerId].dataConn.close()
+        delete peerData.value[remotePeerId]
       })
 
+      // Peer DataConn エラー
       peerData.value[remotePeerId].dataConn.on('error', (err: any) => {
-        console.log('--- dataConn: peer on(error) ---', err)
+        console.error('--- dataConn: peer on(error) ---', err)
+        peerData.value[remotePeerId].dataConn.close()
+        delete peerData.value[remotePeerId]
       })
     }
   }
 
-  // Data メッセージの送信
+  // Peer DataConn メッセージの送信
   function sendDataAll(sendText: string) {
+    // メッセージ作成
     const sendData = new DataConnData()
     sendData.type = 'message'
     sendData.senderPeerId = myPeerId.value
     sendData.message = sendText
-
+    // 接続中すべてへ送信
     Object.keys(peerData.value).forEach((remotePeerId) => {
       if (remotePeerId !== myPeerId.value) {
         peerData.value[remotePeerId].dataConn.send(sendData)
@@ -358,11 +373,12 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   }
 
   // Data 切断
-  function disconnectData() {
-    Object.keys(peerData.value).forEach((remotePeerId) => {
+  async function disconnectData() {
+    Object.keys(peerData.value).forEach(async (remotePeerId) => {
       if (remotePeerId !== myPeerId.value) {
-        peerData.value[remotePeerId].dataConn.close()
+        await peerData.value[remotePeerId].dataConn.close()
       }
+      delete peerData.value[remotePeerId]
     })
   }
 
@@ -400,6 +416,24 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
   }
 
+  // 状態をコンソール出力
+  function showInfoLog() {
+    console.info('peer', peer.value)
+    console.info('peer', peer.value?.id)
+    console.info('peer', peer.value?.disconnected)
+    console.info('peer', peer.value?.destroyed)
+
+    Object.keys(peerData.value).forEach((peerId) => {
+      const displayName = peerData.value[peerId].displayName
+      console.info('dataConn peer', displayName + ': ' + peerId)
+      console.info('dataConn', peerData.value[peerId].dataConn)
+    })
+
+    Object.keys(peerMedias.value).forEach((peerId) => {
+      console.info('mediaConn peer', peerMedias.value[peerId].peerId)
+    })
+  }
+
   return {
     myName,
     myPeerId,
@@ -417,6 +451,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     checkMedias,
     connectData,
     sendDataAll,
-    disconnectData
+    disconnectData,
+
+    showInfoLog
   }
 })
