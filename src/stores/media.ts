@@ -4,6 +4,8 @@ import { defineStore } from 'pinia'
 export const useMediaStore = defineStore('media', () => {
   // local Media Stream
   const mediaStreamLocal = ref<MediaStream>(new MediaStream())
+  // canvas Media Stream
+  const mediaStreamCanvas = ref<MediaStream>(new MediaStream())
   // media stream
   const mediaStream = ref<MediaStream>(new MediaStream())
 
@@ -112,6 +114,36 @@ export const useMediaStore = defineStore('media', () => {
     }
   }
 
+  // MediaStream 代替テキスト用
+  const altText = ref('')
+  const canvas = ref()
+  const ctx = ref()
+  const ctxOption = {
+    x: 0,
+    y: 0,
+    width: 1920,
+    height: 1080
+  }
+  //
+  function openMediaStreamCanvas() {
+    canvas.value = document.createElement('canvas')
+    canvas.value.width = ctxOption.width
+    canvas.value.height = ctxOption.height
+    ctx.value = canvas.value.getContext('2d')
+    ;(function loop() {
+      ctx.value.clearRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
+      ctx.value.fillStyle = 'black'
+      ctx.value.fillRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
+      ctx.value.font = '100px sans-serif'
+      ctx.value.fillStyle = 'white'
+      ctx.value.textAlign = 'center'
+      ctx.value.textBaseline = 'bottom'
+      ctx.value.fillText(altText.value, ctxOption.width / 2, ctxOption.height / 2)
+      setTimeout(loop, 1000 / 30) // drawing at 30fps
+    })()
+    mediaStreamCanvas.value = canvas.value.captureStream(30)
+  }
+
   // 映像入力 on/off
   function setVideoEnabled(value: boolean) {
     mediaStream.value.getVideoTracks().forEach((track) => {
@@ -156,10 +188,14 @@ export const useMediaStore = defineStore('media', () => {
     mediaStreamConstraints,
     mediaStream,
     mediaStreamLocal,
+    mediaStreamCanvas,
     openMediaStreamLocal,
+    openMediaStreamCanvas,
     setVideoEnabled,
     setAudioEnabled,
     closeMediaStreamLocal,
-    closeMediaStream
+    closeMediaStream,
+
+    altText
   }
 })

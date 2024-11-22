@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
@@ -46,6 +46,9 @@ const myVideoMirrored = ref(true)
 
 // my display name
 const myDisplayName = ref('')
+watch(myDisplayName, () => {
+  mediaStore.altText = webrtcStore.myName = myDisplayName.value
+})
 
 // 招待メール送信先メールアドレス
 const invitedEmailAddress = ref<string>('')
@@ -71,22 +74,8 @@ const modalSendInvitaionSuccess = ref()
 // Modal: 設定
 const modalSettings = ref()
 
-// 参加者数
-const speakerLength = ref(webrtcStore.peerMediasNum)
-watch(webrtcStore.peerMedias, async () => {
-  if (webrtcStore.peerMediasNum <= 1) {
-    targetSpeakerPeerId.value = webrtcStore.myPeerId
-  } else {
-    const aryPeerIds = Object.keys(webrtcStore.peerMedias)
-    let iidx = aryPeerIds.length - 1
-    targetSpeakerPeerId.value = aryPeerIds[iidx]
-    while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
-      iidx--
-      targetSpeakerPeerId.value = aryPeerIds[iidx]
-    }
-  }
-  speakerLength.value = webrtcStore.peerMediasNum
-})
+// // 参加者数
+// const speakerLength = ref(8)
 
 const startRoom = async () => {
   // 状態: 退室
@@ -101,8 +90,11 @@ const startRoom = async () => {
     return false
   }
 
-  // open my MediaStream
+  // open the local MediaStream (webcam)
   await mediaStore.openMediaStreamLocal()
+  // open the canvas MediaStream (text)
+  mediaStore.openMediaStreamCanvas()
+  // defaultで mediaStreamLocal を設定
   mediaStore.mediaStream = mediaStore.mediaStreamLocal
 
   // open Peer
@@ -154,7 +146,7 @@ const toTopPage = () => {
 // Roomへの入室
 const enterRoom = async () => {
   // init.
-  webrtcStore.myName = myDisplayName.value
+  mediaStore.altText = webrtcStore.myName = myDisplayName.value
   webrtcStore.dataConnData = []
   targetSpeakerPeerId.value = webrtcStore.myPeerId
 
@@ -217,7 +209,35 @@ const checkStatusPeerConn = async () => {
 
 // video on/off
 const toggleVideo = async () => {
-  mediaStore.setVideoEnabled(!trackStatus.value.video)
+  // Speaker mode target is reset.
+  targetSpeakerPeerId.value = ''
+  await nextTick() 
+
+  if (statusEnterRoom.value) {
+    // media すべて切断
+    await webrtcStore.disconnectMedia2()
+  }
+
+  if (trackStatus.value.video) {
+    console.log('--- local => canvas ---')
+    webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamCanvas
+  } else {
+    console.log('--- canvas => local ---')
+    webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamLocal
+  }
+
+  if (statusEnterRoom.value) {
+    // 入室状態を取得
+    const roomInfo = await roomStore.statusRoom(roomHash.value)
+    roomInfo.attenders.forEach(async (item: any) => {
+      console.log('attenders >>', item.peer_id)
+    })
+    roomInfo.attenders.forEach(async (item: any) => {
+      // 現在の参加者それぞれへメディア再接続
+      await webrtcStore.connectMedia2(item.peer_id)
+    })
+  }
+
   trackStatus.value.video = !trackStatus.value.video
 }
 
@@ -426,7 +446,7 @@ const showInfoLog = () => {
                   class="me-0 h-10 w-20"
                   :class="{
                     'bg-slate-400 hover:bg-slate-400':
-                      myDisplayName === '' || !mediaStore.mediaStream?.active
+                      myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStore.mediaStream?.active
                   }"
                   @click="enterRoom"
                   :disabled="
@@ -590,7 +610,7 @@ const showInfoLog = () => {
             <div
               class="max-w-screen absolute left-0 top-3 z-20 overflow-x-hidden rounded-sm border border-slate-500 bg-slate-300"
             >
-              <div class="speakers flex flex-nowrap justify-start">
+              <div class="w-full flex flex-nowrap justify-start">
                 <div
                   class="relative flex h-24 w-32 items-center"
                   v-for="pm in webrtcStore.peerMedias"
@@ -630,6 +650,7 @@ const showInfoLog = () => {
             <!-- // speakers list -->
 
             <!-- current speaker -->
+            <!--
             <div
               class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500"
               v-if="targetSpeakerPeerId !== ''"
@@ -654,6 +675,7 @@ const showInfoLog = () => {
                 </div>
               </div>
             </div>
+            -->
             <!-- // current speaker -->
           </div>
         </div>
@@ -903,10 +925,6 @@ const showInfoLog = () => {
 </template>
 
 <style scoped lang="scss">
-.speakers {
-  width: calc(8rem * v-bind(speakerLength));
-}
-
 .main-speaker-view {
   height: calc(100vh - 100px);
 }
