@@ -74,9 +74,6 @@ const modalSendInvitaionSuccess = ref()
 // Modal: 設定
 const modalSettings = ref()
 
-// // 参加者数
-// const speakerLength = ref(8)
-
 const startRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
@@ -125,7 +122,6 @@ const endRoom = async () => {
 onBeforeUnmount(endRoom)
 
 webrtcStore.errorCallbackFunc = async (options: any) => {
-  console.info('--- webrtcErrCallback() ---')
   if (options.peer_id) {
     console.info('options.peer_id', options.peer_id)
   }
@@ -160,9 +156,9 @@ const enterRoom = async () => {
   const roomInfo = await roomStore.statusRoom(roomHash.value)
   roomInfo.attenders.forEach(async (item: any) => {
     // 現在の参加者それぞれへデータ接続
-    webrtcStore.connectData(item.peer_id, item.display_name)
+    // webrtcStore.connectData(item.peer_id, item.display_name)
     // 現在の参加者それぞれへメディア接続
-    await webrtcStore.connectMedia(item.peer_id)
+    await webrtcStore.connectMedia(item.peer_id, item.display_name)
   })
 
   // 相手の disconnect 不良への対応
@@ -194,7 +190,6 @@ const exitRoom = async () => {
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
-  // webrtcStore.disconnectData()
 
   // 退室APIアクセス
   await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
@@ -219,19 +214,14 @@ const toggleVideo = async () => {
   }
 
   if (trackStatus.value.video) {
-    console.log('--- local => canvas ---')
     webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamCanvas
   } else {
-    console.log('--- canvas => local ---')
     webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamLocal
   }
 
   if (statusEnterRoom.value) {
     // 入室状態を取得
     const roomInfo = await roomStore.statusRoom(roomHash.value)
-    roomInfo.attenders.forEach(async (item: any) => {
-      console.log('attenders >>', item.peer_id)
-    })
     roomInfo.attenders.forEach(async (item: any) => {
       // 現在の参加者それぞれへメディア再接続
       await webrtcStore.connectMedia2(item.peer_id)
@@ -287,9 +277,9 @@ const sendText = () => {
   webrtcStore.sendDataAll(messageText.value)
 }
 
-const showInfoLog = () => {
-  webrtcStore.showInfoLog()
-}
+// const showInfoLog = () => {
+//   webrtcStore.showInfoLog()
+// }
 </script>
 
 <template>
@@ -332,11 +322,6 @@ const showInfoLog = () => {
               </div>
 
               <div class="my-3 flex items-center justify-center">
-                <!-- showInfoLog -->
-                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
-                  Info
-                </ButtonGeneralPrimary>
-                <!-- // showInfoLog -->
                 <!-- 設定 -->
                 <ButtonGeneralPrimary class="me-1 h-12" @click="modalSettings.open()">
                   設定
@@ -495,9 +480,6 @@ const showInfoLog = () => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
-                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="showInfoLog">
-                  Info
-                </ButtonGeneralPrimary>
                 <!-- 表示切替 -->
                 <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
@@ -617,65 +599,63 @@ const showInfoLog = () => {
                   :key="pm.peerId"
                   @click="chooseSpeaker(pm.peerId)"
                 >
-                  <video
-                    class="h-96 w-96"
-                    :class="{
-                      'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
-                    }"
-                    :srcObject.prop="pm.mediaStream"
-                    autoplay
-                    muted
-                    playsinline
-                  ></video>
-                  <audio
-                    class=""
-                    :srcObject.prop="pm.mediaStream"
-                    autoplay
-                    v-if="pm.peerId !== webrtcStore.myPeerId"
-                  ></audio>
-                  <div
-                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
-                  >
-                    <div class="">
-                      {{ webrtcStore.peerData[pm.peerId].displayName }}
+                  <template v-if="pm.available">
+                    <video
+                      class="h-96 w-96"
+                      :class="{
+                        'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                      }"
+                      :srcObject.prop="pm.mediaStream"
+                      autoplay
+                      muted
+                      playsinline
+                    ></video>
+                    <audio
+                      class=""
+                      :srcObject.prop="pm.mediaStream"
+                      autoplay
+                      v-if="pm.peerId !== webrtcStore.myPeerId"
+                    ></audio>
+                    <div
+                      class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                    >
+                      <div class="">
+                        {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                      </div>
                     </div>
-                  </div>
-                  <div class="">
-                    <br />
-                    <!-- {{ pm.mediaStream.getVideoTracks()[0].enabled }} -->
-                  </div>
+                  </template>
                 </div>
               </div>
             </div>
             <!-- // speakers list -->
 
             <!-- current speaker -->
-            <!--
             <div
               class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500"
               v-if="targetSpeakerPeerId !== ''"
             >
-              <video
-                class="h-full w-full"
-                :class="{
-                  'my-video-mirrored':
-                    myVideoMirrored &&
-                    webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
-                }"
-                :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
-                autoplay
-                muted
-                playsinline
-              ></video>
-              <div
-                class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
-              >
-                <div class="">
-                  {{ webrtcStore.peerData[targetSpeakerPeerId].displayName }}
+              <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
+                <video
+                  class="h-full w-full"
+                  :class="{
+                    'my-video-mirrored':
+                      myVideoMirrored &&
+                      webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
+                  }"
+                  :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
+                  autoplay
+                  muted
+                  playsinline
+                ></video>
+                <div
+                  class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                >
+                  <div class="">
+                    {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
-            -->
             <!-- // current speaker -->
           </div>
         </div>
@@ -684,10 +664,6 @@ const showInfoLog = () => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
-                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="showInfoLog">
-                  Info
-                </ButtonGeneralPrimary>
-
                 <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -822,29 +798,31 @@ const showInfoLog = () => {
               v-for="(pm, peerId) in webrtcStore.peerMedias"
               :key="peerId"
             >
-              <video
-                class="h-full w-full"
-                :class="{
-                  'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
-                }"
-                :srcObject.prop="pm.mediaStream"
-                autoplay
-                muted
-                playsinline
-              ></video>
-              <audio
-                class=""
-                :srcObject.prop="pm.mediaStream"
-                autoplay
-                v-if="pm.peerId !== webrtcStore.myPeerId"
-              ></audio>
-              <div
-                class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
-              >
-                <div class="">
-                  {{ webrtcStore.peerData[pm.peerId].displayName }}
+              <template v-if="pm.available">
+                <video
+                  class="h-full w-full"
+                  :class="{
+                    'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                  }"
+                  :srcObject.prop="pm.mediaStream"
+                  autoplay
+                  muted
+                  playsinline
+                ></video>
+                <audio
+                  class=""
+                  :srcObject.prop="pm.mediaStream"
+                  autoplay
+                  v-if="pm.peerId !== webrtcStore.myPeerId"
+                ></audio>
+                <div
+                  class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                >
+                  <div class="">
+                    {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
           </div>
         </div>
@@ -859,8 +837,7 @@ const showInfoLog = () => {
       <div class="">data conn.</div>
       <div class="h-fit max-h-96 min-h-80 w-full overflow-y-auto border border-red-300">
         <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
-          {{ item.type }}: {{ webrtcStore.peerData[item.senderPeerId].displayName }} -
-          {{ item.message }}
+          {{ item.type }}: - {{ item.message }}
         </div>
       </div>
       <div class="">
