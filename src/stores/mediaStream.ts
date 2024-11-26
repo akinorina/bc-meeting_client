@@ -5,9 +5,11 @@ import '@tensorflow/tfjs-core'
 import '@tensorflow/tfjs-backend-webgl'
 import * as bodySegmentation from '@tensorflow-models/body-segmentation'
 
-export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-background', () => {
-  // バーチャル背景処理結果出力
-  const mediaStream = ref<MediaStream>()
+export const useMediaStreamStore = defineStore('media-stream', () => {
+  // 出力 media stream
+  const mediaStreamNormal = ref<MediaStream>()
+  const mediaStreamAltText = ref<MediaStream>()
+  const mediaStreamVbg = ref<MediaStream>()
 
   // Camera動画用 Video
   let video: HTMLVideoElement
@@ -31,9 +33,71 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
 
   // ボディー分割処理用
   let segmenter: bodySegmentation.BodySegmenter
-  const requestAnimationFrameId = ref(0)
+  let requestIdVb = 0
 
-  async function openMediaStream(mediaStreamConstraints: MediaStreamConstraints) {
+  // MediaStream 代替テキスト用
+  const altText = ref('')
+  let requestIdAltText = 0
+
+  // normal: mediaStream 作成
+  async function openNormal(mediaStreamConstraints: MediaStreamConstraints) {
+    try {
+      mediaStreamNormal.value = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
+    } catch (err: any) {
+      console.error('Failed to get local stream', err)
+
+      // log to console first
+      console.error(err) /* handle the error */
+      if (err.name == 'NotFoundError' || err.name == 'DevicesNotFoundError') {
+        // required track is missing
+        console.error('Required track is missing')
+      } else if (err.name == 'NotReadableError' || err.name == 'TrackStartError') {
+        // webcam or mic are already in use
+        console.error('Webcam or mic are already in use')
+      } else if (err.name == 'OverconstrainedError' || err.name == 'ConstraintNotSatisfiedError') {
+        // constraints can not be satisfied by avb. devices
+        console.error('Constraints can not be satisfied by available devices')
+      } else if (err.name == 'NotAllowedError' || err.name == 'PermissionDeniedError') {
+        // permission denied in browser
+        console.error('Permission Denied.')
+      } else if (err.name == 'TypeError' || err.name == 'TypeError') {
+        // empty constraints object
+        console.error('Both audio and video are FALSE')
+      } else {
+        // other errors
+        console.error('Sorry! Another error occurred.')
+      }
+    }
+  }
+
+  // 代替テキスト: mediaStream 作成
+  async function openAltText() {
+    canvas.value = document.createElement('canvas') as HTMLCanvasElement
+    canvas.value.width = ctxOption.width
+    canvas.value.height = ctxOption.height
+    ctx.value = canvas.value.getContext('2d') as CanvasRenderingContext2D
+    mediaStreamAltText.value = canvas.value.captureStream()
+
+    // テキストCanvas描画
+    drawText()
+  }
+
+  // 代替テキスト: mediaStream 描画
+  function drawText() {
+    if (!ctx.value) return false
+    ctx.value.clearRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
+    ctx.value.fillStyle = 'black'
+    ctx.value.fillRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
+    ctx.value.font = '100px sans-serif'
+    ctx.value.fillStyle = 'white'
+    ctx.value.textAlign = 'center'
+    ctx.value.textBaseline = 'bottom'
+    ctx.value.fillText(altText.value, ctxOption.width / 2, ctxOption.height / 2)
+    requestIdAltText = window.requestAnimationFrame(drawText)
+  }
+
+  // バーチャル背景: mediaStream 作成
+  async function openVirtualBackground(mediaStreamConstraints: MediaStreamConstraints) {
     // Camera動画
     video = document.createElement('video') as HTMLVideoElement
 
@@ -59,16 +123,10 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
       initBodySegmentation()
     }
 
-    mediaStream.value = canvas.value.captureStream(30)
-    mediaStream.value.getAudioTracks().forEach((tr) => {
-      mediaStream.value?.removeTrack(tr)
-    })
-    mediastreamCam.value.getAudioTracks().forEach((tr) => {
-      mediaStream.value?.addTrack(tr.clone())
-    })
+    mediaStreamVbg.value = canvas.value.captureStream(30)
   }
 
-  // 背景画像 読み込み (再実行することで画像差し替え可能)
+  // バーチャル背景: 背景画像 読み込み (再実行することで画像差し替え可能)
   function loadBackgroundImage() {
     imgBg = document.createElement('img')
     imgBg.src = bgImageUrl.value
@@ -81,6 +139,7 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
     })
   }
 
+  // バーチャル背景: 初期化
   async function initBodySegmentation() {
     // ボディセグメンテーションモデルの作成
     await createBodySegmentation()
@@ -95,6 +154,7 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
     }
   }
 
+  // バーチャル背景: ぼかし描画
   const processFrameBlur = async () => {
     if (!video || !canvas.value) return // processFrame()
 
@@ -115,9 +175,10 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
       flipHorizontal
     )
 
-    requestAnimationFrameId.value = window.requestAnimationFrame(processFrameBlur)
+    requestIdVb = window.requestAnimationFrame(processFrameBlur)
   }
 
+  // バーチャル背景: 背景描画
   const processFrameVirtual = async () => {
     if (!video || !canvas.value || !ctx.value) return // processFrame()
 
@@ -167,9 +228,10 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
     // 処理後の画像データをキャンバスに描画
     ctx.value.putImageData(imageData, 0, 0)
 
-    requestAnimationFrameId.value = window.requestAnimationFrame(processFrameVirtual)
+    requestIdVb = window.requestAnimationFrame(processFrameVirtual)
   }
 
+  // バーチャル背景: ボディー分割作成
   const createBodySegmentation = async () => {
     // ボディセグメンテーションモデルの設定
     const model = bodySegmentation.SupportedModels.MediaPipeSelfieSegmentation
@@ -182,32 +244,63 @@ export const useMediaStreamVirtualBackgroundStore = defineStore('virtual-backgro
     segmenter = await bodySegmentation.createSegmenter(model, segmenterConfig)
   }
 
+  // バーチャル背景: 人物分割
   const segmentPeople = async () => {
     // ビデオフレームから人物のセグメンテーションを実行
     const estimationConfig = { flipHorizontal: false }
     return await segmenter.segmentPeople(video, estimationConfig)
   }
 
-  const closeMediaStream = async () => {
+  // normal: mediaStream 削除
+  const closeNormal = async () => {
+    mediaStreamNormal.value?.getTracks().forEach((tr) => {
+      tr.stop()
+      mediaStreamNormal.value?.removeTrack(tr)
+    })
+  }
+
+  const closeAltText = async () => {
+    // 描画停止
+    window.cancelAnimationFrame(requestIdAltText)
+
+    mediaStreamAltText.value?.getTracks().forEach((tr) => {
+      tr.stop()
+      mediaStreamAltText.value?.removeTrack(tr)
+    })
+  }
+
+  const closeVirtualBackground = async () => {
     // requestAnimationFrame() 停止
-    window.cancelAnimationFrame(requestAnimationFrameId.value)
+    window.cancelAnimationFrame(requestIdVb)
 
     mediastreamCam.value?.getTracks().forEach((tr) => {
       tr.stop()
       mediastreamCam.value?.removeTrack(tr)
     })
 
-    mediaStream.value?.getTracks().forEach((tr) => {
+    mediaStreamVbg.value?.getTracks().forEach((tr) => {
       tr.stop()
-      mediaStream.value?.removeTrack(tr)
+      mediaStreamVbg.value?.removeTrack(tr)
     })
   }
 
   return {
-    mediaStream,
-    openMediaStream,
-    closeMediaStream,
+    // normal
+    mediaStreamNormal,
+    openNormal,
+    closeNormal,
+
+    // alternative text
+    mediaStreamAltText,
+    altText,
+    openAltText,
+    closeAltText,
+
+    // virtual background
+    mediaStreamVbg,
     bgImageUrl,
+    openVirtualBackground,
+    closeVirtualBackground,
     loadBackgroundImage
   }
 })

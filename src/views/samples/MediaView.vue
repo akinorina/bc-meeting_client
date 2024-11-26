@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useMediaDeviceStore } from '@/stores/mediaDevice';
-import { useMediaStreamCanvasStore } from '@/stores/mediaStreamCanvas';
-import { useMediaStreamLocalStore } from '@/stores/mediaStreamLocal';
-import { useMediaStreamVirtualBackgroundStore } from '@/stores/mediaStreamVirtualBackground';
+import { useMediaStreamStore } from '@/stores/mediaStream';
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import InputCheckbox from '@/components/ui/InputCheckbox.vue'
@@ -11,9 +9,7 @@ import InputText from '@/components/ui/InputText.vue';
 import { RouterLink } from 'vue-router';
 
 const mediaDeviceStore = useMediaDeviceStore()
-const mediaStreamLocalStore = useMediaStreamLocalStore()
-const mediaStreamCanvasStore = useMediaStreamCanvasStore()
-const mediaStreamVirtualBackgroundStore = useMediaStreamVirtualBackgroundStore()
+const mediaStreamStore = useMediaStreamStore()
 
 // media stream
 const mediaStream = ref<MediaStream>(new MediaStream)
@@ -31,8 +27,10 @@ const myVideoMirrored = ref(true)
 const modalSettings = ref()
 
 // バーチャル背景 mediaStream 設定
-const selectBg = ref('normal')
-const bgImages = ref({
+// video mode
+const videoMode = ref('normal')
+const videoModeTmp = ref('normal')
+const videoModes = ref({
   'normal': '通常',
   '': 'ぼかし',
   '/bgimage1.jpg': '壁紙１',
@@ -41,54 +39,95 @@ const bgImages = ref({
 
 onMounted(async () => {
   // canvas text
-  mediaStreamCanvasStore.altText = 'hello!'
+  mediaStreamStore.altText = 'hello!'
 
   // open the mediastream
   await mediaDeviceStore.init()
-  await mediaStreamLocalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamCanvasStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamVirtualBackgroundStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+  await mediaStreamStore.openAltText()
+  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
-  mediaStream.value = mediaStreamLocalStore.mediaStream.clone() as MediaStream
-  mediaStream.value.getTracks().forEach((tr) => {
-    tr.enabled = true
-  })
-  trackStatus.value.video = true
-  trackStatus.value.audio = true
+  mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
+  trackStatus.value = { video: true, audio: true }
 })
 
 onBeforeUnmount(async () => {
+  await mediaStreamStore.closeVirtualBackground()
+  await mediaStreamStore.closeAltText()
+  await mediaStreamStore.closeNormal()
+
   // close the mediaStream
   mediaStream.value.getTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
   })
-
-  mediaStreamLocalStore.closeMediaStream()
-  mediaStreamCanvasStore.closeMediaStream()
-  mediaStreamVirtualBackgroundStore.closeMediaStream()
 })
 
+/*
+// // MediaStream開く
+// const openMediaStreams = async () => {
+//   switch (videoMode.value) {
+//     case 'normal':
+//       await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+//       break
+//     case 'alt-text':
+//       await mediaStreamStore.openAltText()
+//       break
+//     default:
+//       mediaStreamStore.bgImageUrl = videoMode.value
+//       await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+//       break
+//   }
+// }
+// // MediaStream閉じる
+// const closeMediaStreams = async () => {
+//   switch (videoMode.value) {
+//     case 'normal':
+//       await mediaStreamStore.closeNormal()
+//       break
+//     case 'alt-text':
+//       await mediaStreamStore.closeAltText()
+//       break
+//     default:
+//       await mediaStreamStore.closeVirtualBackground()
+//       break
+//   }
+// }
+*/
+
 // video on/off
-const toggleVideo = () => {
+const toggleVideo = async () => {
   trackStatus.value.video = !trackStatus.value.video
   if (trackStatus.value.video) {
-    // off -> on : VideoTrack を Local に置き換え
-    mediaStream.value.getVideoTracks().forEach((tr) => {
-      mediaStream.value.removeTrack(tr)
-    })
-    mediaStreamLocalStore.mediaStream.getVideoTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
+    // altText -> normal or ...
+    videoMode.value = videoModeTmp.value
   } else {
-    // on -> off : VideoTrack を Canvas に置き換え
-    mediaStream.value.getVideoTracks().forEach((tr) => {
-      mediaStream.value.removeTrack(tr)
-    })
-    // mediaStream.value =
-    mediaStreamCanvasStore.mediaStream.getVideoTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
+    // normal or ... -> altText
+    videoModeTmp.value = videoMode.value
+    videoMode.value = 'alt-text'
+  }
+
+  // 既存mediaStream から Video を入れ替え
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
   }
 }
 
@@ -107,91 +146,94 @@ const openSettings = () => {
   // open modal
   modalSettings.value.open()
 }
-
+// デバイス変更 - Video
 const changeVideoInput = async () => {
-  // close the mediastreams
-  mediaStreamLocalStore.closeMediaStream()
-  mediaStreamCanvasStore.closeMediaStream()
-  mediaStreamVirtualBackgroundStore.closeMediaStream()
-
-  // device 切替 - Video Input
-  mediaDeviceStore.mediaStreamConstraints.video.deviceId = mediaDeviceStore.videoInputDeviceId
-
-  // open the mediastreams
-  await mediaStreamLocalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamCanvasStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamVirtualBackgroundStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-
-  // MediaStream 設定
+  // close the video mediastream
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
   })
 
-  if (trackStatus.value.video) {
-    mediaStreamLocalStore.mediaStream.getVideoTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
-  } else {
-    mediaStreamCanvasStore.mediaStream.getVideoTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
+  // device 切替 - Video Input
+  mediaDeviceStore.mediaStreamConstraints.video.deviceId = mediaDeviceStore.videoInputDeviceId
+
+  // mediastream 再起動
+  await mediaStreamStore.closeNormal()
+  await mediaStreamStore.closeAltText()
+  await mediaStreamStore.closeVirtualBackground()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+  await mediaStreamStore.openAltText()
+  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+  // 切り替えたMediaStreamからVideoトラックを追加
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
   }
 }
-
+// デバイス変更 - Audio
 const changeAudioInput = async () => {
-  // close the mediastreams
-  mediaStreamLocalStore.closeMediaStream()
-  mediaStreamCanvasStore.closeMediaStream()
-  mediaStreamVirtualBackgroundStore.closeMediaStream()
-
-  // device 切替 - Audio Input
-  mediaDeviceStore.mediaStreamConstraints.audio.deviceId = mediaDeviceStore.audioInputDeviceId
-
-  // open the mediastreams
-  await mediaStreamLocalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamCanvasStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamVirtualBackgroundStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-
-  // MediaStream 設定
+  // close the video mediastream
   mediaStream.value.getAudioTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
   })
 
-  if (trackStatus.value.audio) {
-    mediaStreamLocalStore.mediaStream.getAudioTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
-  } else {
-    mediaStreamCanvasStore.mediaStream.getAudioTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
-  }
+  // device 切替 - Audio Input
+  mediaDeviceStore.mediaStreamConstraints.audio.deviceId = mediaDeviceStore.audioInputDeviceId
+
+  // mediastream 再起動
+  await mediaStreamStore.closeNormal()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+
+  // Normal の Audio を接続
+  mediaStreamStore.mediaStreamNormal?.getAudioTracks().forEach((tr) => {
+    mediaStream.value.addTrack(tr.clone())
+  })
 }
 
 // バーチャル背景 mediaStream 切替
 const changeBackground = async () => {
-  if (selectBg.value === 'normal') {
-    mediaStream.value.getVideoTracks().forEach((tr) => {
-      tr.stop()
-      mediaStream.value.removeTrack(tr)
-    })
-    mediaStreamLocalStore.mediaStream?.getVideoTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
-  } else {
-    mediaStreamVirtualBackgroundStore.bgImageUrl = selectBg.value
-    mediaStreamVirtualBackgroundStore.closeMediaStream()
-    await mediaStreamVirtualBackgroundStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+  trackStatus.value.video = true
 
-    mediaStream.value.getVideoTracks().forEach((tr) => {
-      tr.stop()
-      mediaStream.value.removeTrack(tr)
-    })
-    mediaStreamVirtualBackgroundStore.mediaStream?.getVideoTracks().forEach((tr) => {
-      mediaStream.value.addTrack(tr.clone())
-    })
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.bgImageUrl = videoMode.value
+      mediaStreamStore.closeVirtualBackground()
+      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
   }
 }
 </script>
@@ -299,7 +341,7 @@ const changeBackground = async () => {
     <!-- mediastream alternative video text -->
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
-        <InputText class="w-80 p-3" v-model="mediaStreamCanvasStore.altText" />
+        <InputText class="w-80 p-3" v-model="mediaStreamStore.altText" />
       </div>
     </div>
     <!-- // mediastream alternative video text-->
@@ -318,17 +360,17 @@ const changeBackground = async () => {
         <div class="">
           <select
             class="mt-3 w-64 border p-3"
-            v-model="selectBg"
+            v-model="videoMode"
             @change="changeBackground"
           >
-            <template v-for="(val, sKey) in bgImages" :key="sKey">
+            <template v-for="(val, sKey) in videoModes" :key="sKey">
               <option :value="sKey">
                 {{ val }}
               </option>
             </template>
           </select>
           <div class="w-64 h-12 px-3 py-2 border">
-            {{ selectBg }}
+            {{ videoMode }}
           </div>
         </div>
         <!-- // select a virtual background. -->
