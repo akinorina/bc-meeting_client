@@ -3,7 +3,8 @@ import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
-import { useMediaStore } from '@/stores/media'
+import { useMediaStreamStore } from '@/stores/media'
+import { useMediaStreamCanvasStore } from '@/stores/mediaStreamCanvas'
 import { useRoomStore } from '@/stores/rooms'
 import { axios } from '@/lib/Axios'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
@@ -22,7 +23,8 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
-const mediaStore = useMediaStore()
+const mediaStore = useMediaStreamStore()
+const mediaStreamCanvasStore = useMediaStreamCanvasStore()
 const roomStore = useRoomStore()
 
 const roomHashParam = computed({
@@ -90,7 +92,7 @@ const startRoom = async () => {
   // open the local MediaStream (webcam)
   await mediaStore.openMediaStreamLocal()
   // open the canvas MediaStream (text)
-  mediaStore.openMediaStreamCanvas()
+  mediaStreamCanvasStore.openMediaStreamCanvas()
   // defaultで mediaStreamLocal を設定
   mediaStore.mediaStream = mediaStore.mediaStreamLocal
 
@@ -116,7 +118,8 @@ const endRoom = async () => {
 
   await webrtcStore.close()
 
-  mediaStore.closeMediaStreamLocal()
+  mediaStore.closeMediaStream()
+  mediaStreamCanvasStore.closeMediaStreamCanvas()
   mediaStore.closeMediaStream()
 }
 onBeforeUnmount(endRoom)
@@ -206,7 +209,7 @@ const checkStatusPeerConn = async () => {
 const toggleVideo = async () => {
   // Speaker mode target is reset.
   targetSpeakerPeerId.value = ''
-  await nextTick() 
+  await nextTick()
 
   if (statusEnterRoom.value) {
     // media すべて切断
@@ -214,7 +217,7 @@ const toggleVideo = async () => {
   }
 
   if (trackStatus.value.video) {
-    webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamCanvas
+    webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStreamCanvasStore.mediaStreamCanvas
   } else {
     webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamLocal
   }
@@ -275,6 +278,22 @@ const messageText = ref('')
 // Text-chat: メッセージ送信
 const sendText = () => {
   webrtcStore.sendDataAll(messageText.value)
+}
+
+const changeVideoInput = async () => {
+  // device 切替 - Video Input
+  mediaStore.closeMediaStream()
+  mediaStore.mediaStreamConstraints.video.deviceId = mediaStore.videoInputDeviceId
+  await mediaStore.openMediaStreamLocal()
+  mediaStore.mediaStream = mediaStore.mediaStreamLocal
+}
+
+const changeAudioInput = async () => {
+  // device 切替 - Audio Input
+  mediaStore.closeMediaStream()
+  mediaStore.mediaStreamConstraints.audio.deviceId = mediaStore.audioInputDeviceId
+  await mediaStore.openMediaStreamLocal()
+  mediaStore.mediaStream = mediaStore.mediaStreamLocal
 }
 
 // const showInfoLog = () => {
@@ -869,7 +888,7 @@ const sendText = () => {
         <select
           class="mt-3 w-full border p-3"
           v-model="mediaStore.videoInputDeviceId"
-          @change="mediaStore.changeVideoInput"
+          @change="changeVideoInput"
         >
           <template v-for="(val, sKey) in mediaStore.deviceVideoInputs" :key="sKey">
             <option :value="val.deviceId">
@@ -884,7 +903,7 @@ const sendText = () => {
         <select
           class="mt-3 w-full border p-3"
           v-model="mediaStore.audioInputDeviceId"
-          @change="mediaStore.changeAudioInput"
+          @change="changeAudioInput"
         >
           <template v-for="(val, sKey) in mediaStore.deviceAudioInputs" :key="sKey">
             <option :value="val.deviceId">
