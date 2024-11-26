@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useMediaDeviceStore } from '@/stores/mediaDevice';
 import { useMediaStreamStore } from '@/stores/mediaStream';
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
@@ -20,6 +20,14 @@ const trackStatus = ref({ video: true, audio: true })
 // 鏡映反転 flag
 const myVideoMirrored = ref(true)
 
+// altText
+const altText = ref('')
+watch(altText, () => {
+  console.log('--- watch() - altText ---', altText.value)
+  mediaStreamStore.altText = altText.value
+  console.log('---> ', mediaStreamStore.altText)
+})
+
 // バーチャル背景 設定
 // const myBackgroundImage = ref('')
 
@@ -39,12 +47,12 @@ const videoModes = ref({
 
 onMounted(async () => {
   // canvas text
-  mediaStreamStore.altText = 'hello!'
+  altText.value = 'your name.'
 
   // open the mediastream
   await mediaDeviceStore.init()
   await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamStore.openAltText()
+  mediaStreamStore.openAltText()
   await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
   mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
@@ -53,7 +61,7 @@ onMounted(async () => {
 
 onBeforeUnmount(async () => {
   await mediaStreamStore.closeVirtualBackground()
-  await mediaStreamStore.closeAltText()
+  mediaStreamStore.closeAltText()
   await mediaStreamStore.closeNormal()
 
   // close the mediaStream
@@ -159,10 +167,10 @@ const changeVideoInput = async () => {
 
   // mediastream 再起動
   await mediaStreamStore.closeNormal()
-  await mediaStreamStore.closeAltText()
+  mediaStreamStore.closeAltText()
   await mediaStreamStore.closeVirtualBackground()
   await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-  await mediaStreamStore.openAltText()
+  mediaStreamStore.openAltText()
   await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
   // 切り替えたMediaStreamからVideoトラックを追加
@@ -341,7 +349,7 @@ const changeBackground = async () => {
     <!-- mediastream alternative video text -->
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
-        <InputText class="w-80 p-3" v-model="mediaStreamStore.altText" />
+        <InputText class="w-80 p-3" v-model="altText" placeholder="your name" />
       </div>
     </div>
     <!-- // mediastream alternative video text-->

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { axios } from '@/lib/Axios'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
-import { useMediaStreamStore } from '@/stores/media'
-import { useMediaStreamCanvasStore } from '@/stores/mediaStreamCanvas'
+import { useMediaDeviceStore } from '@/stores/mediaDevice'
+import { useMediaStreamStore } from '@/stores/mediaStream'
 import { useRoomStore } from '@/stores/rooms'
-import { axios } from '@/lib/Axios'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
@@ -23,8 +23,8 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
-const mediaStore = useMediaStreamStore()
-const mediaStreamCanvasStore = useMediaStreamCanvasStore()
+const mediaDeviceStore = useMediaDeviceStore()
+const mediaStreamStore = useMediaStreamStore()
 const roomStore = useRoomStore()
 
 const roomHashParam = computed({
@@ -40,6 +40,50 @@ const roomHash = ref(roomHashParam.value)
 // NotFound (== bad room hash)
 const isBadRoomHash = ref<boolean>(false)
 
+// media stream
+const mediaStream = ref<MediaStream>(new MediaStream)
+
+// video mode
+const videoMode = ref('normal')
+const videoModeTmp = ref('normal')
+const videoModes = ref({
+  'normal': '通常',
+  '': 'ぼかし',
+  '/bgimage1.jpg': '壁紙１',
+  '/bgimage2.jpg': '壁紙２',
+})
+// バーチャル背景 mediaStream 切替
+const changeVideoMode = async () => {
+  trackStatus.value.video = true
+
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.bgImageUrl = videoMode.value
+      mediaStreamStore.closeVirtualBackground()
+      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+}
+
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
 
@@ -49,7 +93,7 @@ const myVideoMirrored = ref(true)
 // my display name
 const myDisplayName = ref('')
 watch(myDisplayName, () => {
-  mediaStore.altText = webrtcStore.myName = myDisplayName.value
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
 })
 
 // 招待メール送信先メールアドレス
@@ -80,6 +124,9 @@ const startRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
 
+  // canvas text
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = ''
+
   // Room 情報取得
   try {
     await roomStore.getRoomByRoomHash(roomHash.value)
@@ -89,12 +136,14 @@ const startRoom = async () => {
     return false
   }
 
-  // open the local MediaStream (webcam)
-  await mediaStore.openMediaStreamLocal()
-  // open the canvas MediaStream (text)
-  mediaStreamCanvasStore.openMediaStreamCanvas()
-  // defaultで mediaStreamLocal を設定
-  mediaStore.mediaStream = mediaStore.mediaStreamLocal
+  // open the mediastream
+  await mediaDeviceStore.init()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+  mediaStreamStore.openAltText()
+  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+  mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
+  trackStatus.value = { video: true, audio: true }
 
   // open Peer
   await webrtcStore.open({
@@ -106,7 +155,7 @@ const startRoom = async () => {
   // Profile表示名を表示名初期値に設定
   if (authStore.isAuthenticated()) {
     const resProfile = await authStore.getProfile()
-    myDisplayName.value = resProfile.data.username
+    mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = resProfile.data.username
   }
 }
 onMounted(startRoom)
@@ -118,18 +167,59 @@ const endRoom = async () => {
 
   await webrtcStore.close()
 
-  mediaStore.closeMediaStream()
-  mediaStreamCanvasStore.closeMediaStreamCanvas()
-  mediaStore.closeMediaStream()
+  await mediaStreamStore.closeVirtualBackground()
+  await mediaStreamStore.closeAltText()
+  await mediaStreamStore.closeNormal()
+
+  // close the mediaStream
+  mediaStream.value.getTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
 }
 onBeforeUnmount(endRoom)
 
-webrtcStore.errorCallbackFunc = async (options: any) => {
+webrtcStore.peerOnCallCallback = async (options: any) => {
+  console.info('----- webrtcStore.peerOnCallCallback() -----')
   if (options.peer_id) {
     console.info('options.peer_id', options.peer_id)
+    targetSpeakerPeerId.value = options.peer_id
+  }
+}
+
+webrtcStore.peerOnErrorCallback = async (options: any) => {
+  console.info('----- webrtcStore.peerOnErrorCallback() -----')
+  if (options.type) {
+    console.info('options.type   :', options.type)
+    console.info('options.peer_id:', options.peer_id)
   }
   await endRoom()
   await startRoom()
+}
+
+webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
+  console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
+  if (options) {
+    console.info('options.peer_id:', options.peer_id)
+  }
+
+  console.log('---')
+  console.log('webrtcStore.peerMedias', webrtcStore.peerMedias)
+  const keys = Object.keys(webrtcStore.peerMedias)
+  keys.forEach((sk) => {
+    console.log('key:', sk)
+  })
+  console.log('Object.keys(webrtcStore.peerMedias).length', keys.length)
+  if (Object.keys(webrtcStore.peerMedias).length >= 2) {
+    Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
+      if (peerId !== webrtcStore.myPeerId) {
+        console.log('peerId >>>', peerId)
+        targetSpeakerPeerId.value = peerId
+      }
+    })
+  } else {
+    targetSpeakerPeerId.value = webrtcStore.myPeerId
+  }
 }
 
 // top page へ遷移
@@ -145,21 +235,20 @@ const toTopPage = () => {
 // Roomへの入室
 const enterRoom = async () => {
   // init.
-  mediaStore.altText = webrtcStore.myName = myDisplayName.value
-  webrtcStore.dataConnData = []
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
   targetSpeakerPeerId.value = webrtcStore.myPeerId
+
+  // local mediaStream 設定
+  webrtcStore.myMediaStream = mediaStream.value
+  // dataConnData 初期化
+  webrtcStore.dataConnData = []
 
   // 入室APIアクセス
   await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId, myDisplayName.value)
 
-  // local mediaStream 設定
-  webrtcStore.myMediaStream = mediaStore.mediaStream
-
   // 入室状態を取得
   const roomInfo = await roomStore.statusRoom(roomHash.value)
   roomInfo.attenders.forEach(async (item: any) => {
-    // 現在の参加者それぞれへデータ接続
-    // webrtcStore.connectData(item.peer_id, item.display_name)
     // 現在の参加者それぞれへメディア接続
     await webrtcStore.connectMedia(item.peer_id, item.display_name)
   })
@@ -207,9 +296,12 @@ const checkStatusPeerConn = async () => {
 
 // video on/off
 const toggleVideo = async () => {
-  // Speaker mode target is reset.
-  targetSpeakerPeerId.value = ''
-  await nextTick()
+  console.log('--- toggleVideo() ---')
+  trackStatus.value.video = !trackStatus.value.video
+
+  // // Speaker mode target is reset.
+  // targetSpeakerPeerId.value = ''
+  // await nextTick()
 
   if (statusEnterRoom.value) {
     // media すべて切断
@@ -217,10 +309,39 @@ const toggleVideo = async () => {
   }
 
   if (trackStatus.value.video) {
-    webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStreamCanvasStore.mediaStreamCanvas
+    // altText -> normal or ...
+    videoMode.value = videoModeTmp.value
   } else {
-    webrtcStore.myMediaStream = mediaStore.mediaStream = mediaStore.mediaStreamLocal
+    // normal or ... -> altText
+    videoModeTmp.value = videoMode.value
+    videoMode.value = 'alt-text'
   }
+  console.log('---> videoMode.value', videoMode.value)
+
+  // 既存mediaStream から Video を入れ替え
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      console.log('--- case alt-text ---', mediaStreamStore.altText)
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+  webrtcStore.myMediaStream = mediaStream.value
 
   if (statusEnterRoom.value) {
     // 入室状態を取得
@@ -230,14 +351,14 @@ const toggleVideo = async () => {
       await webrtcStore.connectMedia2(item.peer_id)
     })
   }
-
-  trackStatus.value.video = !trackStatus.value.video
 }
 
 // audio on/off
 const toggleAudio = () => {
-  mediaStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
+  mediaStream.value.getAudioTracks().forEach((tr: MediaStreamTrack) => {
+    tr.enabled = trackStatus.value.audio
+  })
 }
 
 // 画面表示モード 変更
@@ -281,24 +402,66 @@ const sendText = () => {
 }
 
 const changeVideoInput = async () => {
+  // close the video mediastream
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
   // device 切替 - Video Input
-  mediaStore.closeMediaStream()
-  mediaStore.mediaStreamConstraints.video.deviceId = mediaStore.videoInputDeviceId
-  await mediaStore.openMediaStreamLocal()
-  mediaStore.mediaStream = mediaStore.mediaStreamLocal
+  mediaDeviceStore.mediaStreamConstraints.video.deviceId = mediaDeviceStore.videoInputDeviceId
+
+  // mediastream 再起動
+  await mediaStreamStore.closeNormal()
+  await mediaStreamStore.closeAltText()
+  await mediaStreamStore.closeVirtualBackground()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+  mediaStreamStore.openAltText()
+  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+  // 切り替えたMediaStreamからVideoトラックを追加
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
 }
 
 const changeAudioInput = async () => {
+  // close the video mediastream
+  mediaStream.value.getAudioTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
   // device 切替 - Audio Input
-  mediaStore.closeMediaStream()
-  mediaStore.mediaStreamConstraints.audio.deviceId = mediaStore.audioInputDeviceId
-  await mediaStore.openMediaStreamLocal()
-  mediaStore.mediaStream = mediaStore.mediaStreamLocal
+  mediaDeviceStore.mediaStreamConstraints.audio.deviceId = mediaDeviceStore.audioInputDeviceId
+
+  // mediastream 再起動
+  await mediaStreamStore.closeNormal()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+
+  // Normal の Audio を接続
+  mediaStreamStore.mediaStreamNormal?.getAudioTracks().forEach((tr) => {
+    mediaStream.value.addTrack(tr.clone())
+  })
 }
 
-// const showInfoLog = () => {
-//   webrtcStore.showInfoLog()
-// }
+const showInfoLog = () => {
+  webrtcStore.showInfoLog()
+}
 </script>
 
 <template>
@@ -324,12 +487,19 @@ const changeAudioInput = async () => {
           <div class="p-3">
             <video
               class="max-h-80 w-full bg-slate-100"
-              :class="{ 'my-video-mirrored': myVideoMirrored }"
-              :srcObject.prop="mediaStore.mediaStream"
+              :class="{ 'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' }"
+              :srcObject.prop="mediaStream"
               autoplay
               muted
               playsinline
             ></video>
+            <!--
+            <audio
+              :srcObject.prop="mediaStream"
+              autoplay
+              playsinline
+            ></audio>
+            -->
 
             <div class="flex w-full justify-between">
               <div class="my-3 flex items-center justify-center">
@@ -341,6 +511,12 @@ const changeAudioInput = async () => {
               </div>
 
               <div class="my-3 flex items-center justify-center">
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
+                  info
+                </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
+
                 <!-- 設定 -->
                 <ButtonGeneralPrimary class="me-1 h-12" @click="modalSettings.open()">
                   設定
@@ -389,7 +565,7 @@ const changeAudioInput = async () => {
 
                 <!-- mic on/off -->
                 <ButtonGeneralPrimary
-                  class="me-0 h-12 w-12"
+                  class="me-1 h-12 w-12"
                   :class="{
                     'bg-slate-400': !trackStatus.audio,
                     'hover:bg-slate-500': !trackStatus.audio
@@ -428,6 +604,20 @@ const changeAudioInput = async () => {
                   </svg>
                 </ButtonGeneralPrimary>
                 <!-- // mic on/off -->
+
+                <!-- 背景設定 -->
+                <select
+                  class="w-24 p-3"
+                  v-model="videoMode"
+                  @change="changeVideoMode"
+                >
+                  <template v-for="(val, sKey) in videoModes" :key="sKey">
+                    <option :value="sKey">
+                      {{ val }}
+                    </option>
+                  </template>
+                </select>
+                <!-- // 背景設定 -->
               </div>
 
               <div class="w-20"></div>
@@ -445,25 +635,22 @@ const changeAudioInput = async () => {
 
               <!-- 表示名 設定 -->
               <div class="my-3 flex">
-                <InputEmail class="me-2 h-10 w-full" placeholder="表示名" v-model="myDisplayName" />
+                <InputText class="me-2 h-10 w-full" placeholder="表示名" v-model="myDisplayName" />
                 <ButtonGeneralPrimary
                   class="me-0 h-10 w-20"
                   :class="{
                     'bg-slate-400 hover:bg-slate-400':
-                      myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStore.mediaStream?.active
+                      myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStream?.active
                   }"
                   @click="enterRoom"
                   :disabled="
                     myDisplayName === '' ||
                     webrtcStore.myPeerId === '' ||
-                    !mediaStore.mediaStream?.active
+                    !mediaStream?.active
                   "
                 >
                   入室
                 </ButtonGeneralPrimary>
-              </div>
-              <div class="">
-                {{ webrtcStore.myPeerId }}
               </div>
               <!-- // 表示名 設定 -->
 
@@ -499,6 +686,12 @@ const changeAudioInput = async () => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
+                  info
+                </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
+
                 <!-- 表示切替 -->
                 <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
@@ -683,6 +876,12 @@ const changeAudioInput = async () => {
             <!-- UI -->
             <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
+                  info
+                </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
+
                 <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -883,14 +1082,14 @@ const changeAudioInput = async () => {
         <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
       </div>
 
-      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStore.deviceVideoInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceVideoInputs.length > 0">
         <div class="font-bold">映像入力</div>
         <select
           class="mt-3 w-full border p-3"
-          v-model="mediaStore.videoInputDeviceId"
+          v-model="mediaDeviceStore.videoInputDeviceId"
           @change="changeVideoInput"
         >
-          <template v-for="(val, sKey) in mediaStore.deviceVideoInputs" :key="sKey">
+          <template v-for="(val, sKey) in mediaDeviceStore.deviceVideoInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
             </option>
@@ -898,14 +1097,14 @@ const changeAudioInput = async () => {
         </select>
       </div>
 
-      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStore.deviceAudioInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceAudioInputs.length > 0">
         <div class="font-bold">音声入力</div>
         <select
           class="mt-3 w-full border p-3"
-          v-model="mediaStore.audioInputDeviceId"
+          v-model="mediaDeviceStore.audioInputDeviceId"
           @change="changeAudioInput"
         >
-          <template v-for="(val, sKey) in mediaStore.deviceAudioInputs" :key="sKey">
+          <template v-for="(val, sKey) in mediaDeviceStore.deviceAudioInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
             </option>

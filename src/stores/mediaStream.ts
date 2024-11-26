@@ -16,8 +16,8 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   const mediastreamCam = ref<MediaStream>()
 
   // 出力する動画用 Canvas
-  const canvas = ref<HTMLCanvasElement>()
-  const ctx = ref<CanvasRenderingContext2D>()
+  const canvasVbg = ref<HTMLCanvasElement>()
+  const ctxVbg = ref<CanvasRenderingContext2D>()
   const ctxOption = {
     x: 0,
     y: 0,
@@ -37,7 +37,9 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
   // MediaStream 代替テキスト用
   const altText = ref('')
-  let requestIdAltText = 0
+  const canvasAlt = ref<HTMLCanvasElement>()
+  const ctxAlt = ref<CanvasRenderingContext2D>()
+  const requestIdAltText = ref(0)
 
   // normal: mediaStream 作成
   async function openNormal(mediaStreamConstraints: MediaStreamConstraints) {
@@ -71,12 +73,12 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   }
 
   // 代替テキスト: mediaStream 作成
-  async function openAltText() {
-    canvas.value = document.createElement('canvas') as HTMLCanvasElement
-    canvas.value.width = ctxOption.width
-    canvas.value.height = ctxOption.height
-    ctx.value = canvas.value.getContext('2d') as CanvasRenderingContext2D
-    mediaStreamAltText.value = canvas.value.captureStream()
+  function openAltText() {
+    canvasAlt.value = document.createElement('canvas') as HTMLCanvasElement
+    canvasAlt.value.width = ctxOption.width
+    canvasAlt.value.height = ctxOption.height
+    ctxAlt.value = canvasAlt.value.getContext('2d') as CanvasRenderingContext2D
+    mediaStreamAltText.value = canvasAlt.value.captureStream(30)
 
     // テキストCanvas描画
     drawText()
@@ -84,16 +86,16 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
   // 代替テキスト: mediaStream 描画
   function drawText() {
-    if (!ctx.value) return false
-    ctx.value.clearRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
-    ctx.value.fillStyle = 'black'
-    ctx.value.fillRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
-    ctx.value.font = '100px sans-serif'
-    ctx.value.fillStyle = 'white'
-    ctx.value.textAlign = 'center'
-    ctx.value.textBaseline = 'bottom'
-    ctx.value.fillText(altText.value, ctxOption.width / 2, ctxOption.height / 2)
-    requestIdAltText = window.requestAnimationFrame(drawText)
+    if (!ctxAlt.value) return false
+    ctxAlt.value.clearRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
+    ctxAlt.value.fillStyle = 'black'
+    ctxAlt.value.fillRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
+    ctxAlt.value.font = '100px sans-serif'
+    ctxAlt.value.fillStyle = 'white'
+    ctxAlt.value.textAlign = 'center'
+    ctxAlt.value.textBaseline = 'bottom'
+    ctxAlt.value.fillText(altText.value, ctxOption.width / 2, ctxOption.height / 2)
+    requestIdAltText.value = window.requestAnimationFrame(drawText)
   }
 
   // バーチャル背景: mediaStream 作成
@@ -102,10 +104,10 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     video = document.createElement('video') as HTMLVideoElement
 
     // 出力用動画
-    canvas.value = document.createElement('canvas') as HTMLCanvasElement
-    canvas.value.width = ctxOption.width
-    canvas.value.height = ctxOption.height
-    ctx.value = canvas.value.getContext('2d') as CanvasRenderingContext2D
+    canvasVbg.value = document.createElement('canvas') as HTMLCanvasElement
+    canvasVbg.value.width = ctxOption.width
+    canvasVbg.value.height = ctxOption.height
+    ctxVbg.value = canvasVbg.value.getContext('2d') as CanvasRenderingContext2D
 
     // カメラからの映像ストリームを取得し、ビデオ要素にセット
     mediastreamCam.value = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
@@ -123,7 +125,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
       initBodySegmentation()
     }
 
-    mediaStreamVbg.value = canvas.value.captureStream(30)
+    mediaStreamVbg.value = canvasVbg.value.captureStream(30)
   }
 
   // バーチャル背景: 背景画像 読み込み (再実行することで画像差し替え可能)
@@ -156,7 +158,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
   // バーチャル背景: ぼかし描画
   const processFrameBlur = async () => {
-    if (!video || !canvas.value) return // processFrame()
+    if (!video || !canvasVbg.value) return // processFrame()
 
     // 人物のセグメンテーションを実行
     const segmentation = await segmentPeople()
@@ -166,7 +168,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     const edgeBlurAmount = 3
     const flipHorizontal = false
     await bodySegmentation.drawBokehEffect(
-      canvas.value,
+      canvasVbg.value,
       video,
       segmentation,
       foregroundThreshold,
@@ -180,7 +182,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
   // バーチャル背景: 背景描画
   const processFrameVirtual = async () => {
-    if (!video || !canvas.value || !ctx.value) return // processFrame()
+    if (!video || !canvasVbg.value || !ctxVbg.value) return // processFrame()
 
     // 人物のセグメンテーションを実行
     const segmentation = await segmentPeople()
@@ -197,7 +199,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     const maskBlurAmount = 10
     const flipHorizontal = false
     await bodySegmentation.drawMask(
-      canvas.value,
+      canvasVbg.value,
       video,
       backgroundDarkeningMask,
       opacity,
@@ -206,10 +208,10 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     )
 
     const mask = backgroundDarkeningMask
-    const imageData = ctx.value.getImageData(0, 0, canvas.value.width, canvas.value.height)
+    const imageData = ctxVbg.value.getImageData(0, 0, canvasVbg.value.width, canvasVbg.value.height)
 
-    ctxBg.drawImage(imgBg, 0, 0, canvas.value.width, canvas.value.height)
-    const imageDataBg = ctxBg.getImageData(0, 0, canvas.value.width, canvas.value.height)
+    ctxBg.drawImage(imgBg, 0, 0, canvasVbg.value.width, canvasVbg.value.height)
+    const imageDataBg = ctxBg.getImageData(0, 0, canvasVbg.value.width, canvasVbg.value.height)
 
     // マスクを使用して背景ピクセルを透明に設定
     for (let i = 0; i < imageData.data.length; i += 4) {
@@ -226,7 +228,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     }
 
     // 処理後の画像データをキャンバスに描画
-    ctx.value.putImageData(imageData, 0, 0)
+    ctxVbg.value.putImageData(imageData, 0, 0)
 
     requestIdVb = window.requestAnimationFrame(processFrameVirtual)
   }
@@ -259,9 +261,9 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     })
   }
 
-  const closeAltText = async () => {
+  const closeAltText = () => {
     // 描画停止
-    window.cancelAnimationFrame(requestIdAltText)
+    window.cancelAnimationFrame(requestIdAltText.value)
 
     mediaStreamAltText.value?.getTracks().forEach((tr) => {
       tr.stop()
