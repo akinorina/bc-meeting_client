@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useMediaDeviceStore } from '@/stores/mediaDevice';
-import { useMediaStreamStore } from '@/stores/mediaStream';
+import { useMediaDeviceStore } from '@/stores/mediaDevice'
+import { useMediaStreamStore } from '@/stores/mediaStream'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import InputCheckbox from '@/components/ui/InputCheckbox.vue'
-import InputText from '@/components/ui/InputText.vue';
-import { RouterLink } from 'vue-router';
+import InputText from '@/components/ui/InputText.vue'
+import { RouterLink } from 'vue-router'
 
 const mediaDeviceStore = useMediaDeviceStore()
 const mediaStreamStore = useMediaStreamStore()
 
 // media stream
-const mediaStream = ref<MediaStream>(new MediaStream)
+const mediaStream = ref<MediaStream>(new MediaStream())
 
 // video/audio: on/off
 const trackStatus = ref({ video: true, audio: true })
@@ -41,7 +41,7 @@ const videoModes = ref({
   'blur:10': 'ぼかし10',
   'blur:30': 'ぼかし30',
   'image:/bgimage1.jpg': '壁紙１',
-  'image:/bgimage2.jpg': '壁紙２',
+  'image:/bgimage2.jpg': '壁紙２'
 })
 
 onMounted(async () => {
@@ -222,35 +222,37 @@ const changeBackground = async () => {
   })
 
   const selected = videoMode.value.match(/(.+):(.+)/)
-  switch (selected[1]) {
-    case 'normal':
-      // Normal のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'alt-text':
-      // AltText のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'blur':
-    case 'image':
-      // VirtualBackground パラメータ設定
-      mediaStreamStore.virtualMode = selected[1]
-      mediaStreamStore.backgroundBlur = parseInt(selected[2])
-      mediaStreamStore.bgImageUrl = selected[2]
+  if (selected) {
+    switch (selected[1]) {
+      case 'normal':
+        // Normal のVideoトラックを mediaStream に追加
+        mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+          mediaStream.value.addTrack(tr.clone())
+        })
+        break
+      case 'alt-text':
+        // AltText のVideoトラックを mediaStream に追加
+        mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+          mediaStream.value.addTrack(tr.clone())
+        })
+        break
+      case 'blur':
+      case 'image':
+        // VirtualBackground パラメータ設定
+        mediaStreamStore.virtualMode = selected[1]
+        mediaStreamStore.backgroundBlur = parseInt(selected[2])
+        mediaStreamStore.bgImageUrl = selected[2]
 
-      // VirtualBackground 再起動
-      mediaStreamStore.closeVirtualBackground()
-      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+        // VirtualBackground 再起動
+        mediaStreamStore.closeVirtualBackground()
+        await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
-      // VirtualBackground のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
+        // VirtualBackground のVideoトラックを mediaStream に追加
+        mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+          mediaStream.value.addTrack(tr.clone())
+        })
+        break
+    }
   }
 }
 </script>
@@ -375,18 +377,14 @@ const changeBackground = async () => {
       <div class="my-3 flex items-center justify-center">
         <!-- select a virtual background. -->
         <div class="">
-          <select
-            class="mt-3 w-64 border p-3"
-            v-model="videoMode"
-            @change="changeBackground"
-          >
+          <select class="mt-3 w-64 border p-3" v-model="videoMode" @change="changeBackground">
             <template v-for="(val, sKey) in videoModes" :key="sKey">
               <option :value="sKey">
                 {{ val }}
               </option>
             </template>
           </select>
-          <div class="w-64 h-12 px-3 py-2 border">
+          <div class="h-12 w-64 border px-3 py-2">
             {{ videoMode }}
           </div>
         </div>
