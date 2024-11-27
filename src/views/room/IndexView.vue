@@ -121,6 +121,8 @@ const modalSendInvitaionSuccess = ref()
 const modalSettings = ref()
 
 const startRoom = async () => {
+  window.addEventListener("beforeunload", unloadFunc);
+
   // 状態: 退室
   statusEnterRoom.value = false
 
@@ -161,6 +163,8 @@ const startRoom = async () => {
 onMounted(startRoom)
 
 const endRoom = async () => {
+  window.removeEventListener("beforeunload", unloadFunc)
+
   if (statusEnterRoom.value) {
     await exitRoom()
   }
@@ -178,6 +182,10 @@ const endRoom = async () => {
   })
 }
 onBeforeUnmount(endRoom)
+// beforeunload
+const unloadFunc = async () => {
+  await endRoom()
+}
 
 webrtcStore.peerOnCallCallback = async (options: any) => {
   console.info('----- webrtcStore.peerOnCallCallback() -----')
