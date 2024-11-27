@@ -53,47 +53,6 @@ const videoModes = ref({
   'image:/bgimage1.jpg': '壁紙１',
   'image:/bgimage2.jpg': '壁紙２',
 })
-// バーチャル背景 mediaStream 切替
-const changeVideoMode = async () => {
-  trackStatus.value.video = true
-
-  mediaStream.value.getVideoTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-
-  const selected = videoMode.value.match(/(.+):(.+)/)
-  switch (selected[1]) {
-    case 'normal':
-      // Normal のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'alt-text':
-      // AltText のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'blur':
-    case 'image':
-      // VirtualBackground パラメータ設定
-      mediaStreamStore.virtualMode = selected[1]
-      mediaStreamStore.backgroundBlur = parseInt(selected[2])
-      mediaStreamStore.bgImageUrl = selected[2]
-
-      // VirtualBackground 再起動
-      mediaStreamStore.closeVirtualBackground()
-      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-      // VirtualBackground のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-  }
-}
 
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
@@ -118,6 +77,9 @@ const viewMode = ref<'speaker' | 'matrix'>('speaker')
 
 // Speaker View - 現在のスピーカーの Peer ID.
 const targetSpeakerPeerId = ref('')
+
+// dataConn（チャット）用 メッセージ
+const messageText = ref('')
 
 // check interval ID.
 let cIId: any = null
@@ -155,7 +117,8 @@ const startRoom = async () => {
   mediaStreamStore.openAltText()
   await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
-  mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
+  // normal mediaStream 設定
+  webrtcStore.myMediaStream = mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
   trackStatus.value = { video: true, audio: true }
 
   // open Peer
@@ -212,8 +175,8 @@ webrtcStore.peerOnErrorCallback = async (options: any) => {
     console.info('options.type   :', options.type)
     console.info('options.peer_id:', options.peer_id)
   }
-  await endRoom()
-  await startRoom()
+  // await endRoom()
+  // await startRoom()
 }
 
 webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
@@ -245,14 +208,60 @@ const toTopPage = () => {
   }
 }
 
+// バーチャル背景 mediaStream 切替
+const changeVideoMode = async () => {
+  trackStatus.value.video = true
+
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
+  const selected = videoMode.value.match(/(.+):(.+)/)
+  switch (selected[1]) {
+    case 'normal':
+      // Normal のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      // AltText のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'blur':
+    case 'image':
+      // VirtualBackground パラメータ設定
+      mediaStreamStore.virtualMode = selected[1]
+      mediaStreamStore.backgroundBlur = parseInt(selected[2])
+      mediaStreamStore.bgImageUrl = selected[2]
+
+      // VirtualBackground 再起動
+      mediaStreamStore.closeVirtualBackground()
+      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+      // VirtualBackground のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+}
+
 // Roomへの入室
 const enterRoom = async () => {
-  // init.
-  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
-  targetSpeakerPeerId.value = webrtcStore.myPeerId
+  if (webrtcStore.myPeerId === '') {
+    console.error('no my peer id.')
+    throw new Error('no my peer id.')
+  }
 
-  // local mediaStream 設定
-  webrtcStore.myMediaStream = mediaStream.value
+  // init.
+  // 表示名
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
+  // Peer ID.
+  targetSpeakerPeerId.value = webrtcStore.myPeerId
   // dataConnData 初期化
   webrtcStore.dataConnData = []
 
@@ -283,18 +292,18 @@ const exitRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
 
+  // close dataConn modal
+  modalDataConnList.value.close()
+
   if (cIId !== null) {
     await clearInterval(cIId)
     cIId = null
   }
 
+  targetSpeakerPeerId.value = webrtcStore.myPeerId
+
   // 退室APIアクセス
   await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
-
-  // close dataConn modal
-  modalDataConnList.value.close()
-
-  targetSpeakerPeerId.value = ''
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
@@ -399,8 +408,6 @@ const sendInviteMail = async () => {
 const chooseSpeaker = (peerId: string) => {
   targetSpeakerPeerId.value = peerId
 }
-
-const messageText = ref('')
 
 // Text-chat: メッセージ送信
 const sendText = () => {
