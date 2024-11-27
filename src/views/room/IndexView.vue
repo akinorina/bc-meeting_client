@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { axios } from '@/lib/Axios'
 import { useAuthStore } from '@/stores/auth'
@@ -41,7 +41,7 @@ const roomHash = ref(roomHashParam.value)
 const isBadRoomHash = ref<boolean>(false)
 
 // media stream
-const mediaStream = ref<MediaStream>(new MediaStream)
+const mediaStream = ref<MediaStream>(new MediaStream())
 
 // video mode
 const videoMode = ref('normal:0')
@@ -51,7 +51,7 @@ const videoModes = ref({
   'blur:10': 'ぼかし10',
   'blur:30': 'ぼかし30',
   'image:/bgimage1.jpg': '壁紙１',
-  'image:/bgimage2.jpg': '壁紙２',
+  'image:/bgimage2.jpg': '壁紙２'
 })
 
 // my MediaStream video/audio
@@ -94,7 +94,7 @@ const modalSendInvitaionSuccess = ref()
 const modalSettings = ref()
 
 const startRoom = async () => {
-  window.addEventListener("beforeunload", unloadFunc)
+  window.addEventListener('beforeunload', unloadFunc)
 
   // 状態: 退室
   statusEnterRoom.value = false
@@ -118,7 +118,8 @@ const startRoom = async () => {
   await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
   // normal mediaStream 設定
-  webrtcStore.myMediaStream = mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
+  webrtcStore.myMediaStream = mediaStream.value =
+    mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
   trackStatus.value = { video: true, audio: true }
 
   // open Peer
@@ -137,7 +138,7 @@ const startRoom = async () => {
 onMounted(startRoom)
 
 const endRoom = async () => {
-  window.removeEventListener("beforeunload", unloadFunc)
+  window.removeEventListener('beforeunload', unloadFunc)
 
   if (statusEnterRoom.value) {
     await exitRoom()
@@ -218,35 +219,37 @@ const changeVideoMode = async () => {
   })
 
   const selected = videoMode.value.match(/(.+):(.+)/)
-  switch (selected[1]) {
-    case 'normal':
-      // Normal のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'alt-text':
-      // AltText のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'blur':
-    case 'image':
-      // VirtualBackground パラメータ設定
-      mediaStreamStore.virtualMode = selected[1]
-      mediaStreamStore.backgroundBlur = parseInt(selected[2])
-      mediaStreamStore.bgImageUrl = selected[2]
+  if (selected) {
+    switch (selected[1]) {
+      case 'normal':
+        // Normal のVideoトラックを mediaStream に追加
+        mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+          mediaStream.value.addTrack(tr.clone())
+        })
+        break
+      case 'alt-text':
+        // AltText のVideoトラックを mediaStream に追加
+        mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+          mediaStream.value.addTrack(tr.clone())
+        })
+        break
+      case 'blur':
+      case 'image':
+        // VirtualBackground パラメータ設定
+        mediaStreamStore.virtualMode = selected[1]
+        mediaStreamStore.backgroundBlur = parseInt(selected[2])
+        mediaStreamStore.bgImageUrl = selected[2]
 
-      // VirtualBackground 再起動
-      mediaStreamStore.closeVirtualBackground()
-      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+        // VirtualBackground 再起動
+        mediaStreamStore.closeVirtualBackground()
+        await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
-      // VirtualBackground のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
+        // VirtualBackground のVideoトラックを mediaStream に追加
+        mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+          mediaStream.value.addTrack(tr.clone())
+        })
+        break
+    }
   }
 }
 
@@ -619,11 +622,7 @@ const showInfoLog = () => {
                 <!-- // mic on/off -->
 
                 <!-- 背景設定 -->
-                <select
-                  class="w-28 p-3"
-                  v-model="videoMode"
-                  @change="changeVideoMode"
-                >
+                <select class="w-28 p-3" v-model="videoMode" @change="changeVideoMode">
                   <template v-for="(val, sKey) in videoModes" :key="sKey">
                     <option :value="sKey">
                       {{ val }}
@@ -657,9 +656,7 @@ const showInfoLog = () => {
                   }"
                   @click="enterRoom"
                   :disabled="
-                    myDisplayName === '' ||
-                    webrtcStore.myPeerId === '' ||
-                    !mediaStream?.active
+                    myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStream?.active
                   "
                 >
                   入室
@@ -817,7 +814,7 @@ const showInfoLog = () => {
             <div
               class="max-w-screen absolute left-0 top-3 z-20 overflow-x-hidden rounded-sm border border-slate-500 bg-slate-300"
             >
-              <div class="w-full flex flex-nowrap justify-start">
+              <div class="flex w-full flex-nowrap justify-start">
                 <div
                   class="relative flex h-24 w-32 items-center"
                   v-for="pm in webrtcStore.peerMedias"
