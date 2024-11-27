@@ -194,7 +194,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         // peerMedia 無効化
         peerMedias.value[remotePeerId].available = false
         setTimeout(() => {
-          // console.log('delete 1')
           if (peerMedias.value[remotePeerId] && !peerMedias.value[remotePeerId].available) {
             delete peerMedias.value[remotePeerId]
           }
@@ -294,7 +293,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         // peerMedia 無効化
         peerMedias.value[remotePeerId].available = false
         setTimeout(() => {
-          // console.log('delete 2')
           if (peerMedias.value[remotePeerId] && !peerMedias.value[remotePeerId].available) {
             delete peerMedias.value[remotePeerId]
           }
@@ -387,7 +385,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         // peerMedia 無効化
         peerMedias.value[peerId].available = false
         setTimeout(() => {
-          // console.log('delete 4')
           if (peerMedias.value[peerId] && !peerMedias.value[peerId].available) {
             delete peerMedias.value[peerId]
           }
@@ -417,7 +414,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         // peerMedia 無効化
         peerMedias.value[peerId].available = false
         setTimeout(() => {
-          // console.log('delete 5')
           if (peerMedias.value[peerId] && !peerMedias.value[peerId].available) {
             delete peerMedias.value[peerId]
           }
@@ -471,7 +467,6 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         // peerMedia 無効化
         peerMedias.value[remotePeerId].available = false
         setTimeout(() => {
-          // console.log('delete 3')
           if (peerMedias.value[remotePeerId] && !peerMedias.value[remotePeerId].available) {
             delete peerMedias.value[remotePeerId]
           }

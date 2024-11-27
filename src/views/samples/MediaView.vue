@@ -23,9 +23,7 @@ const myVideoMirrored = ref(true)
 // altText
 const altText = ref('')
 watch(altText, () => {
-  console.log('--- watch() - altText ---', altText.value)
   mediaStreamStore.altText = altText.value
-  console.log('---> ', mediaStreamStore.altText)
 })
 
 // バーチャル背景 設定

@@ -222,21 +222,15 @@ webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
     console.info('options.peer_id:', options.peer_id)
   }
 
-  console.log('---')
-  console.log('webrtcStore.peerMedias', webrtcStore.peerMedias)
-  const keys = Object.keys(webrtcStore.peerMedias)
-  keys.forEach((sk) => {
-    console.log('key:', sk)
-  })
-  console.log('Object.keys(webrtcStore.peerMedias).length', keys.length)
   if (Object.keys(webrtcStore.peerMedias).length >= 2) {
+    // 他の人との接続があれば、Spearkerモードでは他の人をターゲットにする
     Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
       if (peerId !== webrtcStore.myPeerId) {
-        console.log('peerId >>>', peerId)
         targetSpeakerPeerId.value = peerId
       }
     })
   } else {
+    // 他の人との接続が無い（自分のみ）であれば、Speakerモードでは自分をターゲットにする
     targetSpeakerPeerId.value = webrtcStore.myPeerId
   }
 }
@@ -315,12 +309,7 @@ const checkStatusPeerConn = async () => {
 
 // video on/off
 const toggleVideo = async () => {
-  console.log('--- toggleVideo() ---')
   trackStatus.value.video = !trackStatus.value.video
-
-  // // Speaker mode target is reset.
-  // targetSpeakerPeerId.value = ''
-  // await nextTick()
 
   if (statusEnterRoom.value) {
     // media すべて切断
@@ -335,7 +324,6 @@ const toggleVideo = async () => {
     videoModeTmp.value = videoMode.value
     videoMode.value = 'alt-text'
   }
-  console.log('---> videoMode.value', videoMode.value)
 
   // 既存mediaStream から Video を入れ替え
   mediaStream.value.getVideoTracks().forEach((tr) => {
@@ -349,7 +337,6 @@ const toggleVideo = async () => {
       })
       break
     case 'alt-text':
-      console.log('--- case alt-text ---', mediaStreamStore.altText)
       mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
