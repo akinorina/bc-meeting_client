@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { axios } from '@/lib/Axios'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
-import { useMediaStore } from '@/stores/media'
+import { useMediaDeviceStore } from '@/stores/mediaDevice'
+import { useMediaStreamStore } from '@/stores/mediaStream'
 import { useRoomStore } from '@/stores/rooms'
-import { axios } from '@/lib/Axios'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
@@ -13,13 +14,17 @@ import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import VccHeader from '@/components/VccHeader.vue'
+import InputCheckbox from '@/components/ui/InputCheckbox.vue'
+import ModalessGeneral from '@/components/ModalessGeneral.vue'
+import InputText from '@/components/ui/InputText.vue'
 
 const router = useRouter()
 const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
-const mediaStore = useMediaStore()
+const mediaDeviceStore = useMediaDeviceStore()
+const mediaStreamStore = useMediaStreamStore()
 const roomStore = useRoomStore()
 
 const roomHashParam = computed({
@@ -32,14 +37,34 @@ const roomHashParam = computed({
 })
 const roomHash = ref(roomHashParam.value)
 
+// NotFound (== bad room hash)
+const isBadRoomHash = ref<boolean>(false)
+
+// media stream
+const mediaStream = ref<MediaStream>(new MediaStream)
+
+// video mode
+const videoMode = ref('normal:0')
+const videoModeTmp = ref('normal:0')
+const videoModes = ref({
+  'normal:0': '通常',
+  'blur:10': 'ぼかし10',
+  'blur:30': 'ぼかし30',
+  'image:/bgimage1.jpg': '壁紙１',
+  'image:/bgimage2.jpg': '壁紙２',
+})
+
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
 
-// view mode (speaker|matrix)
-const viewMode = ref('speaker')
+// 自身画像の鏡映反転 on/off
+const myVideoMirrored = ref(true)
 
 // my display name
 const myDisplayName = ref('')
+watch(myDisplayName, () => {
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
+})
 
 // 招待メール送信先メールアドレス
 const invitedEmailAddress = ref<string>('')
@@ -47,56 +72,35 @@ const invitedEmailAddress = ref<string>('')
 // 状態: 入室 / 退室
 const statusEnterRoom = ref(false)
 
+// view mode (speaker|matrix)
+const viewMode = ref<'speaker' | 'matrix'>('speaker')
+
 // Speaker View - 現在のスピーカーの Peer ID.
 const targetSpeakerPeerId = ref('')
+
+// dataConn（チャット）用 メッセージ
+const messageText = ref('')
 
 // check interval ID.
 let cIId: any = null
 
-// NotFound (== bad room hash)
-const isBadRoomHash = ref<boolean>(false)
+// Modal: dataConn datalist
+const modalDataConnList = ref()
 
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
 
-const speakerLength = ref(webrtcStore.peerMediasNum)
-watch(webrtcStore.peerMedias, async () => {
-  if (speakerLength.value > webrtcStore.peerMediasNum) {
-    if (webrtcStore.peerMediasNum <= 1) {
-      targetSpeakerPeerId.value = webrtcStore.myPeerId
-    } else {
-      const aryPeerIds = Object.keys(webrtcStore.peerMedias)
-      console.log('aryPeerIds', aryPeerIds)
-      let iidx = aryPeerIds.length - 1
-      targetSpeakerPeerId.value = aryPeerIds[iidx]
-      while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
-        iidx--
-        targetSpeakerPeerId.value = aryPeerIds[iidx]
-      }
-      console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
-    }
-  }
-  if (speakerLength.value < webrtcStore.peerMediasNum) {
-    if (webrtcStore.peerMediasNum === 1) {
-      targetSpeakerPeerId.value = webrtcStore.myPeerId
-    } else {
-      const aryPeerIds = Object.keys(webrtcStore.peerMedias)
-      console.log('aryPeerIds', aryPeerIds)
-      let iidx = aryPeerIds.length - 1
-      targetSpeakerPeerId.value = aryPeerIds[iidx]
-      while (targetSpeakerPeerId.value === webrtcStore.myPeerId) {
-        iidx--
-        targetSpeakerPeerId.value = aryPeerIds[iidx]
-      }
-      console.log('targetSpeakerPeerId', targetSpeakerPeerId.value)
-    }
-  }
-  speakerLength.value = webrtcStore.peerMediasNum
-})
+// Modal: 設定
+const modalSettings = ref()
 
-onMounted(async () => {
+const startRoom = async () => {
+  window.addEventListener("beforeunload", unloadFunc)
+
   // 状態: 退室
   statusEnterRoom.value = false
+
+  // canvas text
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = ''
 
   // Room 情報取得
   try {
@@ -107,9 +111,15 @@ onMounted(async () => {
     return false
   }
 
-  // open my MediaStream
-  await mediaStore.openMediaStream(trackStatus.value)
-  webrtcStore.myMediaStream = mediaStore.mediaStream
+  // open the mediastream
+  await mediaDeviceStore.init()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+  mediaStreamStore.openAltText()
+  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+  // normal mediaStream 設定
+  webrtcStore.myMediaStream = mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
+  trackStatus.value = { video: true, audio: true }
 
   // open Peer
   await webrtcStore.open({
@@ -119,19 +129,74 @@ onMounted(async () => {
   })
 
   // Profile表示名を表示名初期値に設定
-  const resProfile = await authStore.getProfile()
-  myDisplayName.value = resProfile.data.username
-})
+  if (authStore.isAuthenticated()) {
+    const resProfile = await authStore.getProfile()
+    mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = resProfile.data.username
+  }
+}
+onMounted(startRoom)
 
-onBeforeUnmount(async () => {
+const endRoom = async () => {
+  window.removeEventListener("beforeunload", unloadFunc)
+
   if (statusEnterRoom.value) {
     await exitRoom()
   }
 
   await webrtcStore.close()
 
-  mediaStore.closeMediaStream()
-})
+  await mediaStreamStore.closeVirtualBackground()
+  await mediaStreamStore.closeAltText()
+  await mediaStreamStore.closeNormal()
+
+  // close the mediaStream
+  mediaStream.value.getTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+}
+onBeforeUnmount(endRoom)
+// beforeunload
+const unloadFunc = async () => {
+  await endRoom()
+}
+
+webrtcStore.peerOnCallCallback = async (options: any) => {
+  console.info('----- webrtcStore.peerOnCallCallback() -----')
+  if (options.peer_id) {
+    console.info('options.peer_id', options.peer_id)
+    targetSpeakerPeerId.value = options.peer_id
+  }
+}
+
+webrtcStore.peerOnErrorCallback = async (options: any) => {
+  console.info('----- webrtcStore.peerOnErrorCallback() -----')
+  if (options.type) {
+    console.info('options.type   :', options.type)
+    console.info('options.peer_id:', options.peer_id)
+  }
+  // await endRoom()
+  // await startRoom()
+}
+
+webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
+  console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
+  if (options) {
+    console.info('options.peer_id:', options.peer_id)
+  }
+
+  if (Object.keys(webrtcStore.peerMedias).length >= 2) {
+    // 他の人との接続があれば、Spearkerモードでは他の人をターゲットにする
+    Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
+      if (peerId !== webrtcStore.myPeerId) {
+        targetSpeakerPeerId.value = peerId
+      }
+    })
+  } else {
+    // 他の人との接続が無い（自分のみ）であれば、Speakerモードでは自分をターゲットにする
+    targetSpeakerPeerId.value = webrtcStore.myPeerId
+  }
+}
 
 // top page へ遷移
 const toTopPage = () => {
@@ -143,50 +208,105 @@ const toTopPage = () => {
   }
 }
 
+// バーチャル背景 mediaStream 切替
+const changeVideoMode = async () => {
+  trackStatus.value.video = true
+
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
+  const selected = videoMode.value.match(/(.+):(.+)/)
+  switch (selected[1]) {
+    case 'normal':
+      // Normal のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      // AltText のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'blur':
+    case 'image':
+      // VirtualBackground パラメータ設定
+      mediaStreamStore.virtualMode = selected[1]
+      mediaStreamStore.backgroundBlur = parseInt(selected[2])
+      mediaStreamStore.bgImageUrl = selected[2]
+
+      // VirtualBackground 再起動
+      mediaStreamStore.closeVirtualBackground()
+      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+      // VirtualBackground のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+}
+
 // Roomへの入室
 const enterRoom = async () => {
+  if (webrtcStore.myPeerId === '') {
+    console.error('no my peer id.')
+    throw new Error('no my peer id.')
+  }
+
+  // init.
+  // 表示名
+  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
+  // Peer ID.
   targetSpeakerPeerId.value = webrtcStore.myPeerId
+  // dataConnData 初期化
+  webrtcStore.dataConnData = []
 
   // 入室APIアクセス
   await roomStore.enterRoom(roomHash.value, webrtcStore.myPeerId, myDisplayName.value)
 
   // 入室状態を取得
-  const res2 = await roomStore.statusRoom(roomHash.value)
-  res2.attenders.forEach(async (item: any) => {
-    if (item.peer_id === webrtcStore.myPeerId) {
-      webrtcStore.connectMediaMyself(item.display_name)
-    } else {
-      // 現在の参加者それぞれへメディア接続
-      webrtcStore.connectMedia(item.peer_id, item.display_name)
-    }
+  const roomInfo = await roomStore.statusRoom(roomHash.value)
+  roomInfo.attenders.forEach(async (item: any) => {
+    // 現在の参加者それぞれへメディア接続
+    await webrtcStore.connectMedia(item.peer_id, item.display_name)
   })
-
-  // 状態: 入室
-  statusEnterRoom.value = true
 
   // 相手の disconnect 不良への対応
   cIId = setInterval(() => {
     checkStatusPeerConn()
   }, 5000)
+
+  // // open dataConn modal
+  // modalDataConnList.value.open()
+
+  // 状態: 入室
+  statusEnterRoom.value = true
 }
 
 // Roomからの退室
 const exitRoom = async () => {
+  // 状態: 退室
+  statusEnterRoom.value = false
+
+  // // close dataConn modal
+  // modalDataConnList.value.close()
+
   if (cIId !== null) {
     await clearInterval(cIId)
     cIId = null
   }
 
-  targetSpeakerPeerId.value = ''
-
-  // 状態: 退室
-  statusEnterRoom.value = false
-
-  // WebRTC - 退出
-  webrtcStore.disconnectMedia()
+  targetSpeakerPeerId.value = webrtcStore.myPeerId
 
   // 退室APIアクセス
   await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
+
+  // WebRTC - 退出
+  webrtcStore.disconnectMedia()
 }
 
 // PeerConn 状態をチェック、改善処理
@@ -197,18 +317,66 @@ const checkStatusPeerConn = async () => {
 }
 
 // video on/off
-const toggleVideo = () => {
-  mediaStore.setVideoEnabled(!trackStatus.value.video)
+const toggleVideo = async () => {
   trackStatus.value.video = !trackStatus.value.video
+
+  if (statusEnterRoom.value) {
+    // media すべて切断
+    await webrtcStore.disconnectMedia2()
+  }
+
+  if (trackStatus.value.video) {
+    // altText -> normal or ...
+    videoMode.value = videoModeTmp.value
+  } else {
+    // normal or ... -> altText
+    videoModeTmp.value = videoMode.value
+    videoMode.value = 'alt-text'
+  }
+
+  // 既存mediaStream から Video を入れ替え
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+  webrtcStore.myMediaStream = mediaStream.value
+
+  if (statusEnterRoom.value) {
+    // 入室状態を取得
+    const roomInfo = await roomStore.statusRoom(roomHash.value)
+    roomInfo.attenders.forEach(async (item: any) => {
+      // 現在の参加者それぞれへメディア再接続
+      await webrtcStore.connectMedia2(item.peer_id)
+    })
+  }
 }
 
-// Audio on/off
+// audio on/off
 const toggleAudio = () => {
-  mediaStore.setAudioEnabled(!trackStatus.value.audio)
   trackStatus.value.audio = !trackStatus.value.audio
+  mediaStream.value.getAudioTracks().forEach((tr: MediaStreamTrack) => {
+    tr.enabled = trackStatus.value.audio
+  })
 }
 
-//
+// 画面表示モード 変更
 const changeViewMode = () => {
   if (viewMode.value === 'speaker') {
     viewMode.value = 'matrix'
@@ -236,8 +404,76 @@ const sendInviteMail = async () => {
   }, 2000)
 }
 
+// Speaker mode: Clickしたユーザーを Speaker に設定
 const chooseSpeaker = (peerId: string) => {
   targetSpeakerPeerId.value = peerId
+}
+
+// Text-chat: メッセージ送信
+const sendText = () => {
+  webrtcStore.sendDataAll(messageText.value)
+}
+
+const changeVideoInput = async () => {
+  // close the video mediastream
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
+  // device 切替 - Video Input
+  mediaDeviceStore.mediaStreamConstraints.video.deviceId = mediaDeviceStore.videoInputDeviceId
+
+  // mediastream 再起動
+  await mediaStreamStore.closeNormal()
+  await mediaStreamStore.closeAltText()
+  await mediaStreamStore.closeVirtualBackground()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+  mediaStreamStore.openAltText()
+  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+  // 切り替えたMediaStreamからVideoトラックを追加
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    default:
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+}
+
+const changeAudioInput = async () => {
+  // close the video mediastream
+  mediaStream.value.getAudioTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+
+  // device 切替 - Audio Input
+  mediaDeviceStore.mediaStreamConstraints.audio.deviceId = mediaDeviceStore.audioInputDeviceId
+
+  // mediastream 再起動
+  await mediaStreamStore.closeNormal()
+  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+
+  // Normal の Audio を接続
+  mediaStreamStore.mediaStreamNormal?.getAudioTracks().forEach((tr) => {
+    mediaStream.value.addTrack(tr.clone())
+  })
+}
+
+const showInfoLog = () => {
+  webrtcStore.showInfoLog()
 }
 </script>
 
@@ -256,7 +492,7 @@ const chooseSpeaker = (peerId: string) => {
       </div>
     </template>
     <template v-else>
-      <div class="h-full bg-slate-100" v-if="statusEnterRoom === false">
+      <div class="bg-slate-100 pb-10" v-if="statusEnterRoom === false">
         <!-- 入室前状態 -->
 
         <VccHeader />
@@ -264,20 +500,42 @@ const chooseSpeaker = (peerId: string) => {
           <div class="p-3">
             <video
               class="max-h-80 w-full bg-slate-100"
-              :srcObject.prop="webrtcStore.myMediaStream"
+              :class="{ 'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' }"
+              :srcObject.prop="mediaStream"
               autoplay
               muted
               playsinline
             ></video>
+            <!--
+            <audio
+              :srcObject.prop="mediaStream"
+              autoplay
+              playsinline
+            ></audio>
+            -->
 
             <div class="flex w-full justify-between">
               <div class="my-3 flex items-center justify-center">
+                <!-- 戻る -->
                 <ButtonGeneralSecondary class="h-12 w-20" @click="toTopPage">
                   &lt;&lt; 戻る
                 </ButtonGeneralSecondary>
+                <!-- // 戻る -->
               </div>
 
               <div class="my-3 flex items-center justify-center">
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
+                  info
+                </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
+
+                <!-- 設定 -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="modalSettings.open()">
+                  設定
+                </ButtonGeneralPrimary>
+                <!-- // 設定 -->
+
                 <!-- video on/off -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12"
@@ -320,7 +578,7 @@ const chooseSpeaker = (peerId: string) => {
 
                 <!-- mic on/off -->
                 <ButtonGeneralPrimary
-                  class="me-0 h-12 w-12"
+                  class="me-1 h-12 w-12"
                   :class="{
                     'bg-slate-400': !trackStatus.audio,
                     'hover:bg-slate-500': !trackStatus.audio
@@ -359,6 +617,20 @@ const chooseSpeaker = (peerId: string) => {
                   </svg>
                 </ButtonGeneralPrimary>
                 <!-- // mic on/off -->
+
+                <!-- 背景設定 -->
+                <select
+                  class="w-28 p-3"
+                  v-model="videoMode"
+                  @change="changeVideoMode"
+                >
+                  <template v-for="(val, sKey) in videoModes" :key="sKey">
+                    <option :value="sKey">
+                      {{ val }}
+                    </option>
+                  </template>
+                </select>
+                <!-- // 背景設定 -->
               </div>
 
               <div class="w-20"></div>
@@ -366,29 +638,36 @@ const chooseSpeaker = (peerId: string) => {
           </div>
           <div class="flex w-full justify-center">
             <div class="mx-3 w-full rounded-md border p-3 text-center">
+              <!-- Room名称 Room Hash -->
               <div class="my-3">
                 <div class="text-xl font-semibold">{{ roomStore.room.room_name }}</div>
                 <div class="">{{ roomStore.room.room_hash }}</div>
+                <div class="">{{ webrtcStore.myPeerId }}</div>
               </div>
+              <!-- // Room名称 Room Hash -->
 
-              <div class="">
-                <div class="my-3 flex">
-                  <InputEmail
-                    class="me-2 h-10 w-full"
-                    placeholder="表示名"
-                    v-model="myDisplayName"
-                  />
-                  <ButtonGeneralPrimary
-                    class="me-0 h-10 w-20"
-                    :class="{ 'bg-slate-400 hover:bg-slate-400': myDisplayName === '' || !mediaStore.mediaStream?.active }"
-                    @click="enterRoom"
-                    :disabled="myDisplayName === '' || !mediaStore.mediaStream?.active"
-                  >
-                    入室
-                  </ButtonGeneralPrimary>
-                </div>
+              <!-- 表示名 設定 -->
+              <div class="my-3 flex">
+                <InputText class="me-2 h-10 w-full" placeholder="表示名" v-model="myDisplayName" />
+                <ButtonGeneralPrimary
+                  class="me-0 h-10 w-20"
+                  :class="{
+                    'bg-slate-400 hover:bg-slate-400':
+                      myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStream?.active
+                  }"
+                  @click="enterRoom"
+                  :disabled="
+                    myDisplayName === '' ||
+                    webrtcStore.myPeerId === '' ||
+                    !mediaStream?.active
+                  "
+                >
+                  入室
+                </ButtonGeneralPrimary>
               </div>
+              <!-- // 表示名 設定 -->
 
+              <!-- メールで招待する -->
               <div class="my-3 text-left" v-if="authStore.isAuthenticated()">
                 <div class="text-md font-semibold">招待する</div>
                 <div class="">
@@ -405,6 +684,7 @@ const chooseSpeaker = (peerId: string) => {
                   </ButtonGeneral>
                 </div>
               </div>
+              <!-- // メールで招待する -->
             </div>
           </div>
         </div>
@@ -417,24 +697,32 @@ const chooseSpeaker = (peerId: string) => {
         <div v-if="viewMode === 'speaker'">
           <div class="relative h-screen bg-slate-500">
             <!-- UI -->
-            <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
+            <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-18"
-                  @click="changeViewMode"
-                >
-                  <div v-if="viewMode === 'speaker'">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
-                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
-                    </svg>
-                  </div>
-                  <div v-else>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-3x3" viewBox="0 0 16 16">
-                      <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"/>
-                    </svg>
-                  </div>
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
+                  info
                 </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
 
+                <!-- 表示切替 -->
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-person-fill"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
+                    />
+                  </svg>
+                </ButtonGeneralPrimary>
+                <!-- // 表示切替 -->
+
+                <!-- video on/off -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12"
                   :class="{
@@ -472,7 +760,9 @@ const chooseSpeaker = (peerId: string) => {
                     />
                   </svg>
                 </ButtonGeneralPrimary>
+                <!-- // video on/off -->
 
+                <!-- audio on/off -->
                 <ButtonGeneralPrimary
                   class="me-2 h-12 w-12"
                   :class="{
@@ -512,85 +802,112 @@ const chooseSpeaker = (peerId: string) => {
                     />
                   </svg>
                 </ButtonGeneralPrimary>
+                <!-- // audio on/off -->
 
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+                <!-- 退室 -->
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">
+                  退室
+                </ButtonGeneralDanger>
+                <!-- // 退室 -->
               </div>
             </div>
             <!-- // UI -->
 
             <!-- speakers list -->
-            <div class="absolute z-20 top-3 left-0 max-w-screen bg-slate-300 border border-slate-500 rounded-sm overflow-x-hidden">
-              <div class="speakers flex flex-nowrap justify-start">
+            <div
+              class="max-w-screen absolute left-0 top-3 z-20 overflow-x-hidden rounded-sm border border-slate-500 bg-slate-300"
+            >
+              <div class="w-full flex flex-nowrap justify-start">
                 <div
-                  class="relative w-32 h-24 flex items-center"
-                  v-for="(pm) in webrtcStore.peerMedias"
+                  class="relative flex h-24 w-32 items-center"
+                  v-for="pm in webrtcStore.peerMedias"
                   :key="pm.peerId"
                   @click="chooseSpeaker(pm.peerId)"
                 >
-                  <video
-                    class="h-full w-full"
-                    :srcObject.prop="pm.mediaStream"
-                    autoplay
-                    muted
-                    playsinline
-                  ></video>
-                  <audio
-                    class=""
-                    :srcObject.prop="pm.mediaStream"
-                    autoplay
-                    v-if="pm.peerId !== webrtcStore.myPeerId"
-                  ></audio>
-                  <div
-                    class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-1 text-xs font-bold text-white"
-                  >
-                    <div class="">
-                      {{ pm.displayName }}
+                  <template v-if="pm.available">
+                    <video
+                      class="h-96 w-96"
+                      :class="{
+                        'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                      }"
+                      :srcObject.prop="pm.mediaStream"
+                      autoplay
+                      muted
+                      playsinline
+                    ></video>
+                    <audio
+                      class=""
+                      :srcObject.prop="pm.mediaStream"
+                      autoplay
+                      v-if="pm.peerId !== webrtcStore.myPeerId"
+                    ></audio>
+                    <div
+                      class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                    >
+                      <div class="">
+                        {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                      </div>
                     </div>
-                  </div>
+                  </template>
                 </div>
               </div>
             </div>
             <!-- // speakers list -->
 
             <!-- current speaker -->
-            <div class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500">
-              <video
-                class="h-full w-full"
-                :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
-                autoplay
-                muted
-                playsinline
-              ></video>
-              <div
-                class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-1 text-xs font-bold text-white"
-              >
-                <div class="">
-                  {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+            <div
+              class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500"
+              v-if="targetSpeakerPeerId !== ''"
+            >
+              <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
+                <video
+                  class="h-full w-full"
+                  :class="{
+                    'my-video-mirrored':
+                      myVideoMirrored &&
+                      webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
+                  }"
+                  :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
+                  autoplay
+                  muted
+                  playsinline
+                ></video>
+                <div
+                  class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                >
+                  <div class="">
+                    {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
             <!-- // current speaker -->
           </div>
         </div>
         <div class="" v-else>
-          <div class="h-screen w-screen flex flex-wrap justify-center items-center">
+          <div class="flex h-screen w-screen flex-wrap items-center justify-center">
             <!-- UI -->
-            <div class="absolute z-10 bottom-3 right-3 rounded-md bg-slate-200 p-2">
+            <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
               <div class="flex">
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-18"
-                  @click="changeViewMode"
-                >
-                  <div v-if="viewMode === 'speaker'">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
-                      <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
-                    </svg>
-                  </div>
-                  <div v-else>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-3x3" viewBox="0 0 16 16">
-                      <path d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"/>
-                    </svg>
-                  </div>
+                <!-- showInfoLog -->
+                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
+                  info
+                </ButtonGeneralPrimary>
+                <!-- // showInfoLog -->
+
+                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-grid-3x3"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
+                    />
+                  </svg>
                 </ButtonGeneralPrimary>
 
                 <ButtonGeneralPrimary
@@ -671,7 +988,9 @@ const chooseSpeaker = (peerId: string) => {
                   </svg>
                 </ButtonGeneralPrimary>
 
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">退室</ButtonGeneralDanger>
+                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">
+                  退室
+                </ButtonGeneralDanger>
               </div>
             </div>
             <!-- // UI -->
@@ -710,26 +1029,31 @@ const chooseSpeaker = (peerId: string) => {
               v-for="(pm, peerId) in webrtcStore.peerMedias"
               :key="peerId"
             >
-              <video
-                class="h-full w-full"
-                :srcObject.prop="pm.mediaStream"
-                autoplay
-                muted
-                playsinline
-              ></video>
-              <audio
-                class=""
-                :srcObject.prop="pm.mediaStream"
-                autoplay
-                v-if="pm.peerId !== webrtcStore.myPeerId"
-              ></audio>
-              <div
-                class="absolute z-10 bottom-0 left-0 rounded-md bg-black p-3 text-xl font-bold text-white"
-              >
-                <div class="">
-                  {{ pm.displayName }}
+              <template v-if="pm.available">
+                <video
+                  class="h-full w-full"
+                  :class="{
+                    'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                  }"
+                  :srcObject.prop="pm.mediaStream"
+                  autoplay
+                  muted
+                  playsinline
+                ></video>
+                <audio
+                  class=""
+                  :srcObject.prop="pm.mediaStream"
+                  autoplay
+                  v-if="pm.peerId !== webrtcStore.myPeerId"
+                ></audio>
+                <div
+                  class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                >
+                  <div class="">
+                    {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
           </div>
         </div>
@@ -739,6 +1063,21 @@ const chooseSpeaker = (peerId: string) => {
     </template>
   </div>
 
+  <ModalessGeneral ref="modalDataConnList" :pos-left="750" :pos-top="100">
+    <div class="h-fit w-96">
+      <div class="">data conn.</div>
+      <div class="h-fit max-h-96 min-h-80 w-full overflow-y-auto border border-red-300">
+        <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
+          {{ item.type }}: - {{ item.message }}
+        </div>
+      </div>
+      <div class="">
+        <InputText class="w-80" v-model="messageText" />
+        <ButtonGeneralPrimary class="w-18" @click="sendText"> 送信 </ButtonGeneralPrimary>
+      </div>
+    </div>
+  </ModalessGeneral>
+
   <ModalGeneral ref="modalSendInvitaionSuccess">
     <div class="w-64 p-3">
       <div class="text-center">
@@ -747,14 +1086,58 @@ const chooseSpeaker = (peerId: string) => {
       </div>
     </div>
   </ModalGeneral>
+
+  <ModalGeneral ref="modalSettings">
+    <div class="p-5">
+      <div class="text-center font-bold">設定</div>
+
+      <div class="my-5 w-96 border px-2 py-5">
+        <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+      </div>
+
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceVideoInputs.length > 0">
+        <div class="font-bold">映像入力</div>
+        <select
+          class="mt-3 w-full border p-3"
+          v-model="mediaDeviceStore.videoInputDeviceId"
+          @change="changeVideoInput"
+        >
+          <template v-for="(val, sKey) in mediaDeviceStore.deviceVideoInputs" :key="sKey">
+            <option :value="val.deviceId">
+              {{ val.label }}
+            </option>
+          </template>
+        </select>
+      </div>
+
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceAudioInputs.length > 0">
+        <div class="font-bold">音声入力</div>
+        <select
+          class="mt-3 w-full border p-3"
+          v-model="mediaDeviceStore.audioInputDeviceId"
+          @change="changeAudioInput"
+        >
+          <template v-for="(val, sKey) in mediaDeviceStore.deviceAudioInputs" :key="sKey">
+            <option :value="val.deviceId">
+              {{ val.label }}
+            </option>
+          </template>
+        </select>
+      </div>
+
+      <div class="">
+        <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
+      </div>
+    </div>
+  </ModalGeneral>
 </template>
 
 <style scoped lang="scss">
-.speakers {
-  width: calc(8rem * v-bind(speakerLength));
-}
-
 .main-speaker-view {
   height: calc(100vh - 100px);
+}
+
+.my-video-mirrored {
+  transform: scaleX(-1);
 }
 </style>
