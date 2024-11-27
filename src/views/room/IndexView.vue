@@ -280,8 +280,8 @@ const enterRoom = async () => {
     checkStatusPeerConn()
   }, 5000)
 
-  // open dataConn modal
-  modalDataConnList.value.open()
+  // // open dataConn modal
+  // modalDataConnList.value.open()
 
   // 状態: 入室
   statusEnterRoom.value = true
@@ -292,8 +292,8 @@ const exitRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
 
-  // close dataConn modal
-  modalDataConnList.value.close()
+  // // close dataConn modal
+  // modalDataConnList.value.close()
 
   if (cIId !== null) {
     await clearInterval(cIId)
