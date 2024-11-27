@@ -26,6 +26,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   }
 
   // 背景画像 Img & Canvas
+  const virtualMode = ref<'normal' | 'alt-text' | 'blur' | 'image'>('blur')
   const bgImageUrl = ref('')
   let imgBg: HTMLImageElement
   let canvasBg: HTMLCanvasElement
@@ -34,6 +35,9 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   // ボディー分割処理用
   let segmenter: bodySegmentation.BodySegmenter
   let requestIdVb = 0
+
+  // 背景ぼかし効果値
+  const backgroundBlur = ref(20)
 
   // MediaStream 代替テキスト用
   const altText = ref('')
@@ -117,7 +121,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
     // ビデオのメタデータが読み込まれたら、キャンバスのサイズを設定し初期化
     // 背景画像
-    if (bgImageUrl.value !== '') {
+    if (virtualMode.value === 'image') {
       loadBackgroundImage()
     }
 
@@ -147,12 +151,15 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     await createBodySegmentation()
 
     // フレーム処理の開始
-    if (bgImageUrl.value === '') {
-      // blur
-      processFrameBlur()
-    } else {
-      // virtual background image
-      processFrameVirtual()
+    switch (virtualMode.value) {
+      case 'blur':
+        // background blur
+        processFrameBlur()
+        break
+      case 'image':
+        // background virtual image
+        processFrameVirtual()
+        break
     }
   }
 
@@ -164,7 +171,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     const segmentation = await segmentPeople()
 
     const foregroundThreshold = 0.5
-    const backgroundBlurAmount = 20
+    const backgroundBlurAmount = backgroundBlur.value
     const edgeBlurAmount = 3
     const flipHorizontal = false
     await bodySegmentation.drawBokehEffect(
@@ -299,7 +306,9 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     closeAltText,
 
     // virtual background
+    virtualMode,
     mediaStreamVbg,
+    backgroundBlur,
     bgImageUrl,
     openVirtualBackground,
     closeVirtualBackground,

@@ -36,13 +36,14 @@ const modalSettings = ref()
 
 // バーチャル背景 mediaStream 設定
 // video mode
-const videoMode = ref('normal')
-const videoModeTmp = ref('normal')
+const videoMode = ref('normal:0')
+const videoModeTmp = ref('normal:0')
 const videoModes = ref({
-  'normal': '通常',
-  '': 'ぼかし',
-  '/bgimage1.jpg': '壁紙１',
-  '/bgimage2.jpg': '壁紙２',
+  'normal:0': '通常',
+  'blur:10': 'ぼかし10',
+  'blur:30': 'ぼかし30',
+  'image:/bgimage1.jpg': '壁紙１',
+  'image:/bgimage2.jpg': '壁紙２',
 })
 
 onMounted(async () => {
@@ -222,22 +223,32 @@ const changeBackground = async () => {
     mediaStream.value.removeTrack(tr)
   })
 
-  switch (videoMode.value) {
+  const selected = videoMode.value.match(/(.+):(.+)/)
+  switch (selected[1]) {
     case 'normal':
+      // Normal のVideoトラックを mediaStream に追加
       mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
       break
     case 'alt-text':
+      // AltText のVideoトラックを mediaStream に追加
       mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
       break
-    default:
-      mediaStreamStore.bgImageUrl = videoMode.value
+    case 'blur':
+    case 'image':
+      // VirtualBackground パラメータ設定
+      mediaStreamStore.virtualMode = selected[1]
+      mediaStreamStore.backgroundBlur = parseInt(selected[2])
+      mediaStreamStore.bgImageUrl = selected[2]
+
+      // VirtualBackground 再起動
       mediaStreamStore.closeVirtualBackground()
       await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
+      // VirtualBackground のVideoトラックを mediaStream に追加
       mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
