@@ -132,7 +132,7 @@ const modalSendInvitaionSuccess = ref()
 const modalSettings = ref()
 
 const startRoom = async () => {
-  window.addEventListener("beforeunload", unloadFunc);
+  window.addEventListener("beforeunload", unloadFunc)
 
   // 状態: 退室
   statusEnterRoom.value = false
@@ -294,6 +294,9 @@ const exitRoom = async () => {
     cIId = null
   }
 
+  // 退室APIアクセス
+  await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
+
   // close dataConn modal
   modalDataConnList.value.close()
 
@@ -301,9 +304,6 @@ const exitRoom = async () => {
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
-
-  // 退室APIアクセス
-  await roomStore.exitRoom(roomHash.value, webrtcStore.myPeerId)
 }
 
 // PeerConn 状態をチェック、改善処理

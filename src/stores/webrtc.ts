@@ -369,16 +369,20 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         await peerMedias.value[peerId].dataConn?.close()
 
         // MediaStream停止
-        await peerMedias.value[peerId].mediaStream
-          ?.getTracks()
-          .forEach((track: MediaStreamTrack) => track.stop())
+        if (peerMedias.value[peerId].mediaStream) {
+          await peerMedias.value[peerId].mediaStream
+            ?.getTracks()
+            .forEach((track: MediaStreamTrack) => track.stop())
+
+          delete peerMedias.value[peerId].mediaConn
+        }
 
         // MediaConnection CLOSE
-        await peerMedias.value[peerId].mediaConn?.close()
+        if (peerMedias.value[peerId].mediaConn) {
+          await peerMedias.value[peerId].mediaConn?.close()
 
-        // peerMedia 削除
-        delete peerMedias.value[peerId].dataConn
-        delete peerMedias.value[peerId].mediaConn
+          delete peerMedias.value[peerId].dataConn
+        }
 
         // peerMedia 無効化
         peerMedias.value[peerId].available = false
