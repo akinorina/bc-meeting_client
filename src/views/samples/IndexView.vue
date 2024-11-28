@@ -48,6 +48,17 @@ import VccHeader from '@/components/VccHeader.vue'
             </div>
           </router-link>
         </div>
+
+        <div class="">
+          <router-link :to="{ name: 'samples_tf' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">Tensor Flow</h5>
+                <p class="">ML のサンプルです。</p>
+              </div>
+            </div>
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
