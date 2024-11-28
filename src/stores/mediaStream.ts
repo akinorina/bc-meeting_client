@@ -1,9 +1,10 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import '@mediapipe/selfie_segmentation'
-import '@tensorflow/tfjs-core'
-import '@tensorflow/tfjs-backend-webgl'
-import * as bodySegmentation from '@tensorflow-models/body-segmentation'
+// import '@mediapipe/selfie_segmentation'
+// import '@tensorflow/tfjs-core'
+// import '@tensorflow/tfjs-backend-webgl'
+// import * as bodySegmentation from '@tensorflow-models/body-segmentation'
+import { ImageSegmenter, FilesetResolver, type ImageSegmenterResult } from '@mediapipe/tasks-vision'
 
 export const useMediaStreamStore = defineStore('media-stream', () => {
   // 出力 media stream
@@ -12,7 +13,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   const mediaStreamVbg = ref<MediaStream>()
 
   // Camera動画用 Video
-  let video: HTMLVideoElement
+  let videoVbg: HTMLVideoElement
   const mediastreamCam = ref<MediaStream>()
 
   // 出力する動画用 Canvas
@@ -32,18 +33,24 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   let canvasBg: HTMLCanvasElement
   let ctxBg: CanvasRenderingContext2D
 
-  // ボディー分割処理用
-  let segmenter: bodySegmentation.BodySegmenter
+  // バックグラウンド分割`処理用
   let requestIdVb = 0
+  let imageSegmenter: ImageSegmenter
 
   // 背景ぼかし効果値
-  const backgroundBlur = ref(20)
+  const backgroundBlur = ref(10)
+  const canvasBlur = ref<HTMLCanvasElement>()
+  const ctxBlur = ref<CanvasRenderingContext2D>()
 
   // MediaStream 代替テキスト用
   const altText = ref('')
   const canvasAlt = ref<HTMLCanvasElement>()
   const ctxAlt = ref<CanvasRenderingContext2D>()
   const requestIdAltText = ref(0)
+
+  // 動作 | 停止
+  const webcamRunning = ref(false)
+  let lastWebcamTime = -1
 
   // normal: mediaStream 作成
   async function openNormal(mediaStreamConstraints: MediaStreamConstraints) {
@@ -105,7 +112,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   // バーチャル背景: mediaStream 作成
   async function openVirtualBackground(mediaStreamConstraints: MediaStreamConstraints) {
     // Camera動画
-    video = document.createElement('video') as HTMLVideoElement
+    videoVbg = document.createElement('video') as HTMLVideoElement
 
     // 出力用動画
     canvasVbg.value = document.createElement('canvas') as HTMLCanvasElement
@@ -113,11 +120,18 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     canvasVbg.value.height = ctxOption.height
     ctxVbg.value = canvasVbg.value.getContext('2d') as CanvasRenderingContext2D
 
+    // ぼかし用
+    canvasBlur.value = document.createElement('canvas') as HTMLCanvasElement
+    canvasBlur.value.width = ctxOption.width
+    canvasBlur.value.height = ctxOption.height
+    ctxBlur.value = canvasBlur.value.getContext('2d') as CanvasRenderingContext2D
+    ctxBlur.value.filter = 'blur(' + backgroundBlur.value + 'px)'
+
     // カメラからの映像ストリームを取得し、ビデオ要素にセット
     mediastreamCam.value = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
-    video.srcObject = mediastreamCam.value
-    video.play()
-    video.muted = true
+    videoVbg.srcObject = mediastreamCam.value
+    videoVbg.play()
+    videoVbg.muted = true
 
     // ビデオのメタデータが読み込まれたら、キャンバスのサイズを設定し初期化
     // 背景画像
@@ -125,7 +139,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
       loadBackgroundImage()
     }
 
-    video.onloadedmetadata = () => {
+    videoVbg.onloadedmetadata = () => {
       initBodySegmentation()
     }
 
@@ -147,10 +161,12 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
   // バーチャル背景: 初期化
   async function initBodySegmentation() {
+    // フレーム処理の開始
+    webcamRunning.value = true
+
     // ボディセグメンテーションモデルの作成
     await createBodySegmentation()
 
-    // フレーム処理の開始
     switch (virtualMode.value) {
       case 'blur':
         // background blur
@@ -163,101 +179,168 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     }
   }
 
-  // バーチャル背景: ぼかし描画
-  const processFrameBlur = async () => {
-    if (!video || !canvasVbg.value) return // processFrame()
-
-    // 人物のセグメンテーションを実行
-    const segmentation = await segmentPeople()
-
-    const foregroundThreshold = 0.5
-    const backgroundBlurAmount = backgroundBlur.value
-    const edgeBlurAmount = 3
-    const flipHorizontal = false
-    await bodySegmentation.drawBokehEffect(
-      canvasVbg.value,
-      video,
-      segmentation,
-      foregroundThreshold,
-      backgroundBlurAmount,
-      edgeBlurAmount,
-      flipHorizontal
+  // バーチャル背景: バックグラウンド作成
+  const createBodySegmentation = async () => {
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
     )
 
-    requestIdVb = window.requestAnimationFrame(processFrameBlur)
+    // [画像セグメンテーション]: 生成
+    imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO',
+      outputCategoryMask: true,
+      outputConfidenceMasks: false
+    })
+
+    // [画像セグメンテーション]: 初期設定
+    imageSegmenter.setOptions({ runningMode: 'VIDEO' })
+  }
+
+  // バーチャル背景: ぼかし描画
+  const processFrameBlur = async () => {
+    if (!videoVbg || !ctxVbg.value || !ctxBlur.value) return
+
+    if (videoVbg.currentTime === lastWebcamTime) {
+      if (webcamRunning.value) {
+        requestIdVb = window.requestAnimationFrame(processFrameBlur)
+      }
+      return
+    }
+    lastWebcamTime = videoVbg.currentTime
+
+    // Video映像 => Canvas 描画
+    ctxVbg.value.drawImage(videoVbg, 0, 0, videoVbg.videoWidth, videoVbg.videoHeight)
+
+    // Video映像 => ぼかし用 Canvas 描画
+    ctxBlur.value.drawImage(videoVbg, 0, 0, videoVbg.videoWidth, videoVbg.videoHeight)
+
+    // Do not segmented if imageSegmenter hasn't loaded
+    if (imageSegmenter === undefined) {
+      return
+    }
+
+    const startTimeMs = performance.now()
+
+    // [画像セグメンテーション]: 開始
+    // Start segmenting the stream.
+    imageSegmenter.segmentForVideo(videoVbg, startTimeMs, callbackForVideoBlur)
+  }
+  const callbackForVideoBlur = async (result: ImageSegmenterResult) => {
+    if (!videoVbg || !ctxVbg.value || !ctxBlur.value || !result.categoryMask) return
+
+    // Canvas 画像 => imageData
+    const imageData = ctxVbg.value.getImageData(
+      0,
+      0,
+      videoVbg.videoWidth,
+      videoVbg.videoHeight
+    ).data
+
+    // ぼかしバックグラウンド画像データ
+    const imageBlur = ctxBlur.value.getImageData(
+      0,
+      0,
+      videoVbg.videoWidth,
+      videoVbg.videoHeight
+    ).data
+    // // バックグラウンド画像 原画データ
+    // const imageDataBg = ctxBg.getImageData(0, 0, videoVbg.videoWidth, videoVbg.videoHeight).data
+
+    // [画像セグメンテーション]: 判定結果 => imageData 加工 => dataNew
+    const mask = result.categoryMask.getAsFloat32Array()
+    // console.log('mask.length', mask.length) // 2073600 = 1920 x 1080
+    let j = 0
+    for (let i = 0; i < mask.length; ++i) {
+      const maskVal = Math.floor(mask[i] * 255.0)
+      if (maskVal < 10) {
+        // バーチャル背景画像 貼り付け
+        imageData[j] = imageBlur[j]
+        imageData[j + 1] = imageBlur[j + 1]
+        imageData[j + 2] = imageBlur[j + 2]
+        imageData[j + 3] = imageBlur[j + 3]
+      }
+      j += 4
+    }
+    const uint8Array = new Uint8ClampedArray(imageData.buffer)
+    const dataNew = new ImageData(uint8Array, videoVbg.videoWidth, videoVbg.videoHeight)
+
+    // imageData 加工 => Canvas画像
+    ctxVbg.value.putImageData(dataNew, 0, 0)
+
+    if (webcamRunning.value) {
+      requestIdVb = window.requestAnimationFrame(processFrameBlur)
+    }
   }
 
   // バーチャル背景: 背景描画
   const processFrameVirtual = async () => {
-    if (!video || !canvasVbg.value || !ctxVbg.value) return // processFrame()
+    if (!videoVbg || !ctxVbg.value) return
 
-    // 人物のセグメンテーションを実行
-    const segmentation = await segmentPeople()
-
-    const foregroundColor = { r: 12, g: 12, b: 12, a: 12 }
-    const backgroundColor = { r: 16, g: 16, b: 16, a: 16 }
-    const backgroundDarkeningMask = await bodySegmentation.toBinaryMask(
-      segmentation,
-      foregroundColor,
-      backgroundColor
-    )
-
-    const opacity = 1.0
-    const maskBlurAmount = 10
-    const flipHorizontal = false
-    await bodySegmentation.drawMask(
-      canvasVbg.value,
-      video,
-      backgroundDarkeningMask,
-      opacity,
-      maskBlurAmount,
-      flipHorizontal
-    )
-
-    const mask = backgroundDarkeningMask
-    const imageData = ctxVbg.value.getImageData(0, 0, canvasVbg.value.width, canvasVbg.value.height)
-
-    ctxBg.drawImage(imgBg, 0, 0, canvasVbg.value.width, canvasVbg.value.height)
-    const imageDataBg = ctxBg.getImageData(0, 0, canvasVbg.value.width, canvasVbg.value.height)
-
-    // マスクを使用して背景ピクセルを透明に設定
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      const maskValue = mask.data[i]
-      if (maskValue > 12) {
-        // // 閾値を調整して結果を改善できます
-        // imageData.data[i + 3] = 0 // アルファチャンネルを0に設定して透明にする
-        // 背景画像を貼る
-        imageData.data[i + 0] = imageDataBg.data[i + 0]
-        imageData.data[i + 1] = imageDataBg.data[i + 1]
-        imageData.data[i + 2] = imageDataBg.data[i + 2]
-        imageData.data[i + 3] = imageDataBg.data[i + 3]
+    if (videoVbg.currentTime === lastWebcamTime) {
+      if (webcamRunning.value) {
+        requestIdVb = window.requestAnimationFrame(processFrameVirtual)
       }
+      return
+    }
+    lastWebcamTime = videoVbg.currentTime
+
+    // Video映像 => Canvas 描画
+    ctxVbg.value.drawImage(videoVbg, 0, 0, videoVbg.videoWidth, videoVbg.videoHeight)
+
+    // Do not segmented if imageSegmenter hasn't loaded
+    if (imageSegmenter === undefined) {
+      return
     }
 
-    // 処理後の画像データをキャンバスに描画
-    ctxVbg.value.putImageData(imageData, 0, 0)
+    const startTimeMs = performance.now()
 
-    requestIdVb = window.requestAnimationFrame(processFrameVirtual)
+    // [画像セグメンテーション]: 開始
+    // Start segmenting the stream.
+    imageSegmenter.segmentForVideo(videoVbg, startTimeMs, callbackForVideo)
   }
+  const callbackForVideo = async (result: ImageSegmenterResult) => {
+    if (!videoVbg || !ctxVbg.value || !result.categoryMask) return
 
-  // バーチャル背景: ボディー分割作成
-  const createBodySegmentation = async () => {
-    // ボディセグメンテーションモデルの設定
-    const model = bodySegmentation.SupportedModels.MediaPipeSelfieSegmentation
-    const segmenterConfig: bodySegmentation.MediaPipeSelfieSegmentationMediaPipeModelConfig = {
-      runtime: 'mediapipe' as const,
-      solutionPath: '/node_modules/@mediapipe/selfie_segmentation',
-      modelType: 'general'
+    // Canvas 画像 => imageData
+    const imageData = ctxVbg.value.getImageData(
+      0,
+      0,
+      videoVbg.videoWidth,
+      videoVbg.videoHeight
+    ).data
+
+    // バックグラウンド画像 原画データ
+    const imageDataBg = ctxBg.getImageData(0, 0, videoVbg.videoWidth, videoVbg.videoHeight).data
+
+    // [画像セグメンテーション]: 判定結果 => imageData 加工 => dataNew
+    const mask = result.categoryMask.getAsFloat32Array()
+    console.log('mask.length', mask.length) // 2073600 = 1920 x 1080
+    let j = 0
+    for (let i = 0; i < mask.length; ++i) {
+      const maskVal = Math.floor(mask[i] * 255.0)
+      if (maskVal < 10) {
+        // バーチャル背景画像 貼り付け
+        imageData[j] = imageDataBg[j]
+        imageData[j + 1] = imageDataBg[j + 1]
+        imageData[j + 2] = imageDataBg[j + 2]
+        imageData[j + 3] = imageDataBg[j + 3]
+      }
+      j += 4
     }
-    // セグメンターの作成
-    segmenter = await bodySegmentation.createSegmenter(model, segmenterConfig)
-  }
+    const uint8Array = new Uint8ClampedArray(imageData.buffer)
+    const dataNew = new ImageData(uint8Array, videoVbg.videoWidth, videoVbg.videoHeight)
 
-  // バーチャル背景: 人物分割
-  const segmentPeople = async () => {
-    // ビデオフレームから人物のセグメンテーションを実行
-    const estimationConfig = { flipHorizontal: false }
-    return await segmenter.segmentPeople(video, estimationConfig)
+    // imageData 加工 => Canvas画像
+    ctxVbg.value.putImageData(dataNew, 0, 0)
+
+    if (webcamRunning.value) {
+      requestIdVb = window.requestAnimationFrame(processFrameVirtual)
+    }
   }
 
   // normal: mediaStream 削除
@@ -268,6 +351,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     })
   }
 
+  // alttext: mediaStream 削除
   const closeAltText = () => {
     // 描画停止
     window.cancelAnimationFrame(requestIdAltText.value)
@@ -278,15 +362,17 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     })
   }
 
+  // Virtual Background: mediaStream 削除
   const closeVirtualBackground = async () => {
     // requestAnimationFrame() 停止
+    webcamRunning.value = false
     window.cancelAnimationFrame(requestIdVb)
 
+    // mediaStream 停止
     mediastreamCam.value?.getTracks().forEach((tr) => {
       tr.stop()
       mediastreamCam.value?.removeTrack(tr)
     })
-
     mediaStreamVbg.value?.getTracks().forEach((tr) => {
       tr.stop()
       mediaStreamVbg.value?.removeTrack(tr)
