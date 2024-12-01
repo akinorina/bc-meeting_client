@@ -604,6 +604,18 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     return targetDisplayName
   }
 
+  // 表示名をすべての人に送信
+  function sendMyNameToAll() {
+    Object.keys(peerMedias.value).forEach(async (remotePeerId) => {
+      // 接続された先へ表示名を送信
+      const sendName = new DataConnData()
+      sendName.type = 'display_name'
+      sendName.senderPeerId = myPeerId.value
+      sendName.message = myName.value
+      await peerMedias.value[remotePeerId].dataConn?.send(sendName)
+    })
+  }
+
   return {
     myName,
     myPeerId,
@@ -622,6 +634,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     disconnectMedia2,
     checkMedias,
     sendDataAll,
+    sendMyNameToAll,
     getDisplayName,
 
     showInfoLog

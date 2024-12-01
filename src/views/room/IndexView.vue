@@ -508,6 +508,22 @@ const changeAudioInput = async () => {
   })
 }
 
+// 表示名を変更
+const changeDisplayName = () => {
+  // 表示名を更新
+  webrtcStore.myName = mediaStreamStore.altText = myDisplayName.value
+
+  // webrtcStore.peerMedias[myPeerId].displayName を更新
+  Object.keys(webrtcStore.peerMedias).forEach((sKey: string) => {
+    if (sKey === webrtcStore.myPeerId) {
+      webrtcStore.peerMedias[sKey].displayName = myDisplayName.value
+    }
+  })
+
+  // 相手へ送信
+  webrtcStore.sendMyNameToAll()
+}
+
 const showInfoLog = () => {
   webrtcStore.showInfoLog()
 }
@@ -738,17 +754,17 @@ const showInfoLog = () => {
                 >
                   <div class="flex flex-nowrap justify-start">
                     <div
-                      class="relative flex h-36 w-60 items-center"
+                      class="relative flex w-60 items-center"
                       v-for="pm in webrtcStore.peerMedias"
                       :key="pm.peerId"
                       @click="chooseSpeaker(pm.peerId)"
                     >
                       <template v-if="pm.available">
                         <video
-                          class="h-96 w-96"
+                          class="w-96 h-36"
                           :class="{
                             'my-video-mirrored':
-                              myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                              myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
                           }"
                           :srcObject.prop="pm.mediaStream"
                           autoplay
@@ -784,7 +800,7 @@ const showInfoLog = () => {
                       class="h-full w-full"
                       :class="{
                         'my-video-mirrored':
-                          myVideoMirrored &&
+                          myVideoMirrored && videoMode !== 'alt-text' &&
                           webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
                             webrtcStore.myPeerId
                       }"
@@ -847,7 +863,7 @@ const showInfoLog = () => {
                       <video
                         class="h-full w-full"
                         :class="{
-                          'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                          'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
                         }"
                         :srcObject.prop="pm.mediaStream"
                         autoplay
@@ -897,6 +913,17 @@ const showInfoLog = () => {
                       @change-audio-input="changeAudioInput"
                     />
                     -->
+
+                    <div class="">
+                      <div class="">表示名</div>
+                      <InputText class="me-2 h-10 w-64" placeholder="表示名" v-model="myDisplayName" />
+                      <ButtonGeneralPrimary
+                        class=""
+                        @click="changeDisplayName"
+                      >
+                        変更
+                      </ButtonGeneralPrimary>
+                    </div>
 
                   </div>
                 </template>
@@ -1010,7 +1037,9 @@ const showInfoLog = () => {
   }
 }
 
-.main-speaker-view,
+.main-speaker-view {
+  height: calc(100vh - 148px - 80px);
+}
 .main-matrix-view {
   height: calc(100vh - 80px);
 }
