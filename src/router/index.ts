@@ -39,11 +39,6 @@ const router = createRouter({
       component: () => import('../views/samples/TfView.vue')
     },
     {
-      path: '/samples/frame',
-      name: 'samples_frame',
-      component: () => import('../views/samples/FrameView.vue')
-    },
-    {
       path: '/signin',
       name: 'sign-in',
       component: () => import('../views/auth/SigninView.vue')

@@ -592,6 +592,18 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
   }
 
+  // peerID => DisplayName 取得
+  function getDisplayName(peerId: string) {
+    let targetDisplayName = ''
+    Object.keys(peerMedias.value).forEach((sKey) => {
+      if (peerMedias.value[sKey].peerId === peerId) {
+        targetDisplayName = peerMedias.value[sKey].displayName
+      }
+    })
+
+    return targetDisplayName
+  }
+
   return {
     myName,
     myPeerId,
@@ -610,6 +622,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     disconnectMedia2,
     checkMedias,
     sendDataAll,
+    getDisplayName,
 
     showInfoLog
   }

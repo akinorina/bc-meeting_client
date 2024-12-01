@@ -28,7 +28,7 @@ const emit = defineEmits([
 <template>
   <div class="w-full bg-slate-200 p-2">
     <div class="flex justify-between">
-      <div class=""></div>
+      <div class="" style="width: 306px;"></div>
 
       <div class="">
         <!-- showInfoLog -->
@@ -151,22 +151,17 @@ const emit = defineEmits([
         <!-- // toggle Audio -->
       </div>
 
-      <div class="">
+      <div class="border">
         <!-- chat -->
-        <ButtonGeneralSecondary class="w-18 me-2 h-12" @click="emit('open-chat')">
-          chat
+        <ButtonGeneralSecondary class="w-24 me-2 h-12" @click="emit('open-chat')">
+          チャット
         </ButtonGeneralSecondary>
         <!-- // chat -->
         <!-- 設定 -->
-        <ButtonGeneralSecondary class="w-18 me-2 h-12" @click="emit('open-settings')">
+        <ButtonGeneralSecondary class="w-24 me-2 h-12" @click="emit('open-settings')">
           設定
         </ButtonGeneralSecondary>
         <!-- // 設定 -->
-        <!-- 背景 -->
-        <ButtonGeneralSecondary class="w-18 me-2 h-12" @click="emit('open-bg')">
-          背景
-        </ButtonGeneralSecondary>
-        <!-- // 背景 -->
 
         <!-- 退室 -->
         <ButtonGeneralDanger class="me-0 h-12 w-24" @click="emit('exit-room')">
