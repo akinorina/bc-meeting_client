@@ -253,7 +253,6 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
     // [画像セグメンテーション]: 判定結果 => imageData 加工 => dataNew
     const mask = result.categoryMask.getAsFloat32Array()
-    // console.log('mask.length', mask.length) // 2073600 = 1920 x 1080
     let j = 0
     for (let i = 0; i < mask.length; ++i) {
       const maskVal = Math.floor(mask[i] * 255.0)
@@ -319,7 +318,6 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
 
     // [画像セグメンテーション]: 判定結果 => imageData 加工 => dataNew
     const mask = result.categoryMask.getAsFloat32Array()
-    console.log('mask.length', mask.length) // 2073600 = 1920 x 1080
     let j = 0
     for (let i = 0; i < mask.length; ++i) {
       const maskVal = Math.floor(mask[i] * 255.0)
