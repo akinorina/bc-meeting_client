@@ -19,19 +19,15 @@ const emit = defineEmits([
   'toggle-video',
   'toggle-audio',
   'exit-room',
-  'open-settings',
+  'open-settings'
 ])
 </script>
 
 <template>
   <div class="w-full bg-slate-50">
-
-    <div class="sm:hidden flex justify-center items-center w-full h-16 bg-slate-500">
+    <div class="flex h-16 w-full items-center justify-center bg-slate-500 sm:hidden">
       <!-- change View mode -->
-      <ButtonGeneralPrimary
-        class="me-2 w-12 h-12 p-0 m-0"
-        @click="emit('change-view-mode')"
-      >
+      <ButtonGeneralPrimary class="m-0 me-2 h-12 w-12 p-0" @click="emit('change-view-mode')">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -61,7 +57,7 @@ const emit = defineEmits([
 
       <!-- toggle Video -->
       <ButtonGeneralPrimary
-        class="me-2 w-12 h-12 p-0 m-0"
+        class="m-0 me-2 h-12 w-12 p-0"
         :class="{
           'bg-slate-400': !trackStatusVideo,
           'hover:bg-slate-500': !trackStatusVideo
@@ -101,7 +97,7 @@ const emit = defineEmits([
 
       <!-- toggle Audio -->
       <ButtonGeneralPrimary
-        class="me-2 w-12 h-12 p-0 m-0"
+        class="m-0 me-2 h-12 w-12 p-0"
         :class="{
           'bg-slate-400': !trackStatusAudio,
           'hover:bg-slate-500': !trackStatusAudio
@@ -142,32 +138,32 @@ const emit = defineEmits([
       <!-- // toggle Audio -->
 
       <!-- 設定 -->
-      <ButtonGeneralPrimary
-        class="me-2 w-18 h-12 p-0 m-0"
-        @click="emit('open-settings')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
-          <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+      <ButtonGeneralPrimary class="w-18 m-0 me-2 h-12 p-0" @click="emit('open-settings')">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="currentColor"
+          class="bi bi-three-dots-vertical"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"
+          />
         </svg>
       </ButtonGeneralPrimary>
       <!-- // 設定 -->
 
       <!-- 退室 -->
-      <ButtonGeneralDanger
-        class="me-2 w-18 h-12 p-0 m-0"
-        @click="emit('exit-room')"
-      >
+      <ButtonGeneralDanger class="w-18 m-0 me-2 h-12 p-0" @click="emit('exit-room')">
         退室
       </ButtonGeneralDanger>
       <!-- // 退室 -->
     </div>
 
-    <div class="hidden sm:flex sm:justify-center sm:items-center w-full h-16 bg-slate-500">
+    <div class="hidden h-16 w-full bg-slate-500 sm:flex sm:items-center sm:justify-center">
       <!-- change View mode -->
-      <ButtonGeneralPrimary
-        class="w-12 h-12 me-2"
-        @click="emit('change-view-mode')"
-      >
+      <ButtonGeneralPrimary class="me-2 h-12 w-12" @click="emit('change-view-mode')">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -197,7 +193,7 @@ const emit = defineEmits([
 
       <!-- toggle Video -->
       <ButtonGeneralPrimary
-        class="w-12 h-12 me-2"
+        class="me-2 h-12 w-12"
         :class="{
           'bg-slate-400': !trackStatusVideo,
           'hover:bg-slate-500': !trackStatusVideo
@@ -237,7 +233,7 @@ const emit = defineEmits([
 
       <!-- toggle Audio -->
       <ButtonGeneralPrimary
-        class="w-12 h-12 me-2"
+        class="me-2 h-12 w-12"
         :class="{
           'bg-slate-400': !trackStatusAudio,
           'hover:bg-slate-500': !trackStatusAudio
@@ -278,25 +274,27 @@ const emit = defineEmits([
       <!-- // toggle Audio -->
 
       <!-- 設定 -->
-      <ButtonGeneralSecondary
-        class="w-12 h-12 me-2"
-        @click="emit('open-settings')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
-          <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+      <ButtonGeneralSecondary class="me-2 h-12 w-12" @click="emit('open-settings')">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="currentColor"
+          class="bi bi-three-dots-vertical"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"
+          />
         </svg>
       </ButtonGeneralSecondary>
       <!-- // 設定 -->
 
       <!-- 退室 -->
-      <ButtonGeneralDanger
-        class="w-16 h-12 me-2"
-        @click="emit('exit-room')"
-      >
+      <ButtonGeneralDanger class="me-2 h-12 w-16" @click="emit('exit-room')">
         退室
       </ButtonGeneralDanger>
       <!-- // 退室 -->
     </div>
-
   </div>
 </template>

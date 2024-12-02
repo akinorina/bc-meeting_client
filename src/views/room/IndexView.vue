@@ -61,56 +61,56 @@ const videoModeData = ref<BackgroundSettingObject>({
     label: '通常',
     type: 'normal',
     blur: 0,
-    url: '/bg/normal.jpg',
+    url: '/bg/normal.jpg'
   },
   blur10: {
     label: 'ぼかし10',
     type: 'blur',
     blur: 10,
-    url: '/bg/bgblur10.jpg',
+    url: '/bg/bgblur10.jpg'
   },
   blur30: {
     label: 'ぼかし30',
     type: 'blur',
     blur: 30,
-    url: '/bg/bgblur30.jpg',
+    url: '/bg/bgblur30.jpg'
   },
   image1: {
     label: '壁紙１',
     type: 'image',
     blur: 0,
-    url: '/bg/pink.jpg',
+    url: '/bg/pink.jpg'
   },
   image2: {
     label: '壁紙２',
     type: 'image',
     blur: 0,
-    url: '/bg/water.jpg',
+    url: '/bg/water.jpg'
   },
   image3: {
     label: '壁紙３',
     type: 'image',
     blur: 0,
-    url: '/bg/leaf.jpg',
+    url: '/bg/leaf.jpg'
   },
   image4: {
     label: '壁紙４',
     type: 'image',
     blur: 0,
-    url: '/bg/yellow.jpg',
+    url: '/bg/yellow.jpg'
   },
   image11: {
     label: '壁紙11',
     type: 'image',
     blur: 0,
-    url: '/bg/bgimage1.jpg',
+    url: '/bg/bgimage1.jpg'
   },
   image12: {
     label: '壁紙12',
     type: 'image',
     blur: 0,
-    url: '/bg/bgimage2.jpg',
-  },
+    url: '/bg/bgimage2.jpg'
+  }
 })
 
 // my MediaStream video/audio
@@ -596,7 +596,6 @@ const changeDisplayName = () => {
   // 相手へ送信
   webrtcStore.sendMyNameToAll()
 }
-
 </script>
 
 <template>
@@ -639,7 +638,7 @@ const changeDisplayName = () => {
             <div class="flex w-full justify-between">
               <div class="my-3 flex items-center justify-center">
                 <!-- 戻る -->
-                <ButtonGeneralSecondary class="h-12 w-20 me-2" @click="toTopPage">
+                <ButtonGeneralSecondary class="me-2 h-12 w-20" @click="toTopPage">
                   &lt;&lt; 戻る
                 </ButtonGeneralSecondary>
                 <!-- // 戻る -->
@@ -733,8 +732,17 @@ const changeDisplayName = () => {
                   class="me-1 h-12 w-12 px-0"
                   @click="openSettingsSp('settings')"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
-                    <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    fill="currentColor"
+                    class="bi bi-three-dots-vertical"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"
+                    />
                   </svg>
                 </ButtonGeneralPrimary>
                 <!-- // 設定 -->
@@ -802,15 +810,15 @@ const changeDisplayName = () => {
         <!-- 入室(meeting)状態 -->
 
         <!-- xs: スマートフォン -->
-        <div class="sm:hidden mx-auto h-screen w-screen bg-slate-400">
+        <div class="mx-auto h-screen w-screen bg-slate-400 sm:hidden">
           <!-- main -->
           <div class="main flex justify-start">
-            <div class=" relative">
+            <div class="relative">
               <!-- ViewMode: Speaker -->
               <template v-if="viewMode === 'speaker'">
                 <!-- speakers list -->
                 <div
-                  class="speakers absolute bottom-0 w-screen left-0 z-20 overflow-x-auto rounded-sm bg-slate-300"
+                  class="speakers absolute bottom-0 left-0 z-20 w-screen overflow-x-auto rounded-sm bg-slate-300"
                 >
                   <div class="speakers-list flex flex-nowrap justify-start">
                     <div
@@ -824,7 +832,9 @@ const changeDisplayName = () => {
                           class=""
                           :class="{
                             'my-video-mirrored':
-                              myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                              myVideoMirrored &&
+                              videoMode !== 'alt-text' &&
+                              pm.peerId === webrtcStore.myPeerId
                           }"
                           :srcObject.prop="pm.mediaStream"
                           autoplay
@@ -860,7 +870,8 @@ const changeDisplayName = () => {
                       class="h-full w-full"
                       :class="{
                         'my-video-mirrored':
-                          myVideoMirrored && videoMode !== 'alt-text' &&
+                          myVideoMirrored &&
+                          videoMode !== 'alt-text' &&
                           webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
                             webrtcStore.myPeerId
                       }"
@@ -923,7 +934,10 @@ const changeDisplayName = () => {
                       <video
                         class="h-full w-full"
                         :class="{
-                          'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                          'my-video-mirrored':
+                            myVideoMirrored &&
+                            videoMode !== 'alt-text' &&
+                            pm.peerId === webrtcStore.myPeerId
                         }"
                         :srcObject.prop="pm.mediaStream"
                         autoplay
@@ -953,7 +967,7 @@ const changeDisplayName = () => {
           <!-- // main -->
 
           <!-- footer -->
-          <div class="footer h-16 flex items-center justify-between bg-slate-200">
+          <div class="footer flex h-16 items-center justify-between bg-slate-200">
             <MeetingController
               :viewMode="viewMode"
               :trackStatusVideo="trackStatus.video"
@@ -970,10 +984,10 @@ const changeDisplayName = () => {
         <!-- // xs: スマートフォン -->
 
         <!-- sm: タブレット、パソコン -->
-        <div class="hidden sm:block mx-auto h-screen w-screen bg-slate-400">
+        <div class="mx-auto hidden h-screen w-screen bg-slate-400 sm:block">
           <!-- main -->
           <div class="main flex justify-start">
-            <div class="pc-meeting relative" :class="{'pc-meeting-full': selectedTabPc === '' }">
+            <div class="pc-meeting relative" :class="{ 'pc-meeting-full': selectedTabPc === '' }">
               <!-- ViewMode: Speaker -->
               <template v-if="viewMode === 'speaker'">
                 <!-- speakers list -->
@@ -989,10 +1003,12 @@ const changeDisplayName = () => {
                     >
                       <template v-if="pm.available">
                         <video
-                          class="w-96 h-36"
+                          class="h-36 w-96"
                           :class="{
                             'my-video-mirrored':
-                              myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                              myVideoMirrored &&
+                              videoMode !== 'alt-text' &&
+                              pm.peerId === webrtcStore.myPeerId
                           }"
                           :srcObject.prop="pm.mediaStream"
                           autoplay
@@ -1028,7 +1044,8 @@ const changeDisplayName = () => {
                       class="h-full w-full"
                       :class="{
                         'my-video-mirrored':
-                          myVideoMirrored && videoMode !== 'alt-text' &&
+                          myVideoMirrored &&
+                          videoMode !== 'alt-text' &&
                           webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
                             webrtcStore.myPeerId
                       }"
@@ -1091,7 +1108,10 @@ const changeDisplayName = () => {
                       <video
                         class="h-full w-full"
                         :class="{
-                          'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                          'my-video-mirrored':
+                            myVideoMirrored &&
+                            videoMode !== 'alt-text' &&
+                            pm.peerId === webrtcStore.myPeerId
                         }"
                         :srcObject.prop="pm.mediaStream"
                         autoplay
@@ -1142,22 +1162,22 @@ const changeDisplayName = () => {
 
                     <div class="">
                       <div class="">表示名</div>
-                      <InputText class="me-2 h-10 w-64" placeholder="表示名" v-model="myDisplayName" />
-                      <ButtonGeneralPrimary
-                        class=""
-                        @click="changeDisplayName"
-                      >
+                      <InputText
+                        class="me-2 h-10 w-64"
+                        placeholder="表示名"
+                        v-model="myDisplayName"
+                      />
+                      <ButtonGeneralPrimary class="" @click="changeDisplayName">
                         変更
                       </ButtonGeneralPrimary>
                     </div>
-
                   </div>
                 </template>
 
                 <template v-else-if="selectedTabPc === 'virtual-background'">
                   <!-- 背景設定 -->
                   <div class="m-0 px-3 py-3">バーチャル背景 設定</div>
-                  <div class="w-full h-full overflow-y-auto">
+                  <div class="h-full w-full overflow-y-auto">
                     <SelectVirtualBackground
                       :videoModeData="videoModeData"
                       v-model="videoMode"
@@ -1213,20 +1233,18 @@ const changeDisplayName = () => {
 
   <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
-    <div class="block sm:hidden sp-dialog w-80 h-full p-5">
+    <div class="sp-dialog block h-full w-80 p-5 sm:hidden">
       <div class="sp-dialog__contents">
         <template v-if="selectedTabSp === 'chat'">
-
           <TextChat />
-
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
-
           <div class="text-center font-bold">設定</div>
           <div class="overflow-y-auto">
-
             <div class="my-5 w-full border px-2 py-5">
-              <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+              <InputCheckbox class="" v-model="myVideoMirrored"
+                >自身の画像を鏡映反転する</InputCheckbox
+              >
             </div>
 
             <DeviceSettings
@@ -1236,30 +1254,23 @@ const changeDisplayName = () => {
 
             <div class="">表示名</div>
             <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
-            <ButtonGeneralPrimary
-              class="w-18 mb-10"
-              @click="changeDisplayName"
-            >
+            <ButtonGeneralPrimary class="w-18 mb-10" @click="changeDisplayName">
               変更
             </ButtonGeneralPrimary>
           </div>
-
         </template>
         <template v-else-if="selectedTabSp === 'virtual-background'">
-
           <div class="text-center font-bold">バーチャル背景 設定</div>
-          <div class="w-full h-96 overflow-y-auto">
+          <div class="h-96 w-full overflow-y-auto">
             <SelectVirtualBackground
               :videoModeData="videoModeData"
               v-model="videoMode"
               @change="changeVideoMode"
             />
           </div>
-
         </template>
       </div>
       <div class="sp-dialog__footer">
-
         <RightsideMenu
           :selected="selectedTabSp"
           @open-chat="selectSettingsSp('chat')"
@@ -1268,24 +1279,24 @@ const changeDisplayName = () => {
         />
 
         <div class="mt-2 text-center">
-          <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
+          <ButtonGeneralPrimary class="" @click="modalSettings.close()">
+            close
+          </ButtonGeneralPrimary>
         </div>
       </div>
     </div>
-    <div class="hidden sm:block pc-dialog w-80 h-full p-5">
+    <div class="pc-dialog hidden h-full w-80 p-5 sm:block">
       <div class="pc-dialog__contents">
         <template v-if="selectedTabSp === 'chat'">
-
           <TextChat />
-
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
-
           <div class="text-center font-bold">設定</div>
           <div class="overflow-y-auto">
-
             <div class="my-5 w-full border px-2 py-5">
-              <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+              <InputCheckbox class="" v-model="myVideoMirrored"
+                >自身の画像を鏡映反転する</InputCheckbox
+              >
             </div>
 
             <DeviceSettings
@@ -1295,30 +1306,23 @@ const changeDisplayName = () => {
 
             <div class="">表示名</div>
             <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
-            <ButtonGeneralPrimary
-              class="w-18 mb-10"
-              @click="changeDisplayName"
-            >
+            <ButtonGeneralPrimary class="w-18 mb-10" @click="changeDisplayName">
               変更
             </ButtonGeneralPrimary>
           </div>
-
         </template>
         <template v-else-if="selectedTabSp === 'virtual-background'">
-
           <div class="text-center font-bold">バーチャル背景 設定</div>
-          <div class="w-full my-2">
+          <div class="my-2 w-full">
             <SelectVirtualBackground
               :videoModeData="videoModeData"
               v-model="videoMode"
               @change="changeVideoMode"
             />
           </div>
-
         </template>
       </div>
       <div class="pc-dialog__footer">
-
         <RightsideMenu
           :selected="selectedTabSp"
           @open-chat="selectSettingsSp('chat')"
@@ -1327,7 +1331,9 @@ const changeDisplayName = () => {
         />
 
         <div class="mt-2 text-center">
-          <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
+          <ButtonGeneralPrimary class="" @click="modalSettings.close()">
+            close
+          </ButtonGeneralPrimary>
         </div>
       </div>
     </div>
