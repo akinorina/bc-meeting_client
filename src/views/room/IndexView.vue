@@ -10,19 +10,29 @@ import { useRoomStore } from '@/stores/rooms'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
-import ButtonGeneralDanger from '@/components/ui/ButtonGeneralDanger.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import VccHeader from '@/components/VccHeader.vue'
 import InputCheckbox from '@/components/ui/InputCheckbox.vue'
-import ModalessGeneral from '@/components/ModalessGeneral.vue'
 import InputText from '@/components/ui/InputText.vue'
+import MeetingController from '@/components/MeetingController.vue'
+import RightsideMenu from '@/components/RightsideMenu.vue'
+import TextChat from '@/components/TextChat.vue'
+import DeviceSettings from '@/components/DeviceSettings.vue'
+import SelectVirtualBackground from '@/components/SelectVirtualBackground.vue'
+import type { BackgroundSettingObject } from '@/lib'
 
 const router = useRouter()
 const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
+
+const numOfPeers = ref(0)
+watch(webrtcStore.peerMedias, () => {
+  numOfPeers.value = Object.keys(webrtcStore.peerMedias).length
+})
+
 const mediaDeviceStore = useMediaDeviceStore()
 const mediaStreamStore = useMediaStreamStore()
 const roomStore = useRoomStore()
@@ -44,14 +54,39 @@ const isBadRoomHash = ref<boolean>(false)
 const mediaStream = ref<MediaStream>(new MediaStream())
 
 // video mode
-const videoMode = ref('normal:0')
-const videoModeTmp = ref('normal:0')
-const videoModes = ref({
-  'normal:0': '通常',
-  'blur:10': 'ぼかし10',
-  'blur:30': 'ぼかし30',
-  'image:/bgimage1.jpg': '壁紙１',
-  'image:/bgimage2.jpg': '壁紙２'
+const videoMode = ref('normal')
+const videoModeTmp = ref('normal')
+const videoModeData = ref<BackgroundSettingObject>({
+  normal: {
+    label: '通常',
+    type: 'normal',
+    blur: 0,
+    url: '/bg/normal.jpg',
+  },
+  blur10: {
+    label: 'ぼかし10',
+    type: 'blur',
+    blur: 10,
+    url: '/bg/bgblur10.jpg',
+  },
+  blur30: {
+    label: 'ぼかし30',
+    type: 'blur',
+    blur: 30,
+    url: '/bg/bgblur30.jpg',
+  },
+  image1: {
+    label: '壁紙１',
+    type: 'image',
+    blur: 0,
+    url: '/bg/bgimage1.jpg',
+  },
+  image2: {
+    label: '壁紙２',
+    type: 'image',
+    blur: 0,
+    url: '/bg/bgimage2.jpg',
+  },
 })
 
 // my MediaStream video/audio
@@ -78,14 +113,8 @@ const viewMode = ref<'speaker' | 'matrix'>('speaker')
 // Speaker View - 現在のスピーカーの Peer ID.
 const targetSpeakerPeerId = ref('')
 
-// dataConn（チャット）用 メッセージ
-const messageText = ref('')
-
 // check interval ID.
 let cIId: any = null
-
-// Modal: dataConn datalist
-const modalDataConnList = ref()
 
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
@@ -213,43 +242,54 @@ const toTopPage = () => {
 const changeVideoMode = async () => {
   trackStatus.value.video = true
 
+  if (statusEnterRoom.value) {
+    // media すべて切断
+    await webrtcStore.disconnectMedia2()
+  }
+
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
   })
 
-  const selected = videoMode.value.match(/(.+):(.+)/)
-  if (selected) {
-    switch (selected[1]) {
-      case 'normal':
-        // Normal のVideoトラックを mediaStream に追加
-        mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-          mediaStream.value.addTrack(tr.clone())
-        })
-        break
-      case 'alt-text':
-        // AltText のVideoトラックを mediaStream に追加
-        mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-          mediaStream.value.addTrack(tr.clone())
-        })
-        break
-      case 'blur':
-      case 'image':
-        // VirtualBackground パラメータ設定
-        mediaStreamStore.virtualMode = selected[1]
-        mediaStreamStore.backgroundBlur = parseInt(selected[2])
-        mediaStreamStore.bgImageUrl = selected[2]
+  switch (videoModeData.value[videoMode.value].type) {
+    case 'normal':
+      // Normal のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'alt-text':
+      // AltText のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+    case 'blur':
+    case 'image':
+      // VirtualBackground パラメータ設定
+      mediaStreamStore.virtualMode = videoModeData.value[videoMode.value].type
+      mediaStreamStore.backgroundBlur = videoModeData.value[videoMode.value].blur
+      mediaStreamStore.bgImageUrl = videoModeData.value[videoMode.value].url
 
-        // VirtualBackground 再起動
-        mediaStreamStore.closeVirtualBackground()
-        await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+      // VirtualBackground 再起動
+      mediaStreamStore.closeVirtualBackground()
+      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
 
-        // VirtualBackground のVideoトラックを mediaStream に追加
-        mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-          mediaStream.value.addTrack(tr.clone())
-        })
-        break
-    }
+      // VirtualBackground のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+      break
+  }
+
+  if (statusEnterRoom.value) {
+    // 入室状態を取得
+    const roomInfo = await roomStore.statusRoom(roomHash.value)
+    roomInfo.attenders.forEach(async (item: any) => {
+      // 現在の参加者それぞれへメディア再接続
+      await webrtcStore.connectMedia2(item.peer_id)
+    })
   }
 }
 
@@ -283,9 +323,6 @@ const enterRoom = async () => {
     checkStatusPeerConn()
   }, 5000)
 
-  // // open dataConn modal
-  // modalDataConnList.value.open()
-
   // 状態: 入室
   statusEnterRoom.value = true
 }
@@ -294,9 +331,6 @@ const enterRoom = async () => {
 const exitRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
-
-  // // close dataConn modal
-  // modalDataConnList.value.close()
 
   if (cIId !== null) {
     await clearInterval(cIId)
@@ -412,12 +446,50 @@ const chooseSpeaker = (peerId: string) => {
   targetSpeakerPeerId.value = peerId
 }
 
-// Text-chat: メッセージ送信
-const sendText = () => {
-  webrtcStore.sendDataAll(messageText.value)
+// [スマートフォン]: settings: 設定ダイアログ
+const selectedTabSp = ref<'' | 'chat' | 'settings' | 'virtual-background'>('chat')
+// [スマートフォン]: 設定ダイアログ: ダイアログを開く
+const openSettingsSp = (selected: '' | 'chat' | 'settings' | 'virtual-background') => {
+  // デバイス一覧 更新
+  mediaDeviceStore.makeDeviceList()
+
+  // tab選択
+  selectedTabSp.value = selected
+
+  // 設定ダイアログを開く
+  modalSettings.value.open()
+}
+// [スマートフォン]: 設定ダイアログ: タブを選択
+const selectSettingsSp = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
+  selectedTabSp.value = value
+
+  if (selectedTabSp.value === 'settings') {
+    mediaDeviceStore.makeDeviceList()
+  }
 }
 
+// [Tablet / PC]: settings: 右サイド・設定欄 : '' | 'chat' | 'settings' | 'virtual-background'
+const selectedTabPc = ref<'' | 'chat' | 'settings' | 'virtual-background'>('')
+// [Tablet / PC]: 設定ダイアログ: タブを選択
+const selectSettingsPc = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
+  if (selectedTabPc.value === value) {
+    selectedTabPc.value = ''
+  } else {
+    selectedTabPc.value = value
+
+    if (selectedTabPc.value === 'settings') {
+      mediaDeviceStore.makeDeviceList()
+    }
+  }
+}
+
+// 設定ダイアログ: Video入力 切替
 const changeVideoInput = async () => {
+  if (statusEnterRoom.value) {
+    // media すべて切断
+    await webrtcStore.disconnectMedia2()
+  }
+
   // close the video mediastream
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
@@ -453,8 +525,18 @@ const changeVideoInput = async () => {
       })
       break
   }
+
+  if (statusEnterRoom.value) {
+    // 入室状態を取得
+    const roomInfo = await roomStore.statusRoom(roomHash.value)
+    roomInfo.attenders.forEach(async (item: any) => {
+      // 現在の参加者それぞれへメディア再接続
+      await webrtcStore.connectMedia2(item.peer_id)
+    })
+  }
 }
 
+// 設定ダイアログ: Audio入力 切替
 const changeAudioInput = async () => {
   // close the video mediastream
   mediaStream.value.getAudioTracks().forEach((tr) => {
@@ -475,27 +557,40 @@ const changeAudioInput = async () => {
   })
 }
 
-const showInfoLog = () => {
-  webrtcStore.showInfoLog()
+// 表示名を変更
+const changeDisplayName = () => {
+  // 表示名を更新
+  webrtcStore.myName = mediaStreamStore.altText = myDisplayName.value
+
+  // webrtcStore.peerMedias[myPeerId].displayName を更新
+  Object.keys(webrtcStore.peerMedias).forEach((sKey: string) => {
+    if (sKey === webrtcStore.myPeerId) {
+      webrtcStore.peerMedias[sKey].displayName = myDisplayName.value
+    }
+  })
+
+  // 相手へ送信
+  webrtcStore.sendMyNameToAll()
 }
+
 </script>
 
 <template>
-  <div class="h-full bg-slate-100">
-    <template v-if="isBadRoomHash">
-      <VccHeader />
+  <template v-if="isBadRoomHash">
+    <VccHeader />
 
-      <div class="container mx-auto h-full rounded-xl border bg-slate-100 p-3">
-        <div class="m-2">room ハッシュに誤りがあります。</div>
-        <div class="m-2">
-          <ButtonGeneralPrimary class="" @click="router.push({ name: 'index' })"
-            >&lt;&lt; Topページへ戻る</ButtonGeneralPrimary
-          >
-        </div>
+    <div class="container mx-auto h-full rounded-xl border bg-slate-100 p-3">
+      <div class="m-2">room ハッシュに誤りがあります。</div>
+      <div class="m-2">
+        <ButtonGeneralPrimary class="" @click="router.push({ name: 'index' })"
+          >&lt;&lt; Topページへ戻る</ButtonGeneralPrimary
+        >
       </div>
-    </template>
-    <template v-else>
-      <div class="bg-slate-100 pb-10" v-if="statusEnterRoom === false">
+    </div>
+  </template>
+  <template v-else>
+    <template v-if="statusEnterRoom === false">
+      <div class="bg-slate-100 pb-10">
         <!-- 入室前状態 -->
 
         <VccHeader />
@@ -520,25 +615,13 @@ const showInfoLog = () => {
             <div class="flex w-full justify-between">
               <div class="my-3 flex items-center justify-center">
                 <!-- 戻る -->
-                <ButtonGeneralSecondary class="h-12 w-20" @click="toTopPage">
+                <ButtonGeneralSecondary class="h-12 w-20 me-2" @click="toTopPage">
                   &lt;&lt; 戻る
                 </ButtonGeneralSecondary>
                 <!-- // 戻る -->
               </div>
 
               <div class="my-3 flex items-center justify-center">
-                <!-- showInfoLog -->
-                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
-                  info
-                </ButtonGeneralPrimary>
-                <!-- // showInfoLog -->
-
-                <!-- 設定 -->
-                <ButtonGeneralPrimary class="me-1 h-12" @click="modalSettings.open()">
-                  設定
-                </ButtonGeneralPrimary>
-                <!-- // 設定 -->
-
                 <!-- video on/off -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12"
@@ -621,15 +704,16 @@ const showInfoLog = () => {
                 </ButtonGeneralPrimary>
                 <!-- // mic on/off -->
 
-                <!-- 背景設定 -->
-                <select class="w-28 p-3" v-model="videoMode" @change="changeVideoMode">
-                  <template v-for="(val, sKey) in videoModes" :key="sKey">
-                    <option :value="sKey">
-                      {{ val }}
-                    </option>
-                  </template>
-                </select>
-                <!-- // 背景設定 -->
+                <!-- 設定 -->
+                <ButtonGeneralPrimary
+                  class="me-1 h-12 w-12 px-0"
+                  @click="openSettingsSp('settings')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
+                    <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
+                  </svg>
+                </ButtonGeneralPrimary>
+                <!-- // 設定 -->
               </div>
 
               <div class="w-20"></div>
@@ -688,392 +772,411 @@ const showInfoLog = () => {
 
         <!-- // 入室前状態 -->
       </div>
-      <div class="" v-else>
+    </template>
+    <template v-else>
+      <div class="">
         <!-- 入室(meeting)状態 -->
 
-        <div v-if="viewMode === 'speaker'">
-          <div class="relative h-screen bg-slate-500">
-            <!-- UI -->
-            <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
-              <div class="flex">
-                <!-- showInfoLog -->
-                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
-                  info
-                </ButtonGeneralPrimary>
-                <!-- // showInfoLog -->
-
-                <!-- 表示切替 -->
-                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    class="bi bi-person-fill"
-                    viewBox="0 0 16 16"
-                  >
-                    <path
-                      d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"
-                    />
-                  </svg>
-                </ButtonGeneralPrimary>
-                <!-- // 表示切替 -->
-
-                <!-- video on/off -->
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-12"
-                  :class="{
-                    'bg-slate-400': !trackStatus.video,
-                    'hover:bg-slate-500': !trackStatus.video
-                  }"
-                  @click="toggleVideo"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-camera-video-fill"
-                    viewBox="0 0 20 20"
-                    v-if="trackStatus.video"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"
-                    />
-                  </svg>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-camera-video-off-fill"
-                    viewBox="0 0 20 20"
-                    v-else
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
-                    />
-                  </svg>
-                </ButtonGeneralPrimary>
-                <!-- // video on/off -->
-
-                <!-- audio on/off -->
-                <ButtonGeneralPrimary
-                  class="me-2 h-12 w-12"
-                  :class="{
-                    'bg-slate-400': !trackStatus.audio,
-                    'hover:bg-slate-500': !trackStatus.audio
-                  }"
-                  @click="toggleAudio"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-mic-fill"
-                    viewBox="0 0 20 20"
-                    v-if="trackStatus.audio"
-                  >
-                    <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
-                    <path
-                      d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"
-                    />
-                  </svg>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-mic-mute-fill"
-                    viewBox="0 0 20 20"
-                    v-else
-                  >
-                    <path
-                      d="M13 8c0 .564-.094 1.107-.266 1.613l-.814-.814A4.02 4.02 0 0 0 12 8V7a.5.5 0 0 1 1 0v1zm-5 4c.818 0 1.578-.245 2.212-.667l.718.719a4.973 4.973 0 0 1-2.43.923V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 1 0v1a4 4 0 0 0 4 4zm3-9v4.879L5.158 2.037A3.001 3.001 0 0 1 11 3z"
-                    />
-                    <path
-                      d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
-                    />
-                  </svg>
-                </ButtonGeneralPrimary>
-                <!-- // audio on/off -->
-
-                <!-- 退室 -->
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">
-                  退室
-                </ButtonGeneralDanger>
-                <!-- // 退室 -->
-              </div>
-            </div>
-            <!-- // UI -->
-
-            <!-- speakers list -->
-            <div
-              class="max-w-screen absolute left-0 top-3 z-20 overflow-x-hidden rounded-sm border border-slate-500 bg-slate-300"
-            >
-              <div class="flex w-full flex-nowrap justify-start">
+        <!-- xs: スマートフォン -->
+        <div class="sm:hidden mx-auto h-screen w-screen bg-slate-400">
+          <!-- main -->
+          <div class="main flex justify-start">
+            <div class=" relative">
+              <!-- ViewMode: Speaker -->
+              <template v-if="viewMode === 'speaker'">
+                <!-- speakers list -->
                 <div
-                  class="relative flex h-24 w-32 items-center"
-                  v-for="pm in webrtcStore.peerMedias"
-                  :key="pm.peerId"
-                  @click="chooseSpeaker(pm.peerId)"
+                  class="speakers absolute bottom-0 w-screen left-0 z-20 overflow-x-auto rounded-sm bg-slate-300"
                 >
-                  <template v-if="pm.available">
+                  <div class="speakers-list flex flex-nowrap justify-start">
+                    <div
+                      class="speakers-list-item relative flex items-center"
+                      v-for="pm in webrtcStore.peerMedias"
+                      :key="pm.peerId"
+                      @click="chooseSpeaker(pm.peerId)"
+                    >
+                      <template v-if="pm.available">
+                        <video
+                          class=""
+                          :class="{
+                            'my-video-mirrored':
+                              myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                          }"
+                          :srcObject.prop="pm.mediaStream"
+                          autoplay
+                          muted
+                          playsinline
+                        ></video>
+                        <audio
+                          class=""
+                          :srcObject.prop="pm.mediaStream"
+                          autoplay
+                          v-if="pm.peerId !== webrtcStore.myPeerId"
+                        ></audio>
+                        <div
+                          class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                        >
+                          <div class="">
+                            {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+                <!-- // speakers list -->
+
+                <!-- current speaker -->
+                <div
+                  class="main-speaker-view relative flex flex-wrap justify-center bg-slate-500"
+                  v-if="targetSpeakerPeerId !== ''"
+                >
+                  <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
                     <video
-                      class="h-96 w-96"
+                      class="h-full w-full"
                       :class="{
-                        'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
+                        'my-video-mirrored':
+                          myVideoMirrored && videoMode !== 'alt-text' &&
+                          webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
+                            webrtcStore.myPeerId
                       }"
-                      :srcObject.prop="pm.mediaStream"
+                      :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
                       autoplay
                       muted
                       playsinline
                     ></video>
-                    <audio
-                      class=""
-                      :srcObject.prop="pm.mediaStream"
-                      autoplay
-                      v-if="pm.peerId !== webrtcStore.myPeerId"
-                    ></audio>
                     <div
                       class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
                     >
                       <div class="">
-                        {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                        {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
                       </div>
                     </div>
                   </template>
                 </div>
-              </div>
-            </div>
-            <!-- // speakers list -->
+                <!-- // current speaker -->
+              </template>
+              <!-- // ViewMode: Speaker -->
 
-            <!-- current speaker -->
-            <div
-              class="main-speaker-view flex w-screen flex-wrap justify-center bg-slate-500"
-              v-if="targetSpeakerPeerId !== ''"
-            >
-              <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
-                <video
-                  class="h-full w-full"
-                  :class="{
-                    'my-video-mirrored':
-                      myVideoMirrored &&
-                      webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
-                  }"
-                  :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
-                  autoplay
-                  muted
-                  playsinline
-                ></video>
-                <div
-                  class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
-                >
-                  <div class="">
-                    {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+              <!-- ViewMode: Matrix -->
+              <template v-else>
+                <div class="main-matrix-view flex flex-wrap items-center justify-center">
+                  <div
+                    class="relative flex items-center border bg-slate-500"
+                    :class="{
+                      'w-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 2,
+                      'w-1/2':
+                        3 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 4,
+                      'w-1/3':
+                        5 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 12,
+                      'w-1/4':
+                        13 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20,
+                      'h-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 1,
+                      'h-1/2':
+                        2 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 6,
+                      'h-1/3':
+                        7 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 9,
+                      'h-1/4':
+                        10 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 16,
+                      'h-1/5':
+                        17 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20
+                    }"
+                    v-for="(pm, peerId) in webrtcStore.peerMedias"
+                    :key="peerId"
+                  >
+                    <template v-if="pm.available">
+                      <video
+                        class="h-full w-full"
+                        :class="{
+                          'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                        }"
+                        :srcObject.prop="pm.mediaStream"
+                        autoplay
+                        muted
+                        playsinline
+                      ></video>
+                      <audio
+                        class=""
+                        :srcObject.prop="pm.mediaStream"
+                        autoplay
+                        v-if="pm.peerId !== webrtcStore.myPeerId"
+                      ></audio>
+                      <div
+                        class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                      >
+                        <div class="">
+                          {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                        </div>
+                      </div>
+                    </template>
                   </div>
                 </div>
               </template>
+              <!-- // ViewMode: Matrix -->
             </div>
-            <!-- // current speaker -->
           </div>
+          <!-- // main -->
+
+          <!-- footer -->
+          <div class="footer h-16 flex items-center justify-between bg-slate-200">
+            <MeetingController
+              :viewMode="viewMode"
+              :trackStatusVideo="trackStatus.video"
+              :trackStatusAudio="trackStatus.audio"
+              @change-view-mode="changeViewMode"
+              @toggle-video="toggleVideo"
+              @toggle-audio="toggleAudio"
+              @exit-room="exitRoom"
+              @open-settings="openSettingsSp('settings')"
+            />
+          </div>
+          <!-- // footer -->
         </div>
-        <div class="" v-else>
-          <div class="flex h-screen w-screen flex-wrap items-center justify-center">
-            <!-- UI -->
-            <div class="absolute bottom-3 right-3 z-10 rounded-md bg-slate-200 p-2">
-              <div class="flex">
-                <!-- showInfoLog -->
-                <ButtonGeneralPrimary class="me-1 h-12" @click="showInfoLog">
-                  info
-                </ButtonGeneralPrimary>
-                <!-- // showInfoLog -->
+        <!-- // xs: スマートフォン -->
 
-                <ButtonGeneralPrimary class="w-18 me-1 h-12" @click="changeViewMode">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    class="bi bi-grid-3x3"
-                    viewBox="0 0 16 16"
-                  >
-                    <path
-                      d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
-                    />
-                  </svg>
-                </ButtonGeneralPrimary>
-
-                <ButtonGeneralPrimary
-                  class="me-1 h-12 w-12"
-                  :class="{
-                    'bg-slate-400': !trackStatus.video,
-                    'hover:bg-slate-500': !trackStatus.video
-                  }"
-                  @click="toggleVideo"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-camera-video-fill"
-                    viewBox="0 0 20 20"
-                    v-if="trackStatus.video"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"
-                    />
-                  </svg>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-camera-video-off-fill"
-                    viewBox="0 0 20 20"
-                    v-else
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
-                    />
-                  </svg>
-                </ButtonGeneralPrimary>
-
-                <ButtonGeneralPrimary
-                  class="me-2 h-12 w-12"
-                  :class="{
-                    'bg-slate-400': !trackStatus.audio,
-                    'hover:bg-slate-500': !trackStatus.audio
-                  }"
-                  @click="toggleAudio"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-mic-fill"
-                    viewBox="0 0 20 20"
-                    v-if="trackStatus.audio"
-                  >
-                    <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
-                    <path
-                      d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"
-                    />
-                  </svg>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="30"
-                    height="24"
-                    fill="currentColor"
-                    class="bi bi-mic-mute-fill"
-                    viewBox="0 0 20 20"
-                    v-else
-                  >
-                    <path
-                      d="M13 8c0 .564-.094 1.107-.266 1.613l-.814-.814A4.02 4.02 0 0 0 12 8V7a.5.5 0 0 1 1 0v1zm-5 4c.818 0 1.578-.245 2.212-.667l.718.719a4.973 4.973 0 0 1-2.43.923V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 1 0v1a4 4 0 0 0 4 4zm3-9v4.879L5.158 2.037A3.001 3.001 0 0 1 11 3z"
-                    />
-                    <path
-                      d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
-                    />
-                  </svg>
-                </ButtonGeneralPrimary>
-
-                <ButtonGeneralDanger class="me-0 border-2" @click="exitRoom">
-                  退室
-                </ButtonGeneralDanger>
-              </div>
-            </div>
-            <!-- // UI -->
-
-            <div
-              class="relative flex items-center border bg-slate-500"
-              :class="{
-                'w-full':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 2,
-                'w-1/2':
-                  3 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 4,
-                'w-1/3':
-                  5 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 12,
-                'w-1/4':
-                  13 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 20,
-                'h-full':
-                  1 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 1,
-                'h-1/2':
-                  2 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 6,
-                'h-1/3':
-                  7 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 9,
-                'h-1/4':
-                  10 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 16,
-                'h-1/5':
-                  17 <= Object.keys(webrtcStore.peerMedias).length &&
-                  Object.keys(webrtcStore.peerMedias).length <= 20
-              }"
-              v-for="(pm, peerId) in webrtcStore.peerMedias"
-              :key="peerId"
-            >
-              <template v-if="pm.available">
-                <video
-                  class="h-full w-full"
-                  :class="{
-                    'my-video-mirrored': myVideoMirrored && pm.peerId === webrtcStore.myPeerId
-                  }"
-                  :srcObject.prop="pm.mediaStream"
-                  autoplay
-                  muted
-                  playsinline
-                ></video>
-                <audio
-                  class=""
-                  :srcObject.prop="pm.mediaStream"
-                  autoplay
-                  v-if="pm.peerId !== webrtcStore.myPeerId"
-                ></audio>
+        <!-- sm: タブレット、パソコン -->
+        <div class="hidden sm:block mx-auto h-screen w-screen bg-slate-400">
+          <!-- main -->
+          <div class="main flex justify-start">
+            <div class="pc-meeting relative" :class="{'pc-meeting-full': selectedTabPc === '' }">
+              <!-- ViewMode: Speaker -->
+              <template v-if="viewMode === 'speaker'">
+                <!-- speakers list -->
                 <div
-                  class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                  class="absolute bottom-0 left-0 z-20 overflow-x-hidden rounded-sm border-2 border-slate-500 bg-slate-300"
                 >
-                  <div class="">
-                    {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                  <div class="flex flex-nowrap justify-start">
+                    <div
+                      class="relative flex w-60 items-center"
+                      v-for="pm in webrtcStore.peerMedias"
+                      :key="pm.peerId"
+                      @click="chooseSpeaker(pm.peerId)"
+                    >
+                      <template v-if="pm.available">
+                        <video
+                          class="w-96 h-36"
+                          :class="{
+                            'my-video-mirrored':
+                              myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                          }"
+                          :srcObject.prop="pm.mediaStream"
+                          autoplay
+                          muted
+                          playsinline
+                        ></video>
+                        <audio
+                          class=""
+                          :srcObject.prop="pm.mediaStream"
+                          autoplay
+                          v-if="pm.peerId !== webrtcStore.myPeerId"
+                        ></audio>
+                        <div
+                          class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                        >
+                          <div class="">
+                            {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+                <!-- // speakers list -->
+
+                <!-- current speaker -->
+                <div
+                  class="main-speaker-view relative flex flex-wrap justify-center bg-slate-500"
+                  v-if="targetSpeakerPeerId !== ''"
+                >
+                  <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
+                    <video
+                      class="h-full w-full"
+                      :class="{
+                        'my-video-mirrored':
+                          myVideoMirrored && videoMode !== 'alt-text' &&
+                          webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
+                            webrtcStore.myPeerId
+                      }"
+                      :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
+                      autoplay
+                      muted
+                      playsinline
+                    ></video>
+                    <div
+                      class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                    >
+                      <div class="">
+                        {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      </div>
+                    </div>
+                  </template>
+                </div>
+                <!-- // current speaker -->
+              </template>
+              <!-- // ViewMode: Speaker -->
+
+              <!-- ViewMode: Matrix -->
+              <template v-else>
+                <div class="main-matrix-view flex flex-wrap items-center justify-center">
+                  <div
+                    class="relative flex items-center border bg-slate-500"
+                    :class="{
+                      'w-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 2,
+                      'w-1/2':
+                        3 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 4,
+                      'w-1/3':
+                        5 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 12,
+                      'w-1/4':
+                        13 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20,
+                      'h-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 1,
+                      'h-1/2':
+                        2 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 6,
+                      'h-1/3':
+                        7 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 9,
+                      'h-1/4':
+                        10 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 16,
+                      'h-1/5':
+                        17 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20
+                    }"
+                    v-for="(pm, peerId) in webrtcStore.peerMedias"
+                    :key="peerId"
+                  >
+                    <template v-if="pm.available">
+                      <video
+                        class="h-full w-full"
+                        :class="{
+                          'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' && pm.peerId === webrtcStore.myPeerId
+                        }"
+                        :srcObject.prop="pm.mediaStream"
+                        autoplay
+                        muted
+                        playsinline
+                      ></video>
+                      <audio
+                        class=""
+                        :srcObject.prop="pm.mediaStream"
+                        autoplay
+                        v-if="pm.peerId !== webrtcStore.myPeerId"
+                      ></audio>
+                      <div
+                        class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                      >
+                        <div class="">
+                          {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                        </div>
+                      </div>
+                    </template>
                   </div>
                 </div>
               </template>
+              <!-- // ViewMode: Matrix -->
             </div>
+
+            <!-- Rightside -->
+            <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
+              <div class="rightside__contents">
+                <template v-if="selectedTabPc === 'chat'">
+                  <TextChat />
+                </template>
+
+                <template v-else-if="selectedTabPc === 'settings'">
+                  <div class="p-5">
+                    <div class="text-center font-bold">設定</div>
+
+                    <div class="my-5 border px-2 py-5">
+                      <InputCheckbox class="" v-model="myVideoMirrored">
+                        自身の画像を鏡映反転する
+                      </InputCheckbox>
+                    </div>
+
+                    <DeviceSettings
+                      @change-video-input="changeVideoInput"
+                      @change-audio-input="changeAudioInput"
+                    />
+
+                    <div class="">
+                      <div class="">表示名</div>
+                      <InputText class="me-2 h-10 w-64" placeholder="表示名" v-model="myDisplayName" />
+                      <ButtonGeneralPrimary
+                        class=""
+                        @click="changeDisplayName"
+                      >
+                        変更
+                      </ButtonGeneralPrimary>
+                    </div>
+
+                  </div>
+                </template>
+
+                <template v-else-if="selectedTabPc === 'virtual-background'">
+                  <!-- 背景設定 -->
+                  <div class="m-0 px-3 py-3">バーチャル背景 設定</div>
+                  <div class="w-full h-full overflow-y-auto">
+                    <SelectVirtualBackground
+                      :videoModeData="videoModeData"
+                      v-model="videoMode"
+                      @change="changeVideoMode"
+                    />
+                  </div>
+                  <!-- // 背景設定 -->
+                </template>
+              </div>
+              <div class="rightside__menu">
+                <RightsideMenu
+                  :selected="selectedTabPc"
+                  @open-chat="selectSettingsPc('chat')"
+                  @open-settings="selectSettingsPc('settings')"
+                  @open-bg="selectSettingsPc('virtual-background')"
+                />
+              </div>
+            </div>
+            <!-- // Rightside -->
           </div>
+          <!-- // main -->
+
+          <!-- footer 64px -->
+          <div class="footer flex h-16 items-center justify-between bg-slate-200">
+            <MeetingController
+              :viewMode="viewMode"
+              :trackStatusVideo="trackStatus.video"
+              :trackStatusAudio="trackStatus.audio"
+              @change-view-mode="changeViewMode"
+              @toggle-video="toggleVideo"
+              @toggle-audio="toggleAudio"
+              @exit-room="exitRoom"
+              @open-settings="selectSettingsPc('settings')"
+            />
+          </div>
+          <!-- // footer -->
         </div>
+        <!-- // sm: タブレット、パソコン -->
 
         <!-- // 入室(meeting)状態 -->
       </div>
     </template>
-  </div>
-
-  <ModalessGeneral ref="modalDataConnList" :pos-left="750" :pos-top="100">
-    <div class="h-fit w-96">
-      <div class="">data conn.</div>
-      <div class="h-fit max-h-96 min-h-80 w-full overflow-y-auto border border-red-300">
-        <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
-          {{ item.type }}: - {{ item.message }}
-        </div>
-      </div>
-      <div class="">
-        <InputText class="w-80" v-model="messageText" />
-        <ButtonGeneralPrimary class="w-18" @click="sendText"> 送信 </ButtonGeneralPrimary>
-      </div>
-    </div>
-  </ModalessGeneral>
+  </template>
 
   <ModalGeneral ref="modalSendInvitaionSuccess">
     <div class="w-64 p-3">
@@ -1084,57 +1187,167 @@ const showInfoLog = () => {
     </div>
   </ModalGeneral>
 
+  <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
-    <div class="p-5">
-      <div class="text-center font-bold">設定</div>
+    <div class="dialog w-80 h-full p-5">
+      <div class="dialog__contents">
+        <template v-if="selectedTabSp === 'chat'">
 
-      <div class="my-5 w-96 border px-2 py-5">
-        <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+          <TextChat />
+
+        </template>
+        <template v-else-if="selectedTabSp === 'settings'">
+
+          <div class="text-center font-bold">設定</div>
+          <div class="overflow-y-auto">
+
+            <div class="my-5 w-full border px-2 py-5">
+              <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+            </div>
+
+            <DeviceSettings
+              @change-video-input="changeVideoInput"
+              @change-audio-input="changeAudioInput"
+            />
+
+            <div class="">表示名</div>
+            <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
+            <ButtonGeneralPrimary
+              class="w-18 mb-10"
+              @click="changeDisplayName"
+            >
+              変更
+            </ButtonGeneralPrimary>
+          </div>
+
+        </template>
+        <template v-else-if="selectedTabSp === 'virtual-background'">
+
+          <div class="text-center font-bold">バーチャル背景 設定</div>
+          <div class="w-full h-96 overflow-y-auto">
+            <SelectVirtualBackground
+              :videoModeData="videoModeData"
+              v-model="videoMode"
+              @change="changeVideoMode"
+            />
+          </div>
+
+        </template>
       </div>
+      <div class="dialog__footer">
 
-      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceVideoInputs.length > 0">
-        <div class="font-bold">映像入力</div>
-        <select
-          class="mt-3 w-full border p-3"
-          v-model="mediaDeviceStore.videoInputDeviceId"
-          @change="changeVideoInput"
-        >
-          <template v-for="(val, sKey) in mediaDeviceStore.deviceVideoInputs" :key="sKey">
-            <option :value="val.deviceId">
-              {{ val.label }}
-            </option>
-          </template>
-        </select>
-      </div>
+        <RightsideMenu
+          :selected="selectedTabSp"
+          @open-chat="selectSettingsSp('chat')"
+          @open-settings="selectSettingsSp('settings')"
+          @open-bg="selectSettingsSp('virtual-background')"
+        />
 
-      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceAudioInputs.length > 0">
-        <div class="font-bold">音声入力</div>
-        <select
-          class="mt-3 w-full border p-3"
-          v-model="mediaDeviceStore.audioInputDeviceId"
-          @change="changeAudioInput"
-        >
-          <template v-for="(val, sKey) in mediaDeviceStore.deviceAudioInputs" :key="sKey">
-            <option :value="val.deviceId">
-              {{ val.label }}
-            </option>
-          </template>
-        </select>
-      </div>
-
-      <div class="">
-        <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
+        <div class="mt-2 text-center">
+          <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
+        </div>
       </div>
     </div>
   </ModalGeneral>
+  <!-- // [スマートフォン]: チャット／設定／背景 ダイアログ -->
 </template>
 
 <style scoped lang="scss">
+$footerHeight: 64px;
+
+.main {
+  width: 100%;
+  height: calc(100vh - $footerHeight);
+}
+.footer {
+  height: $footerHeight;
+}
+
+.pc-meeting {
+  width: calc(100vw - 374px - 0px);
+  height: 100%;
+}
+.pc-meeting-full {
+  width: calc(100vw - 6px);
+}
+
+.rightside {
+  width: 374px;
+  height: 100%;
+
+  &__contents {
+    height: calc(100% - 43px);
+  }
+  &__menu {
+    height: 42px;
+    overflow: hidden;
+  }
+}
+
 .main-speaker-view {
-  height: calc(100vh - 100px);
+  height: calc(100vh - 148px - $footerHeight);
+}
+.main-matrix-view {
+  height: calc(100vh - $footerHeight);
 }
 
 .my-video-mirrored {
   transform: scaleX(-1);
+}
+
+.select-background-image {
+  width: 350px;
+  margin: 0 auto;
+  background-color: #f0f0f0;
+
+  .vbg {
+    width: 172px;
+    position: relative;
+
+    &_image {
+      width: 100%;
+      height: 100%;
+    }
+
+    &__radio {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: none;
+      transform: scale(2);
+      cursor: pointer;
+    }
+  }
+  .vbg.selected {
+    border: 3px black solid;
+  }
+}
+
+.speakers {
+  width: 100%;
+  overflow-x: auto;
+
+  &-list {
+    width: calc(240px * v-bind(numOfPeers));
+
+    &-item {
+      max-width: 240px;
+      max-height: 240px;
+      padding: 5px;
+    }
+  }
+}
+
+.dialog {
+  height: 80vh;
+
+  &__contents {
+    height: calc(100% - 80px);
+    // border: 1px blue dotted;
+    overflow-y: auto;
+  }
+  &__footer {
+    height: 80px;
+  }
 }
 </style>

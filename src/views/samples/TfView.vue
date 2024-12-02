@@ -14,20 +14,20 @@ import { onMounted, ref } from 'vue'
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ImageSegmenter, FilesetResolver, type ImageSegmenterResult } from "@mediapipe/tasks-vision";
+import { ImageSegmenter, FilesetResolver, type ImageSegmenterResult } from '@mediapipe/tasks-vision'
 
 // Get DOM elements
 const video = ref<HTMLVideoElement>()
 const canvasElement = ref()
-const canvasCtx = ref<CanvasRenderingContext2D>();
+const canvasCtx = ref<CanvasRenderingContext2D>()
 // const outputVideo = ref<HTMLVideoElement>()
 const outputMediaStream = ref<MediaStream>()
 
 const enableWebcamButtonName = ref('ENABLE SEGMENTATION')
-let webcamRunning: boolean = false;
+let webcamRunning: boolean = false
 // let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 
-const imageSegmenter = ref<ImageSegmenter>();
+const imageSegmenter = ref<ImageSegmenter>()
 // let labels: Array<string>;
 
 // const legendColors = [
@@ -55,23 +55,23 @@ const imageSegmenter = ref<ImageSegmenter>();
 //   [0, 161, 194, 255] // Vivid Blue
 // ];
 
-const createImageSegmenter = async () => {
-};
-createImageSegmenter();
+const createImageSegmenter = async () => {}
+createImageSegmenter()
 
 onMounted(async () => {
-  const vision = await FilesetResolver.forVisionTasks("/node_modules/@mediapipe/tasks-vision/wasm");
+  const vision = await FilesetResolver.forVisionTasks('/node_modules/@mediapipe/tasks-vision/wasm')
 
   // [画像セグメンテーション]: 生成
   imageSegmenter.value = await ImageSegmenter.createFromOptions(vision, {
     baseOptions: {
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite",
-      delegate: "GPU"
+      modelAssetPath:
+        'https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/1/deeplab_v3.tflite',
+      delegate: 'GPU'
     },
-    runningMode: "VIDEO",
+    runningMode: 'VIDEO',
     outputCategoryMask: true,
     outputConfidenceMasks: false
-  });
+  })
   // [画像セグメンテーション]: 初期設定
   // await imageSegmenter.value.setOptions({ runningMode: "VIDEO" });
   // labels = imageSegmenter.value.getLabels();
@@ -94,45 +94,50 @@ onMounted(async () => {
 })
 
 // Get segmentation from the webcam
-let lastWebcamTime = -1;
+let lastWebcamTime = -1
 async function predictWebcam() {
   if (!video.value || !canvasCtx.value) return
 
   if (video.value.currentTime === lastWebcamTime) {
     if (webcamRunning === true) {
-      window.requestAnimationFrame(predictWebcam);
+      window.requestAnimationFrame(predictWebcam)
     }
-    return;
+    return
   }
-  lastWebcamTime = video.value.currentTime;
+  lastWebcamTime = video.value.currentTime
 
   // Video映像 => Canvas 描画
-  canvasCtx.value.drawImage(video.value, 0, 0, video.value.videoWidth, video.value.videoHeight);
+  canvasCtx.value.drawImage(video.value, 0, 0, video.value.videoWidth, video.value.videoHeight)
 
   // Do not segmented if imageSegmenter hasn't loaded
   if (imageSegmenter.value === undefined) {
-    return;
+    return
   }
 
-  let startTimeMs = performance.now();
+  let startTimeMs = performance.now()
 
   // [画像セグメンテーション]: 開始
   // Start segmenting the stream.
-  imageSegmenter.value.segmentForVideo(video.value, startTimeMs, callbackForVideo);
+  imageSegmenter.value.segmentForVideo(video.value, startTimeMs, callbackForVideo)
 }
 
 function callbackForVideo(result: ImageSegmenterResult) {
   if (!video.value || !canvasCtx.value || !result.categoryMask) return
 
   // Canvas 画像 => imageData
-  let imageData = canvasCtx.value.getImageData(0, 0, video.value.videoWidth, video.value.videoHeight).data;
+  let imageData = canvasCtx.value.getImageData(
+    0,
+    0,
+    video.value.videoWidth,
+    video.value.videoHeight
+  ).data
 
   // [画像セグメンテーション]: 判定結果 => imageData 加工 => dataNew
   const mask = result.categoryMask.getAsFloat32Array()
-  let j = 0;
+  let j = 0
   // let before = 0;
   for (let i = 0; i < mask.length; ++i) {
-    const maskVal = Math.round(mask[i] * 255.0);
+    const maskVal = Math.round(mask[i] * 255.0)
     // if (maskVal !== before) {
     //   // console.log('maskVal', i, maskVal, imageData[j], imageData[j + 1], imageData[j + 2], imageData[j + 3])
     //   before = maskVal
@@ -144,25 +149,25 @@ function callbackForVideo(result: ImageSegmenterResult) {
     // imageData[j + 3] = (legendColor[3] + imageData[j + 3]) / 2;
 
     if (maskVal === 0) {
-      imageData[j + 3] = 0;
+      imageData[j + 3] = 0
     }
-    j += 4;
+    j += 4
   }
-  const uint8Array = new Uint8ClampedArray(imageData.buffer);
-  const dataNew = new ImageData(uint8Array, video.value.videoWidth, video.value.videoHeight);
+  const uint8Array = new Uint8ClampedArray(imageData.buffer)
+  const dataNew = new ImageData(uint8Array, video.value.videoWidth, video.value.videoHeight)
 
   // imageData 加工 => Canvas画像
-  canvasCtx.value.putImageData(dataNew, 0, 0);
+  canvasCtx.value.putImageData(dataNew, 0, 0)
 
   if (webcamRunning === true) {
-    window.requestAnimationFrame(predictWebcam);
+    window.requestAnimationFrame(predictWebcam)
   }
 }
 
 // Enable the live webcam view and start imageSegmentation.
 async function enableCam() {
   if (!hasGetUserMedia()) {
-    console.warn("getUserMedia() is not supported by your browser");
+    console.warn('getUserMedia() is not supported by your browser')
     return
   }
 
@@ -171,33 +176,32 @@ async function enableCam() {
   }
 
   if (webcamRunning === true) {
-    webcamRunning = false;
-    enableWebcamButtonName.value = "ENABLE SEGMENTATION";
+    webcamRunning = false
+    enableWebcamButtonName.value = 'ENABLE SEGMENTATION'
     // ENABLE WEBCAM
   } else {
-    webcamRunning = true;
-    enableWebcamButtonName.value = "DISABLE SEGMENTATION";
+    webcamRunning = true
+    enableWebcamButtonName.value = 'DISABLE SEGMENTATION'
   }
 
   // getUsermedia parameters.
   const constraints = {
     video: {
       width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      height: { ideal: 1080 }
     }
-  };
+  }
 
   // Activate the webcam stream.
-  video.value.srcObject = await navigator.mediaDevices.getUserMedia(constraints);
+  video.value.srcObject = await navigator.mediaDevices.getUserMedia(constraints)
   video.value.play()
-  video.value.addEventListener("loadeddata", predictWebcam);
+  video.value.addEventListener('loadeddata', predictWebcam)
 }
 
 // Check if webcam access is supported.
 function hasGetUserMedia() {
-  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
 }
-
 </script>
 
 <template>
@@ -208,7 +212,13 @@ function hasGetUserMedia() {
           <span class="mdc-button__label">{{ enableWebcamButtonName }}</span>
         </button>
 
-        <video id="output-video" :srcObject.prop="outputMediaStream" autoplay muted playsinline></video>
+        <video
+          id="output-video"
+          :srcObject.prop="outputMediaStream"
+          autoplay
+          muted
+          playsinline
+        ></video>
       </div>
     </section>
   </div>
@@ -290,7 +300,6 @@ section {
   font-size: 12px;
   margin: 0;
 }
-
 
 .segmentOnClick {
   z-index: 0;

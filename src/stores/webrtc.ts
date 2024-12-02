@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Peer } from 'peerjs'
 import type { MediaConnection, DataConnection, PeerOptions } from 'peerjs'
@@ -34,8 +34,14 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // my Media Stream
   const myMediaStream = ref<MediaStream | null>(null)
 
+  // num of Peers
+  const numOfPeers = ref(0)
+
   // PeerMedia
   const peerMedias = ref<PeerMediaObject>({})
+  watch(peerMedias, () => {
+    numOfPeers.value = Object.keys(peerMedias).length
+  })
 
   // 送受信メッセージデータ
   const dataConnData = ref<DataConnData[]>([])
@@ -592,11 +598,36 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     })
   }
 
+  // peerID => DisplayName 取得
+  function getDisplayName(peerId: string) {
+    let targetDisplayName = ''
+    Object.keys(peerMedias.value).forEach((sKey) => {
+      if (peerMedias.value[sKey].peerId === peerId) {
+        targetDisplayName = peerMedias.value[sKey].displayName
+      }
+    })
+
+    return targetDisplayName
+  }
+
+  // 表示名をすべての人に送信
+  function sendMyNameToAll() {
+    Object.keys(peerMedias.value).forEach(async (remotePeerId) => {
+      // 接続された先へ表示名を送信
+      const sendName = new DataConnData()
+      sendName.type = 'display_name'
+      sendName.senderPeerId = myPeerId.value
+      sendName.message = myName.value
+      await peerMedias.value[remotePeerId].dataConn?.send(sendName)
+    })
+  }
+
   return {
     myName,
     myPeerId,
     myMediaStream,
     peerMedias,
+    numOfPeers,
     dataConnData,
     peerOnCallCallback,
     peerOnErrorCallback,
@@ -610,6 +641,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     disconnectMedia2,
     checkMedias,
     sendDataAll,
+    sendMyNameToAll,
+    getDisplayName,
 
     showInfoLog
   }
