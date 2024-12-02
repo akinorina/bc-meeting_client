@@ -252,6 +252,11 @@ const toggleRightSideSettings = (value: '' | 'chat' | 'settings' | 'virtual-back
 const changeVideoMode = async () => {
   trackStatus.value.video = true
 
+  if (statusEnterRoom.value) {
+    // media すべて切断
+    await webrtcStore.disconnectMedia2()
+  }
+
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
@@ -286,6 +291,15 @@ const changeVideoMode = async () => {
         mediaStream.value.addTrack(tr.clone())
       })
       break
+  }
+
+  if (statusEnterRoom.value) {
+    // 入室状態を取得
+    const roomInfo = await roomStore.statusRoom(roomHash.value)
+    roomInfo.attenders.forEach(async (item: any) => {
+      // 現在の参加者それぞれへメディア再接続
+      await webrtcStore.connectMedia2(item.peer_id)
+    })
   }
 }
 
@@ -450,6 +464,11 @@ const openModalSettings = () => {
 
 // 設定ダイアログ: Video入力 切替
 const changeVideoInput = async () => {
+  if (statusEnterRoom.value) {
+    // media すべて切断
+    await webrtcStore.disconnectMedia2()
+  }
+
   // close the video mediastream
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
@@ -484,6 +503,15 @@ const changeVideoInput = async () => {
         mediaStream.value.addTrack(tr.clone())
       })
       break
+  }
+
+  if (statusEnterRoom.value) {
+    // 入室状態を取得
+    const roomInfo = await roomStore.statusRoom(roomHash.value)
+    roomInfo.attenders.forEach(async (item: any) => {
+      // 現在の参加者それぞれへメディア再接続
+      await webrtcStore.connectMedia2(item.peer_id)
+    })
   }
 }
 
@@ -907,12 +935,10 @@ const showInfoLog = () => {
                       </InputCheckbox>
                     </div>
 
-                    <!--
                     <DeviceSettings
                       @change-video-input="changeVideoInput"
                       @change-audio-input="changeAudioInput"
                     />
-                    -->
 
                     <div class="">
                       <div class="">表示名</div>
