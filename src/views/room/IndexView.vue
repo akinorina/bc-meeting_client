@@ -79,10 +79,34 @@ const videoModeData = ref<BackgroundSettingObject>({
     label: '壁紙１',
     type: 'image',
     blur: 0,
-    url: '/bg/bgimage1.jpg',
+    url: '/bg/pink.jpg',
   },
   image2: {
     label: '壁紙２',
+    type: 'image',
+    blur: 0,
+    url: '/bg/water.jpg',
+  },
+  image3: {
+    label: '壁紙３',
+    type: 'image',
+    blur: 0,
+    url: '/bg/leaf.jpg',
+  },
+  image4: {
+    label: '壁紙４',
+    type: 'image',
+    blur: 0,
+    url: '/bg/yellow.jpg',
+  },
+  image11: {
+    label: '壁紙11',
+    type: 'image',
+    blur: 0,
+    url: '/bg/bgimage1.jpg',
+  },
+  image12: {
+    label: '壁紙12',
     type: 'image',
     blur: 0,
     url: '/bg/bgimage2.jpg',
@@ -1189,8 +1213,8 @@ const changeDisplayName = () => {
 
   <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
-    <div class="dialog w-80 h-full p-5">
-      <div class="dialog__contents">
+    <div class="block sm:hidden sp-dialog w-80 h-full p-5">
+      <div class="sp-dialog__contents">
         <template v-if="selectedTabSp === 'chat'">
 
           <TextChat />
@@ -1234,7 +1258,66 @@ const changeDisplayName = () => {
 
         </template>
       </div>
-      <div class="dialog__footer">
+      <div class="sp-dialog__footer">
+
+        <RightsideMenu
+          :selected="selectedTabSp"
+          @open-chat="selectSettingsSp('chat')"
+          @open-settings="selectSettingsSp('settings')"
+          @open-bg="selectSettingsSp('virtual-background')"
+        />
+
+        <div class="mt-2 text-center">
+          <ButtonGeneralPrimary class="" @click="modalSettings.close()"> close </ButtonGeneralPrimary>
+        </div>
+      </div>
+    </div>
+    <div class="hidden sm:block pc-dialog w-80 h-full p-5">
+      <div class="pc-dialog__contents">
+        <template v-if="selectedTabSp === 'chat'">
+
+          <TextChat />
+
+        </template>
+        <template v-else-if="selectedTabSp === 'settings'">
+
+          <div class="text-center font-bold">設定</div>
+          <div class="overflow-y-auto">
+
+            <div class="my-5 w-full border px-2 py-5">
+              <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+            </div>
+
+            <DeviceSettings
+              @change-video-input="changeVideoInput"
+              @change-audio-input="changeAudioInput"
+            />
+
+            <div class="">表示名</div>
+            <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
+            <ButtonGeneralPrimary
+              class="w-18 mb-10"
+              @click="changeDisplayName"
+            >
+              変更
+            </ButtonGeneralPrimary>
+          </div>
+
+        </template>
+        <template v-else-if="selectedTabSp === 'virtual-background'">
+
+          <div class="text-center font-bold">バーチャル背景 設定</div>
+          <div class="w-full my-2">
+            <SelectVirtualBackground
+              :videoModeData="videoModeData"
+              v-model="videoMode"
+              @change="changeVideoMode"
+            />
+          </div>
+
+        </template>
+      </div>
+      <div class="pc-dialog__footer">
 
         <RightsideMenu
           :selected="selectedTabSp"
@@ -1338,7 +1421,7 @@ $footerHeight: 64px;
   }
 }
 
-.dialog {
+.sp-dialog {
   height: 80vh;
 
   &__contents {
@@ -1347,6 +1430,20 @@ $footerHeight: 64px;
     overflow-y: auto;
   }
   &__footer {
+    height: 80px;
+  }
+}
+
+.pc-dialog {
+  width: 600px;
+  height: 80vh;
+
+  &__contents {
+    height: calc(100% - 90px);
+    overflow-y: hidden;
+  }
+  &__footer {
+    margin-top: 10px;
     height: 80px;
   }
 }
