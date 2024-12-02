@@ -24,8 +24,9 @@ const submitChat = () => {
 
 <template>
   <div class="chat h-full w-full">
-    <div class="my-2 ms-2 font-bold">チャット</div>
-    <div class="chat__content h-full overflow-y-auto">
+    <div class="text-center font-bold h-8">Chat</div>
+    <!-- <div class="my-2 ms-2 font-bold">チャット</div> -->
+    <div class="chat__content overflow-y-auto">
       <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
         <div class="flex" :class="{ 'justify-end': item.senderPeerId === webrtcStore.myPeerId }">
           <div class="max-w-64 p-0 m-2">
@@ -39,10 +40,10 @@ const submitChat = () => {
         </div>
       </div>
     </div>
-    <div class="chat__input py-3">
+    <div class="chat__input">
       <form @submit.prevent="submitChat">
-        <InputText class="w-64 p-2" v-model="messageText" />
-        <ButtonGeneralPrimary type="submit" class="w-16">
+        <InputText class="w-48 py-2 m-0" v-model="messageText" />
+        <ButtonGeneralPrimary type="submit" class="w-18 py-2 m-0 text-sm">
           送信
         </ButtonGeneralPrimary>
       </form>
@@ -53,20 +54,20 @@ const submitChat = () => {
 <style lang="scss" scoped>
 
 .chat {
-  width: calc(100% - 0px);
-  height: 100%;
-  padding: 10px;
-  margin: 0 auto;
-  background-color: #fafafa;
+  width: 100%;
+  height: calc(100% - 10px);
+  // border: 2px red dashed;
 
   &__content {
     width: 100%;
-    height: calc(100% - 100px);
+    height: calc(100% - 32px - 64px);
     background-color: #e0e0e0;
+    // border: 1px red dashed;
   }
   &__input {
     width: 100%;
-    height: 65px
+    height: 64px;
+    padding: 10px;
   }
 }
 

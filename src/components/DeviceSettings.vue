@@ -8,7 +8,7 @@ const mediaDeviceStore = useMediaDeviceStore()
 </script>
 
 <template>
-  <div class="">
+  <div class="w-72">
     <div
       class="my-5 border px-2 py-3"
       v-if="mediaDeviceStore.deviceVideoInputs.length > 0"

@@ -54,13 +54,14 @@ const emit = defineEmits(['change'])
 <style lang="scss" scoped>
 
 .select-background-image {
-  width: 350px;
+  width: 310px;
   margin: 0 auto;
   background-color: #a0a0a0;
   overflow-y: scroll;
 
   .vbg {
-    width: 172px;
+    width: 152px;
+    margin: 0 auto;
     position: relative;
 
     &_image {
