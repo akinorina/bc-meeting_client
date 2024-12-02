@@ -24,8 +24,7 @@ const submitChat = () => {
 
 <template>
   <div class="chat h-full w-full">
-    <div class="text-center font-bold h-8">Chat</div>
-    <!-- <div class="my-2 ms-2 font-bold">チャット</div> -->
+    <div class="text-center font-bold h-8">チャット</div>
     <div class="chat__content overflow-y-auto" id="chatBase">
       <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
         <div class="flex" :class="{ 'justify-end': item.senderPeerId === webrtcStore.myPeerId }">
