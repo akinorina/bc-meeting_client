@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Peer } from 'peerjs'
 import type { MediaConnection, DataConnection, PeerOptions } from 'peerjs'
@@ -34,8 +34,14 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   // my Media Stream
   const myMediaStream = ref<MediaStream | null>(null)
 
+  // num of Peers
+  const numOfPeers = ref(0)
+
   // PeerMedia
   const peerMedias = ref<PeerMediaObject>({})
+  watch(peerMedias, () => {
+    numOfPeers.value = Object.keys(peerMedias).length
+  })
 
   // 送受信メッセージデータ
   const dataConnData = ref<DataConnData[]>([])
@@ -621,6 +627,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     myPeerId,
     myMediaStream,
     peerMedias,
+    numOfPeers,
     dataConnData,
     peerOnCallCallback,
     peerOnErrorCallback,

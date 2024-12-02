@@ -17,7 +17,7 @@ import InputCheckbox from '@/components/ui/InputCheckbox.vue'
 import InputText from '@/components/ui/InputText.vue'
 import MeetingController from '@/components/MeetingController.vue'
 import RightsideMenu from '@/components/RightsideMenu.vue'
-import RightsideChat from '@/components/RightsideChat.vue'
+import TextChat from '@/components/TextChat.vue'
 import DeviceSettings from '@/components/DeviceSettings.vue'
 import SelectVirtualBackground from '@/components/SelectVirtualBackground.vue'
 import type { BackgroundSettingObject } from '@/lib'
@@ -27,6 +27,12 @@ const route = useRoute()
 
 const authStore = useAuthStore()
 const webrtcStore = useWebrtcStore()
+
+const numOfPeers = ref(0)
+watch(webrtcStore.peerMedias, () => {
+  numOfPeers.value = Object.keys(webrtcStore.peerMedias).length
+})
+
 const mediaDeviceStore = useMediaDeviceStore()
 const mediaStreamStore = useMediaStreamStore()
 const roomStore = useRoomStore()
@@ -77,24 +83,6 @@ const videoModeData = ref<BackgroundSettingObject>({
   },
   image2: {
     label: '壁紙２',
-    type: 'image',
-    blur: 0,
-    url: '/bg/bgimage2.jpg',
-  },
-  image3: {
-    label: '壁紙３',
-    type: 'image',
-    blur: 0,
-    url: '/bg/bgimage2.jpg',
-  },
-  image4: {
-    label: '壁紙４',
-    type: 'image',
-    blur: 0,
-    url: '/bg/bgimage2.jpg',
-  },
-  image5: {
-    label: '壁紙５',
     type: 'image',
     blur: 0,
     url: '/bg/bgimage2.jpg',
@@ -790,10 +778,10 @@ const changeDisplayName = () => {
         <!-- 入室(meeting)状態 -->
 
         <!-- xs: スマートフォン -->
-        <div class="sm:hidden mx-auto h-screen w-screen bg-slate-300">
+        <div class="sm:hidden mx-auto h-screen w-screen bg-slate-400">
           <!-- main -->
           <div class="main flex justify-start">
-            <div class="meeting relative" :class="{'meeting-full': selectedTabSp === '' }">
+            <div class=" relative">
               <!-- ViewMode: Speaker -->
               <template v-if="viewMode === 'speaker'">
                 <!-- speakers list -->
@@ -958,10 +946,10 @@ const changeDisplayName = () => {
         <!-- // xs: スマートフォン -->
 
         <!-- sm: タブレット、パソコン -->
-        <div class="hidden sm:block mx-auto h-screen w-screen">
+        <div class="hidden sm:block mx-auto h-screen w-screen bg-slate-400">
           <!-- main -->
           <div class="main flex justify-start">
-            <div class="meeting relative" :class="{'meeting-full': selectedTabPc === '' }">
+            <div class="pc-meeting relative" :class="{'pc-meeting-full': selectedTabPc === '' }">
               <!-- ViewMode: Speaker -->
               <template v-if="viewMode === 'speaker'">
                 <!-- speakers list -->
@@ -1108,9 +1096,9 @@ const changeDisplayName = () => {
 
             <!-- Rightside -->
             <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
-              <div class="rightside__contents border border-red-500">
+              <div class="rightside__contents">
                 <template v-if="selectedTabPc === 'chat'">
-                  <RightsideChat />
+                  <TextChat />
                 </template>
 
                 <template v-else-if="selectedTabPc === 'settings'">
@@ -1201,23 +1189,40 @@ const changeDisplayName = () => {
 
   <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
-    <div class="dialog w-80 h-full p-5 border-0 border-red-500">
+    <div class="dialog w-80 h-full p-5">
       <div class="dialog__contents">
         <template v-if="selectedTabSp === 'chat'">
-          <RightsideChat />
+
+          <TextChat />
+
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
+
           <div class="text-center font-bold">設定</div>
-          <div class="my-5 w-full border px-2 py-5">
-            <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+          <div class="overflow-y-auto">
+
+            <div class="my-5 w-full border px-2 py-5">
+              <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+            </div>
+
+            <DeviceSettings
+              @change-video-input="changeVideoInput"
+              @change-audio-input="changeAudioInput"
+            />
+
+            <div class="">表示名</div>
+            <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
+            <ButtonGeneralPrimary
+              class="w-18 mb-10"
+              @click="changeDisplayName"
+            >
+              変更
+            </ButtonGeneralPrimary>
           </div>
 
-          <DeviceSettings
-            @change-video-input="changeVideoInput"
-            @change-audio-input="changeAudioInput"
-          />
         </template>
         <template v-else-if="selectedTabSp === 'virtual-background'">
+
           <div class="text-center font-bold">バーチャル背景 設定</div>
           <div class="w-full h-96 overflow-y-auto">
             <SelectVirtualBackground
@@ -1226,6 +1231,7 @@ const changeDisplayName = () => {
               @change="changeVideoMode"
             />
           </div>
+
         </template>
       </div>
       <div class="dialog__footer">
@@ -1252,25 +1258,22 @@ $footerHeight: 64px;
 .main {
   width: 100%;
   height: calc(100vh - $footerHeight);
-  // border: 3px yellow solid;
 }
 .footer {
   height: $footerHeight;
-  // border: 1px yellow solid;
 }
 
-.meeting {
+.pc-meeting {
   width: calc(100vw - 374px - 0px);
   height: 100%;
 }
-.meeting-full {
+.pc-meeting-full {
   width: calc(100vw - 6px);
 }
 
 .rightside {
   width: 374px;
   height: 100%;
-  // border: 1px red dashed;
 
   &__contents {
     height: calc(100% - 43px);
@@ -1325,8 +1328,7 @@ $footerHeight: 64px;
   overflow-x: auto;
 
   &-list {
-    // border: 1px red dashed;
-    width: calc(240px * 10);
+    width: calc(240px * v-bind(numOfPeers));
 
     &-item {
       max-width: 240px;
@@ -1341,11 +1343,11 @@ $footerHeight: 64px;
 
   &__contents {
     height: calc(100% - 80px);
-    // border: 1px blue solid;
+    // border: 1px blue dotted;
+    overflow-y: auto;
   }
   &__footer {
     height: 80px;
-    // border: 1px red solid;
   }
 }
 </style>

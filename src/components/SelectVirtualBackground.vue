@@ -57,7 +57,7 @@ const emit = defineEmits(['change'])
   width: 310px;
   margin: 0 auto;
   background-color: #a0a0a0;
-  overflow-y: scroll;
+  overflow-y: auto;
 
   .vbg {
     width: 152px;
