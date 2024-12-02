@@ -44,11 +44,6 @@ const roomHash = ref(roomHashParam.value)
 // NotFound (== bad room hash)
 const isBadRoomHash = ref<boolean>(false)
 
-// settings: 右サイド・設定欄 : '' | 'chat' | 'settings' | 'virtual-background'
-const rightSideSettings = ref<'' | 'chat' | 'settings' | 'virtual-background'>('')
-// settings: 設定ダイアログ
-const selectedTab = ref<'' | 'chat' | 'settings' | 'virtual-background'>('chat')
-
 // media stream
 const mediaStream = ref<MediaStream>(new MediaStream())
 
@@ -252,19 +247,6 @@ const toTopPage = () => {
     router.push({ name: 'mypage' })
   } else {
     router.push({ name: 'index' })
-  }
-}
-
-//
-const toggleRightSideSettings = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
-  if (rightSideSettings.value === value) {
-    rightSideSettings.value = ''
-  } else {
-    rightSideSettings.value = value
-
-    if (rightSideSettings.value === 'settings') {
-      mediaDeviceStore.makeDeviceList()
-    }
   }
 }
 
@@ -476,23 +458,40 @@ const chooseSpeaker = (peerId: string) => {
   targetSpeakerPeerId.value = peerId
 }
 
-// [スマフォ]: 設定ダイアログ: ダイアログを開く
-const openModalSettings = (selected: '' | 'chat' | 'settings' | 'virtual-background') => {
+// [スマートフォン]: settings: 設定ダイアログ
+const selectedTabSp = ref<'' | 'chat' | 'settings' | 'virtual-background'>('chat')
+// [スマートフォン]: 設定ダイアログ: ダイアログを開く
+const openSettingsSp = (selected: '' | 'chat' | 'settings' | 'virtual-background') => {
   // デバイス一覧 更新
   mediaDeviceStore.makeDeviceList()
 
   // tab選択
-  selectedTab.value = selected
+  selectedTabSp.value = selected
 
   // 設定ダイアログを開く
   modalSettings.value.open()
 }
-// [スマフォ]: 設定ダイアログ: タブを選択
-const selectModalSettings = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
-  selectedTab.value = value
+// [スマートフォン]: 設定ダイアログ: タブを選択
+const selectSettingsSp = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
+  selectedTabSp.value = value
 
-  if (selectedTab.value === 'settings') {
+  if (selectedTabSp.value === 'settings') {
     mediaDeviceStore.makeDeviceList()
+  }
+}
+
+// [Tablet / PC]: settings: 右サイド・設定欄 : '' | 'chat' | 'settings' | 'virtual-background'
+const selectedTabPc = ref<'' | 'chat' | 'settings' | 'virtual-background'>('')
+// [Tablet / PC]: 設定ダイアログ: タブを選択
+const selectSettingsPc = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
+  if (selectedTabPc.value === value) {
+    selectedTabPc.value = ''
+  } else {
+    selectedTabPc.value = value
+
+    if (selectedTabPc.value === 'settings') {
+      mediaDeviceStore.makeDeviceList()
+    }
   }
 }
 
@@ -720,7 +719,7 @@ const changeDisplayName = () => {
                 <!-- 設定 -->
                 <ButtonGeneralPrimary
                   class="me-1 h-12 w-12 px-0"
-                  @click="openModalSettings('settings')"
+                  @click="openSettingsSp('settings')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
                     <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/>
@@ -794,7 +793,7 @@ const changeDisplayName = () => {
         <div class="sm:hidden mx-auto h-screen w-screen bg-slate-300">
           <!-- main -->
           <div class="main flex justify-start">
-            <div class="meeting relative" :class="{'meeting-full': rightSideSettings === '' }">
+            <div class="meeting relative" :class="{'meeting-full': selectedTabSp === '' }">
               <!-- ViewMode: Speaker -->
               <template v-if="viewMode === 'speaker'">
                 <!-- speakers list -->
@@ -951,7 +950,7 @@ const changeDisplayName = () => {
               @toggle-video="toggleVideo"
               @toggle-audio="toggleAudio"
               @exit-room="exitRoom"
-              @open-settings="openModalSettings('settings')"
+              @open-settings="openSettingsSp('settings')"
             />
           </div>
           <!-- // footer -->
@@ -962,7 +961,7 @@ const changeDisplayName = () => {
         <div class="hidden sm:block mx-auto h-screen w-screen">
           <!-- main -->
           <div class="main flex justify-start">
-            <div class="meeting relative" :class="{'meeting-full': rightSideSettings === '' }">
+            <div class="meeting relative" :class="{'meeting-full': selectedTabPc === '' }">
               <!-- ViewMode: Speaker -->
               <template v-if="viewMode === 'speaker'">
                 <!-- speakers list -->
@@ -1108,13 +1107,13 @@ const changeDisplayName = () => {
             </div>
 
             <!-- Rightside -->
-            <div class="rightside overflow-y-auto" v-if="rightSideSettings !== ''">
-              <div class="rightside__contents">
-                <template v-if="rightSideSettings === 'chat'">
+            <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
+              <div class="rightside__contents border border-red-500">
+                <template v-if="selectedTabPc === 'chat'">
                   <RightsideChat />
                 </template>
 
-                <template v-else-if="rightSideSettings === 'settings'">
+                <template v-else-if="selectedTabPc === 'settings'">
                   <div class="p-5">
                     <div class="text-center font-bold">設定</div>
 
@@ -1143,7 +1142,7 @@ const changeDisplayName = () => {
                   </div>
                 </template>
 
-                <template v-else-if="rightSideSettings === 'virtual-background'">
+                <template v-else-if="selectedTabPc === 'virtual-background'">
                   <!-- 背景設定 -->
                   <div class="m-0 px-3 py-3">バーチャル背景 設定</div>
                   <div class="w-full h-full overflow-y-auto">
@@ -1158,10 +1157,10 @@ const changeDisplayName = () => {
               </div>
               <div class="rightside__menu">
                 <RightsideMenu
-                  :selected="selectedTab"
-                  @open-chat="toggleRightSideSettings('chat')"
-                  @open-settings="toggleRightSideSettings('settings')"
-                  @open-bg="toggleRightSideSettings('virtual-background')"
+                  :selected="selectedTabPc"
+                  @open-chat="selectSettingsPc('chat')"
+                  @open-settings="selectSettingsPc('settings')"
+                  @open-bg="selectSettingsPc('virtual-background')"
                 />
               </div>
             </div>
@@ -1179,7 +1178,7 @@ const changeDisplayName = () => {
               @toggle-video="toggleVideo"
               @toggle-audio="toggleAudio"
               @exit-room="exitRoom"
-              @open-settings="toggleRightSideSettings('settings')"
+              @open-settings="selectSettingsPc('settings')"
             />
           </div>
           <!-- // footer -->
@@ -1200,14 +1199,14 @@ const changeDisplayName = () => {
     </div>
   </ModalGeneral>
 
-  <!-- [スマフォ]: チャット／設定／背景 ダイアログ -->
+  <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
     <div class="dialog w-80 h-full p-5 border-0 border-red-500">
       <div class="dialog__contents">
-        <template v-if="selectedTab === 'chat'">
+        <template v-if="selectedTabSp === 'chat'">
           <RightsideChat />
         </template>
-        <template v-else-if="selectedTab === 'settings'">
+        <template v-else-if="selectedTabSp === 'settings'">
           <div class="text-center font-bold">設定</div>
           <div class="my-5 w-full border px-2 py-5">
             <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
@@ -1218,7 +1217,7 @@ const changeDisplayName = () => {
             @change-audio-input="changeAudioInput"
           />
         </template>
-        <template v-else-if="selectedTab === 'virtual-background'">
+        <template v-else-if="selectedTabSp === 'virtual-background'">
           <div class="text-center font-bold">バーチャル背景 設定</div>
           <div class="w-full h-96 overflow-y-auto">
             <SelectVirtualBackground
@@ -1232,10 +1231,10 @@ const changeDisplayName = () => {
       <div class="dialog__footer">
 
         <RightsideMenu
-          :selected="selectedTab"
-          @open-chat="selectModalSettings('chat')"
-          @open-settings="selectModalSettings('settings')"
-          @open-bg="selectModalSettings('virtual-background')"
+          :selected="selectedTabSp"
+          @open-chat="selectSettingsSp('chat')"
+          @open-settings="selectSettingsSp('settings')"
+          @open-bg="selectSettingsSp('virtual-background')"
         />
 
         <div class="mt-2 text-center">
@@ -1244,7 +1243,7 @@ const changeDisplayName = () => {
       </div>
     </div>
   </ModalGeneral>
-  <!-- // [スマフォ]: チャット／設定／背景 ダイアログ -->
+  <!-- // [スマートフォン]: チャット／設定／背景 ダイアログ -->
 </template>
 
 <style scoped lang="scss">
@@ -1263,7 +1262,6 @@ $footerHeight: 64px;
 .meeting {
   width: calc(100vw - 374px - 0px);
   height: 100%;
-  // border: 0 blue dashed;
 }
 .meeting-full {
   width: calc(100vw - 6px);
@@ -1328,7 +1326,7 @@ $footerHeight: 64px;
 
   &-list {
     // border: 1px red dashed;
-    width: calc(240px * );
+    width: calc(240px * 10);
 
     &-item {
       max-width: 240px;
