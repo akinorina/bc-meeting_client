@@ -63,6 +63,12 @@ const videoModeData = ref<BackgroundSettingObject>({
     blur: 0,
     url: '/bg/normal.jpg'
   },
+  'alt-text': {
+    label: 'camera off',
+    type: 'alt-text',
+    blur: 0,
+    url: '/bg/normal.jpg'
+  },
   blur10: {
     label: 'ぼかし10',
     type: 'blur',
@@ -229,8 +235,6 @@ webrtcStore.peerOnErrorCallback = async (options: any) => {
     console.info('options.type   :', options.type)
     console.info('options.peer_id:', options.peer_id)
   }
-  // await endRoom()
-  // await startRoom()
 }
 
 webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
@@ -264,30 +268,27 @@ const toTopPage = () => {
 
 // バーチャル背景 mediaStream 切替
 const changeVideoMode = async () => {
-  trackStatus.value.video = true
-
-  if (statusEnterRoom.value) {
-    // media すべて切断
-    await webrtcStore.disconnectMedia2()
-  }
-
+  // mediaStream に変更後の VideoTrack を配置
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
   })
-
   switch (videoModeData.value[videoMode.value].type) {
     case 'normal':
       // Normal のVideoトラックを mediaStream に追加
       mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
+
+      trackStatus.value.video = true
       break
     case 'alt-text':
       // AltText のVideoトラックを mediaStream に追加
       mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
+
+      trackStatus.value.video = false
       break
     case 'blur':
     case 'image':
@@ -304,16 +305,14 @@ const changeVideoMode = async () => {
       mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr.clone())
       })
+
+      trackStatus.value.video = true
       break
   }
 
+  // 通信中は PeerConnection の Video トラックを置き換え
   if (statusEnterRoom.value) {
-    // 入室状態を取得
-    const roomInfo = await roomStore.statusRoom(roomHash.value)
-    roomInfo.attenders.forEach(async (item: any) => {
-      // 現在の参加者それぞれへメディア再接続
-      await webrtcStore.connectMedia2(item.peer_id)
-    })
+    webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
   }
 }
 
@@ -379,20 +378,16 @@ const checkStatusPeerConn = async () => {
 
 // video on/off
 const toggleVideo = async () => {
-  trackStatus.value.video = !trackStatus.value.video
-
-  if (statusEnterRoom.value) {
-    // media すべて切断
-    await webrtcStore.disconnectMedia2()
-  }
-
-  if (trackStatus.value.video) {
+  // 値の更新
+  if (videoMode.value === 'alt-text') {
     // altText -> normal or ...
     videoMode.value = videoModeTmp.value
+    trackStatus.value.video = true
   } else {
     // normal or ... -> altText
     videoModeTmp.value = videoMode.value
     videoMode.value = 'alt-text'
+    trackStatus.value.video = false
   }
 
   // 既存mediaStream から Video を入れ替え
@@ -417,24 +412,21 @@ const toggleVideo = async () => {
       })
       break
   }
-  webrtcStore.myMediaStream = mediaStream.value
 
+  // 通信中は PeerConnection の Video トラックを置き換え
   if (statusEnterRoom.value) {
-    // 入室状態を取得
-    const roomInfo = await roomStore.statusRoom(roomHash.value)
-    roomInfo.attenders.forEach(async (item: any) => {
-      // 現在の参加者それぞれへメディア再接続
-      await webrtcStore.connectMedia2(item.peer_id)
-    })
+    webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
   }
 }
 
 // audio on/off
 const toggleAudio = () => {
   trackStatus.value.audio = !trackStatus.value.audio
-  mediaStream.value.getAudioTracks().forEach((tr: MediaStreamTrack) => {
-    tr.enabled = trackStatus.value.audio
-  })
+
+  // 通信中は PeerConnection の Audio トラックを変更
+  if (statusEnterRoom.value) {
+    webrtcStore.changeAudioEnabledToPeerConnection(trackStatus.value.audio)
+  }
 }
 
 // 画面表示モード 変更
@@ -509,11 +501,6 @@ const selectSettingsPc = (value: '' | 'chat' | 'settings' | 'virtual-background'
 
 // 設定ダイアログ: Video入力 切替
 const changeVideoInput = async () => {
-  if (statusEnterRoom.value) {
-    // media すべて切断
-    await webrtcStore.disconnectMedia2()
-  }
-
   // close the video mediastream
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
@@ -550,13 +537,9 @@ const changeVideoInput = async () => {
       break
   }
 
+  // 通信中は PeerConnection の Video トラックを置き換え
   if (statusEnterRoom.value) {
-    // 入室状態を取得
-    const roomInfo = await roomStore.statusRoom(roomHash.value)
-    roomInfo.attenders.forEach(async (item: any) => {
-      // 現在の参加者それぞれへメディア再接続
-      await webrtcStore.connectMedia2(item.peer_id)
-    })
+    webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
   }
 }
 
