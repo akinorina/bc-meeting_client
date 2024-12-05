@@ -21,6 +21,7 @@ import TextChat from '@/components/TextChat.vue'
 import DeviceSettings from '@/components/DeviceSettings.vue'
 import SelectVirtualBackground from '@/components/SelectVirtualBackground.vue'
 import type { BackgroundSettingObject } from '@/lib'
+import backgroundData from '@/assets/background.json'
 
 const router = useRouter()
 const route = useRoute()
@@ -56,68 +57,7 @@ const mediaStream = ref<MediaStream>(new MediaStream())
 // video mode
 const videoMode = ref('normal')
 const videoModeTmp = ref('normal')
-const videoModeData = ref<BackgroundSettingObject>({
-  normal: {
-    label: '通常',
-    type: 'normal',
-    blur: 0,
-    url: '/bg/normal.jpg'
-  },
-  'alt-text': {
-    label: 'camera off',
-    type: 'alt-text',
-    blur: 0,
-    url: '/bg/normal.jpg'
-  },
-  blur10: {
-    label: 'ぼかし10',
-    type: 'blur',
-    blur: 10,
-    url: '/bg/bgblur10.jpg'
-  },
-  blur30: {
-    label: 'ぼかし30',
-    type: 'blur',
-    blur: 30,
-    url: '/bg/bgblur30.jpg'
-  },
-  image1: {
-    label: '壁紙１',
-    type: 'image',
-    blur: 0,
-    url: '/bg/pink.jpg'
-  },
-  image2: {
-    label: '壁紙２',
-    type: 'image',
-    blur: 0,
-    url: '/bg/water.jpg'
-  },
-  image3: {
-    label: '壁紙３',
-    type: 'image',
-    blur: 0,
-    url: '/bg/leaf.jpg'
-  },
-  image4: {
-    label: '壁紙４',
-    type: 'image',
-    blur: 0,
-    url: '/bg/yellow.jpg'
-  },
-  image11: {
-    label: '壁紙11',
-    type: 'image',
-    blur: 0,
-    url: '/bg/bgimage1.jpg'
-  },
-  image12: {
-    label: '壁紙12',
-    type: 'image',
-    blur: 0,
-    url: '/bg/bgimage2.jpg'
-  }
-})
+const videoModeData = ref<BackgroundSettingObject>(backgroundData as BackgroundSettingObject)
 
 // my MediaStream video/audio
 const trackStatus = ref({ video: true, audio: true })
