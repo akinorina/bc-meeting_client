@@ -22,6 +22,7 @@ import DeviceSettings from '@/components/DeviceSettings.vue'
 import SelectVirtualBackground from '@/components/SelectVirtualBackground.vue'
 import type { BackgroundSettingObject } from '@/lib'
 import backgroundData from '@/assets/background.json'
+import SettingParts from '@/components/SettingParts.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -203,56 +204,6 @@ const toTopPage = () => {
   }
 }
 
-// バーチャル背景 mediaStream 切替
-const changeVideoMode = async () => {
-  // mediaStream に変更後の VideoTrack を配置
-  mediaStream.value.getVideoTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-  switch (videoModeData.value[videoMode.value].type) {
-    case 'normal':
-      // Normal のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-
-      trackStatus.value.video = true
-      break
-    case 'alt-text':
-      // AltText のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-
-      trackStatus.value.video = false
-      break
-    case 'blur':
-    case 'image':
-      // VirtualBackground パラメータ設定
-      mediaStreamStore.virtualMode = videoModeData.value[videoMode.value].type
-      mediaStreamStore.backgroundBlur = videoModeData.value[videoMode.value].blur
-      mediaStreamStore.bgImageUrl = videoModeData.value[videoMode.value].url
-
-      // VirtualBackground 再起動
-      mediaStreamStore.closeVirtualBackground()
-      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-      // VirtualBackground のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-
-      trackStatus.value.video = true
-      break
-  }
-
-  // 通信中は PeerConnection の Video トラックを置き換え
-  if (statusEnterRoom.value) {
-    webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
-  }
-}
-
 // Roomへの入室
 const enterRoom = async () => {
   if (webrtcStore.myPeerId === '') {
@@ -311,6 +262,56 @@ const checkStatusPeerConn = async () => {
   // status
   const res = await roomStore.statusRoom(roomHash.value)
   webrtcStore.checkMedias(res)
+}
+
+// バーチャル背景 mediaStream 切替
+const changeVideoMode = async () => {
+  // mediaStream に変更後の VideoTrack を配置
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+  switch (videoModeData.value[videoMode.value].type) {
+    case 'normal':
+      // Normal のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+
+      trackStatus.value.video = true
+      break
+    case 'alt-text':
+      // AltText のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+
+      trackStatus.value.video = false
+      break
+    case 'blur':
+    case 'image':
+      // VirtualBackground パラメータ設定
+      mediaStreamStore.virtualMode = videoModeData.value[videoMode.value].type
+      mediaStreamStore.backgroundBlur = videoModeData.value[videoMode.value].blur
+      mediaStreamStore.bgImageUrl = videoModeData.value[videoMode.value].url
+
+      // VirtualBackground 再起動
+      mediaStreamStore.closeVirtualBackground()
+      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+
+      // VirtualBackground のVideoトラックを mediaStream に追加
+      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr.clone())
+      })
+
+      trackStatus.value.video = true
+      break
+  }
+
+  // 通信中は PeerConnection の Video トラックを置き換え
+  if (statusEnterRoom.value) {
+    webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
+  }
 }
 
 // video on/off
@@ -721,7 +722,6 @@ const changeDisplayName = () => {
         <!-- main -->
         <div class="main flex justify-start">
           <div class="relative">
-            <!-- ViewMode: Speaker -->
             <template v-if="viewMode === 'speaker'">
               <!-- speakers list -->
               <div
@@ -798,9 +798,7 @@ const changeDisplayName = () => {
               </div>
               <!-- // current speaker -->
             </template>
-            <!-- // ViewMode: Speaker -->
 
-            <!-- ViewMode: Matrix -->
             <template v-else>
               <div class="main-matrix-view flex flex-wrap items-center justify-center">
                 <div
@@ -868,7 +866,6 @@ const changeDisplayName = () => {
                 </div>
               </div>
             </template>
-            <!-- // ViewMode: Matrix -->
           </div>
         </div>
         <!-- // main -->
@@ -1049,50 +1046,37 @@ const changeDisplayName = () => {
           <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
             <div class="rightside__contents">
               <template v-if="selectedTabPc === 'chat'">
-                <TextChat />
-              </template>
-
-              <template v-else-if="selectedTabPc === 'settings'">
-                <div class="p-5">
-                  <div class="text-center font-bold">設定</div>
-
-                  <div class="my-5 border px-2 py-5">
-                    <InputCheckbox class="" v-model="myVideoMirrored">
-                      自身の画像を鏡映反転する
-                    </InputCheckbox>
-                  </div>
-
-                  <DeviceSettings
-                    @change-video-input="changeVideoInput"
-                    @change-audio-input="changeAudioInput"
-                  />
-
-                  <div class="">
-                    <div class="">表示名</div>
-                    <InputText
-                      class="me-2 h-10 w-64"
-                      placeholder="表示名"
-                      v-model="myDisplayName"
-                    />
-                    <ButtonGeneralPrimary class="" @click="changeDisplayName">
-                      変更
-                    </ButtonGeneralPrimary>
-                  </div>
+                <div class="w-full h-full border-0 border-red-500 border-dashed">
+                  <TextChat />
                 </div>
               </template>
 
+              <template v-else-if="selectedTabPc === 'settings'">
+                <div class="w-full h-full overflow-y-auto border-0 border-red-500 border-dashed">
+                  <div class="m-0 p-3 font-bold">設定</div>
+                  <SettingParts
+                    v-model:my-video-mirrored="myVideoMirrored"
+                    v-model:my-display-name="myDisplayName"
+                    @change-video-input="changeVideoInput"
+                    @change-audio-input="changeAudioInput"
+                    @change-display-name="changeDisplayName"
+                  />
+                </div>
+              </template>
+
+              <!-- 背景設定 -->
               <template v-else-if="selectedTabPc === 'virtual-background'">
-                <!-- 背景設定 -->
-                <div class="m-0 px-3 py-3">バーチャル背景 設定</div>
-                <div class="h-full w-full overflow-y-auto">
+                <div class="w-full h-full border-0 border-red-500 border-dashed">
+                  <div class="m-0 p-3 font-bold">バーチャル背景 設定</div>
                   <SelectVirtualBackground
+                    class="px-5 border-0 border-blue-500 border-dashed"
                     :videoModeData="videoModeData"
                     v-model="videoMode"
                     @change="changeVideoMode"
                   />
                 </div>
-                <!-- // 背景設定 -->
               </template>
+              <!-- // 背景設定 -->
             </div>
             <div class="rightside__menu">
               <RightsideMenu
