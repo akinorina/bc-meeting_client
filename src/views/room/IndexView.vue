@@ -13,12 +13,10 @@ import ButtonGeneralSecondary from '@/components/ui/ButtonGeneralSecondary.vue'
 import InputEmail from '@/components/ui/InputEmail.vue'
 import ModalGeneral from '@/components/ModalGeneral.vue'
 import VccHeader from '@/components/VccHeader.vue'
-import InputCheckbox from '@/components/ui/InputCheckbox.vue'
 import InputText from '@/components/ui/InputText.vue'
 import MeetingController from '@/components/MeetingController.vue'
 import RightsideMenu from '@/components/RightsideMenu.vue'
 import TextChat from '@/components/TextChat.vue'
-import DeviceSettings from '@/components/DeviceSettings.vue'
 import SelectVirtualBackground from '@/components/SelectVirtualBackground.vue'
 import type { BackgroundSettingObject } from '@/lib'
 import backgroundData from '@/assets/background.json'
@@ -94,6 +92,7 @@ const modalFailureGettingUserMedia = ref()
 const modalSettings = ref()
 
 const startRoom = async () => {
+  console.log('--- mounted : startRoom() ---')
   window.addEventListener('beforeunload', unloadFunc)
 
   // 状態: 退室
@@ -140,6 +139,8 @@ const startRoom = async () => {
     const resProfile = await authStore.getProfile()
     mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = resProfile.data.username
   }
+
+  console.log('--- mounted : startRoom() --- end')
 }
 onMounted(startRoom)
 
@@ -603,6 +604,7 @@ const doReload = () => {
                     d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
                   />
                 </svg>
+                <template #explain>カメラ ON/OFF</template>
               </ButtonGeneralPrimary>
               <!-- // video on/off -->
 
@@ -645,6 +647,7 @@ const doReload = () => {
                     d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
                   />
                 </svg>
+                <template #explain>マイク ON/OFF</template>
               </ButtonGeneralPrimary>
               <!-- // mic on/off -->
 
@@ -665,6 +668,7 @@ const doReload = () => {
                     d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"
                   />
                 </svg>
+                <template #explain>設定</template>
               </ButtonGeneralPrimary>
               <!-- // 設定 -->
             </div>
@@ -1104,7 +1108,7 @@ const doReload = () => {
         </div>
         <!-- // main -->
 
-        <!-- footer 64px -->
+        <!-- footer -->
         <div class="footer flex h-16 items-center justify-between bg-slate-200">
           <MeetingController
             :viewMode="viewMode"
@@ -1153,30 +1157,25 @@ const doReload = () => {
 
   <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
-    <div class="sp-dialog block h-full w-80 p-5 sm:hidden">
-      <div class="sp-dialog__contents">
+    <div class="common-dialog w-72 sm:w-[37.5rem] p-5">
+      <div class="common-dialog__contents">
         <template v-if="selectedTabSp === 'chat'">
           <TextChat />
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
-          <div class="text-center font-bold">設定</div>
-          <div class="overflow-y-auto">
-            <div class="my-5 w-full border px-2 py-5">
-              <InputCheckbox class="" v-model="myVideoMirrored"
-                >自身の画像を鏡映反転する</InputCheckbox
-              >
+          <div class="w-full h-full border-0 border-red-500 border-dashed">
+            <div class="m-0 p-3 font-bold border-0 border-red-500 border-dashed">設定</div>
+            <div
+              style="height: calc(100% - 60px); overflow-y: auto"
+            >
+              <SettingParts
+                v-model:my-video-mirrored="myVideoMirrored"
+                v-model:my-display-name="myDisplayName"
+                @change-video-input="changeVideoInput"
+                @change-audio-input="changeAudioInput"
+                @change-display-name="changeDisplayName"
+              />
             </div>
-
-            <DeviceSettings
-              @change-video-input="changeVideoInput"
-              @change-audio-input="changeAudioInput"
-            />
-
-            <div class="">表示名</div>
-            <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
-            <ButtonGeneralPrimary class="w-18 mb-10" @click="changeDisplayName">
-              変更
-            </ButtonGeneralPrimary>
           </div>
         </template>
         <template v-else-if="selectedTabSp === 'virtual-background'">
@@ -1190,59 +1189,7 @@ const doReload = () => {
           </div>
         </template>
       </div>
-      <div class="sp-dialog__footer">
-        <RightsideMenu
-          :selected="selectedTabSp"
-          @open-chat="selectSettingsSp('chat')"
-          @open-settings="selectSettingsSp('settings')"
-          @open-bg="selectSettingsSp('virtual-background')"
-        />
-
-        <div class="mt-2 text-center">
-          <ButtonGeneralPrimary class="" @click="modalSettings.close()">
-            close
-          </ButtonGeneralPrimary>
-        </div>
-      </div>
-    </div>
-    <div class="pc-dialog hidden h-full w-80 p-5 sm:block">
-      <div class="pc-dialog__contents">
-        <template v-if="selectedTabSp === 'chat'">
-          <TextChat />
-        </template>
-        <template v-else-if="selectedTabSp === 'settings'">
-          <div class="text-center font-bold">設定</div>
-          <div class="overflow-y-auto">
-            <div class="my-5 w-full border px-2 py-5">
-              <InputCheckbox class="" v-model="myVideoMirrored"
-                >自身の画像を鏡映反転する</InputCheckbox
-              >
-            </div>
-
-            <DeviceSettings
-              @change-video-input="changeVideoInput"
-              @change-audio-input="changeAudioInput"
-            />
-
-            <div class="">表示名</div>
-            <InputText class="me-2 h-10 w-52" placeholder="表示名" v-model="myDisplayName" />
-            <ButtonGeneralPrimary class="w-18 mb-10" @click="changeDisplayName">
-              変更
-            </ButtonGeneralPrimary>
-          </div>
-        </template>
-        <template v-else-if="selectedTabSp === 'virtual-background'">
-          <div class="text-center font-bold">バーチャル背景 設定</div>
-          <div class="my-2 w-full">
-            <SelectVirtualBackground
-              :videoModeData="videoModeData"
-              v-model="videoMode"
-              @change="changeVideoMode"
-            />
-          </div>
-        </template>
-      </div>
-      <div class="pc-dialog__footer">
+      <div class="common-dialog__footer">
         <RightsideMenu
           :selected="selectedTabSp"
           @open-chat="selectSettingsSp('chat')"
@@ -1347,29 +1294,14 @@ $footerHeight: 64px;
   }
 }
 
-.sp-dialog {
+.common-dialog {
   height: 80vh;
 
   &__contents {
     height: calc(100% - 80px);
-    // border: 1px blue dotted;
     overflow-y: auto;
   }
   &__footer {
-    height: 80px;
-  }
-}
-
-.pc-dialog {
-  width: 600px;
-  height: 80vh;
-
-  &__contents {
-    height: calc(100% - 90px);
-    overflow-y: hidden;
-  }
-  &__footer {
-    margin-top: 10px;
     height: 80px;
   }
 }

@@ -52,6 +52,7 @@ const emit = defineEmits([
             d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
           />
         </svg>
+        <template #explain>ビューモード変更</template>
       </ButtonGeneralPrimary>
       <!-- // change View mode -->
 
@@ -92,6 +93,7 @@ const emit = defineEmits([
             d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
           />
         </svg>
+        <template #explain>カメラ ON/OFF</template>
       </ButtonGeneralPrimary>
       <!-- // toggle Video -->
 
@@ -134,6 +136,7 @@ const emit = defineEmits([
             d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
           />
         </svg>
+        <template #explain>マイク ON/OFF</template>
       </ButtonGeneralPrimary>
       <!-- // toggle Audio -->
 
@@ -151,12 +154,19 @@ const emit = defineEmits([
             d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"
           />
         </svg>
+        <template #explain>チャット、設定、背景</template>
       </ButtonGeneralPrimary>
       <!-- // 設定 -->
 
       <!-- 退室 -->
-      <ButtonGeneralDanger class="w-18 m-0 me-2 h-12 p-0" @click="emit('exit-room')">
+      <ButtonGeneralDanger
+        class="w-18 m-0 me-2 h-12 p-0"
+        @click="emit('exit-room')"
+      >
+        <template #default>
         退室
+        </template>
+        <template #explain>退室します</template>
       </ButtonGeneralDanger>
       <!-- // 退室 -->
     </div>
@@ -188,6 +198,7 @@ const emit = defineEmits([
             d="M0 1.5A1.5 1.5 0 0 1 1.5 0h13A1.5 1.5 0 0 1 16 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5zM1.5 1a.5.5 0 0 0-.5.5V5h4V1zM5 6H1v4h4zm1 4h4V6H6zm-1 1H1v3.5a.5.5 0 0 0 .5.5H5zm1 0v4h4v-4zm5 0v4h3.5a.5.5 0 0 0 .5-.5V11zm0-1h4V6h-4zm0-5h4V1.5a.5.5 0 0 0-.5-.5H11zm-1 0V1H6v4z"
           />
         </svg>
+        <template #explain>ビューモード切り替え</template>
       </ButtonGeneralPrimary>
       <!-- // change View mode -->
 
@@ -228,6 +239,7 @@ const emit = defineEmits([
             d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l6.69 9.365zm-10.114-9A2.001 2.001 0 0 0 0 5v6a2 2 0 0 0 2 2h5.728L.847 3.366zm9.746 11.925-10-14 .814-.58 10 14-.814.58z"
           />
         </svg>
+        <template #explain>カメラ ON/OFF</template>
       </ButtonGeneralPrimary>
       <!-- // toggle Video -->
 
@@ -270,6 +282,7 @@ const emit = defineEmits([
             d="M9.486 10.607 5 6.12V8a3 3 0 0 0 4.486 2.607zm-7.84-9.253 12 12 .708-.708-12-12-.708.708z"
           />
         </svg>
+        <template #explain>マイク ON/OFF</template>
       </ButtonGeneralPrimary>
       <!-- // toggle Audio -->
 
@@ -287,12 +300,14 @@ const emit = defineEmits([
             d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"
           />
         </svg>
+        <template #explain>各種の設定</template>
       </ButtonGeneralSecondary>
       <!-- // 設定 -->
 
       <!-- 退室 -->
       <ButtonGeneralDanger class="me-2 h-12 w-16" @click="emit('exit-room')">
         退室
+        <template #explain>ミーティングから退室します。</template>
       </ButtonGeneralDanger>
       <!-- // 退室 -->
     </div>

@@ -31,14 +31,18 @@ export const useMediaDeviceStore = defineStore('media-device', () => {
   const audioOutputDeviceId = ref('')
 
   async function init() {
+    console.log('--- init() ---')
     await makeDeviceList()
     // 制約に deviceId を設定
     mediaStreamConstraints.value.video.deviceId = videoInputDeviceId.value
     mediaStreamConstraints.value.audio.deviceId = audioInputDeviceId.value
+    console.log('--- init() --- complete')
   }
 
   // device list 作成
   async function makeDeviceList() {
+    console.log('--- makeDeviceList() ---')
+
     // init. select each 1st device.
     const devices = await navigator.mediaDevices.enumerateDevices()
     deviceAudioInputs.value = devices.filter((item) => {
@@ -59,6 +63,7 @@ export const useMediaDeviceStore = defineStore('media-device', () => {
     if (audioOutputDeviceId.value === '' && deviceAudioOutputs.value.length > 0) {
       audioOutputDeviceId.value = deviceAudioOutputs.value[0].deviceId
     }
+    console.log('--- makeDeviceList() --- complete')
   }
 
   return {

@@ -11,7 +11,7 @@ const emit = defineEmits(['change-display-name', 'change-video-input', 'change-a
 </script>
 
 <template>
-  <div class="p-5">
+  <div class="p-0">
     <div class="my-5 border px-2 py-5">
       <InputCheckbox class="" v-model="myVideoMirrored">
         自身の画像を鏡映反転する
@@ -26,7 +26,7 @@ const emit = defineEmits(['change-display-name', 'change-video-input', 'change-a
     <div class="my-5 border px-2 py-5">
       <div class="">表示名</div>
       <InputText
-        class="me-2 h-10 w-60"
+        class="me-2 h-10 display-name__text"
         placeholder="表示名"
         v-model="myDisplayName"
       />
@@ -38,4 +38,9 @@ const emit = defineEmits(['change-display-name', 'change-video-input', 'change-a
 </template>
 
 <style lang="scss" scoped>
+.display-name {
+  &__text {
+    width: calc(100% - 70px);
+  }
+}
 </style>

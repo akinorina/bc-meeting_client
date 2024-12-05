@@ -3,17 +3,18 @@ import { ref, watch, nextTick, onMounted } from 'vue'
 import { useWebrtcStore } from '../stores/webrtc'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import InputText from '@/components/ui/InputText.vue'
+import ButtonGeneralSecondary from './ui/ButtonGeneralSecondary.vue';
 
 const webrtcStore = useWebrtcStore()
 const messageText = ref('')
 
 watch(webrtcStore.dataConnData, async () => {
-  showNewestLine()
+  await showNewestLine()
 })
 
-onMounted(() => {
-  console.log('--- mounted()')
-  showNewestLine()
+onMounted(async () => {
+  console.log('--- TextChat : onMounted() ---')
+  await showNewestLine()
 })
 
 const submitChat = () => {
@@ -27,6 +28,7 @@ const submitChat = () => {
 const showNewestLine = async () => {
   await nextTick()
   const obj = document.getElementById('chatBase') as HTMLElement
+  console.log('obj.scrollHeight', obj.scrollHeight)
   obj.scrollTop = obj.scrollHeight
 }
 </script>
@@ -55,6 +57,13 @@ const showNewestLine = async () => {
             <ButtonGeneralPrimary type="submit" class="btn-text m-0 py-2 text-sm">
               送信
             </ButtonGeneralPrimary>
+            <ButtonGeneralSecondary
+              type="button"
+              class="ms-5"
+              @click="showNewestLine()"
+            >
+              ⭐️
+            </ButtonGeneralSecondary>
           </div>
         </form>
     </div>
@@ -70,6 +79,7 @@ const showNewestLine = async () => {
     width: 100%;
     height: calc(100% - 50px - 65px);
     overflow-y: auto;
+    background-color: #c0c0c0;
   }
   &__input {
     width: 100%;
@@ -77,7 +87,7 @@ const showNewestLine = async () => {
     padding: 10px;
 
     .input-text {
-      width: calc(100% - 72px);
+      width: calc(100% - 72px - 100px);
     }
     .btn-text {
       width: 64px;
