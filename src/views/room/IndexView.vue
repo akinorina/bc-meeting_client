@@ -87,6 +87,9 @@ let cIId: any = null
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
 
+// Modal: getUserMedia() 失敗
+const modalFailureGettingUserMedia = ref()
+
 // Modal: 設定
 const modalSettings = ref()
 
@@ -109,10 +112,16 @@ const startRoom = async () => {
   }
 
   // open the mediastream
-  await mediaDeviceStore.init()
-  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-  mediaStreamStore.openAltText()
-  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+  try {
+    await mediaDeviceStore.init()
+    await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
+    mediaStreamStore.openAltText()
+    await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+  } catch (err: any) {
+    if (err.message === 'coud not get a User Media.') {
+      modalFailureGettingUserMedia.value.open()
+    }
+  }
 
   // normal mediaStream 設定
   webrtcStore.myMediaStream = mediaStream.value =
@@ -516,6 +525,10 @@ const changeDisplayName = () => {
 
   // 相手へ送信
   webrtcStore.sendMyNameToAll()
+}
+
+const doReload = () => {
+  location.reload()
 }
 </script>
 
@@ -1117,6 +1130,23 @@ const changeDisplayName = () => {
       <div class="text-center">
         <div class="font-bold">招待メール</div>
         <div class="m-3">送信しました。</div>
+      </div>
+    </div>
+  </ModalGeneral>
+
+  <ModalGeneral ref="modalFailureGettingUserMedia">
+    <div class="w-64 p-3">
+      <div class="text-center">
+        <div class="font-bold">お願い</div>
+        <div class="m-3">
+          カメラとマイクの使用を許可してください。
+        </div>
+        <ButtonGeneralPrimary
+          class="w-24 h-12"
+          @click="doReload"
+        >
+          OK
+        </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
