@@ -101,6 +101,11 @@ const router = createRouter({
       component: () => import('../views/room/IndexView.vue')
     },
     {
+      path: '/room/not-found',
+      name: 'room_not-found',
+      component: () => import('../views/room/NotFoundHashView.vue')
+    },
+    {
       path: '/mypage',
       name: 'mypage',
       component: () => import('../views/mypage/IndexView.vue')
