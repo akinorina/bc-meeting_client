@@ -55,13 +55,6 @@ const showNewestLine = async () => {
             <ButtonGeneralPrimary type="submit" class="btn-text m-0 py-2 text-sm">
               送信
             </ButtonGeneralPrimary>
-            <ButtonGeneralSecondary
-              type="button"
-              class="ms-5"
-              @click="showNewestLine()"
-            >
-              ⭐️
-            </ButtonGeneralSecondary>
           </div>
         </form>
     </div>
@@ -85,7 +78,7 @@ const showNewestLine = async () => {
     padding: 10px;
 
     .input-text {
-      width: calc(100% - 72px - 100px);
+      width: calc(100% - 72px);
     }
     .btn-text {
       width: 64px;

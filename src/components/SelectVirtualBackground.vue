@@ -68,9 +68,10 @@ const emit = defineEmits(['change'])
 
 <style lang="scss" scoped>
 .background-image {
-  height: calc(100% - 0px);
+  height: 100%;
   overflow-y: auto;
-  background-color: #e0e0e0;
+  background-color: #e2e8f0;
+  padding: 4px;
 
   &__images {
     width: 100%;
@@ -78,7 +79,7 @@ const emit = defineEmits(['change'])
     margin: 0 auto;
 
     .vbg {
-      width: 132px;
+      width: 128px;
       margin: 5px 2px;
       position: relative;
 
