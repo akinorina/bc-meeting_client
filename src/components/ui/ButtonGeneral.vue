@@ -36,16 +36,16 @@ const hideButtonExplaining = () => {
 <style lang="scss" scoped>
 .explanation {
   display: none;
-  width: 150%;
-  height: 50px;
+  width: 100%;
+  height: 40px;
   border: 1px #000000 solid;
   border-radius: 5px;
   padding: 5px;
   position: absolute;
   left: 0;
-  top: -55px;
+  top: -45px;
   z-index: 30;
-  font-size: 0.75rem;
+  font-size: 0.5rem;
 }
 .explanation.show {
   display: block;

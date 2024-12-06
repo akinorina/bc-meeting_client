@@ -1197,7 +1197,7 @@ const doReload = () => {
           @open-bg="selectSettingsSp('virtual-background')"
         />
 
-        <div class="mt-2 text-center">
+        <div class="my-2 text-center">
           <ButtonGeneralPrimary class="" @click="modalSettings.close()">
             close
           </ButtonGeneralPrimary>
@@ -1298,11 +1298,11 @@ $footerHeight: 64px;
   height: 80vh;
 
   &__contents {
-    height: calc(100% - 80px);
+    height: calc(100% - 100px);
     overflow-y: auto;
   }
   &__footer {
-    height: 80px;
+    height: 100px;
   }
 }
 </style>
