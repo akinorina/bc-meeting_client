@@ -92,7 +92,6 @@ const modalFailureGettingUserMedia = ref()
 const modalSettings = ref()
 
 const startRoom = async () => {
-  console.log('--- mounted : startRoom() ---')
   window.addEventListener('beforeunload', unloadFunc)
 
   // 状態: 退室
@@ -139,8 +138,6 @@ const startRoom = async () => {
     const resProfile = await authStore.getProfile()
     mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = resProfile.data.username
   }
-
-  console.log('--- mounted : startRoom() --- end')
 }
 onMounted(startRoom)
 

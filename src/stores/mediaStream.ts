@@ -88,7 +88,6 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
           // empty constraints object
           console.error('Both audio and video are FALSE')
         } else if (err.message === 'coud not get a User Media.') {
-          console.log('--- throw errr ')
           throw err
         } else {
           // other errors

@@ -103,25 +103,33 @@ export const useWebrtcStore = defineStore('webrtc', () => {
           }
           // 接続された先へ表示名を送信
           const sendName = new DataConnData()
-          sendName.type = 'display_name'
+          sendName.type = 'request_display_name'
           sendName.senderPeerId = myPeerId.value
           sendName.message = myName.value
           await peerMedias.value[remotePeerId].dataConn?.send(sendName)
-
-          // 接続されたことの告知 送信
-          const sendData = new DataConnData()
-          sendData.type = 'message'
-          sendData.senderPeerId = myPeerId.value
-          sendData.message = '接続しました。'
-          peerMedias.value[remotePeerId].dataConn?.send(sendData)
-          dataConnData.value.push(sendData)
+          // console.log('send: ', sendName)
         })
 
         // on data: Data接続 受信
         peerMedias.value[remotePeerId].dataConn?.on('data', (dataUnknown: unknown) => {
+          let sendName: DataConnData | undefined = undefined
           const data = dataUnknown as DataConnData
           switch (data.type) {
-            case 'display_name':
+            case 'request_display_name':
+              // 接続された先の表示名を格納
+              // console.log('received: ', data)
+              peerMedias.value[remotePeerId].displayName = data.message
+              // 接続された先へ表示名を要求
+              sendName = new DataConnData()
+              sendName.type = 'send_display_name'
+              sendName.senderPeerId = myPeerId.value
+              sendName.message = myName.value
+              peerMedias.value[remotePeerId].dataConn?.send(sendName)
+              // console.log('send: ', sendName)
+              break
+            case 'send_display_name':
+              // 接続された先の表示名を格納
+              // console.log('received: ', data)
               peerMedias.value[remotePeerId].displayName = data.message
               break
             case 'message':
@@ -324,27 +332,35 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // Peer DataConn 接続確立
       peerMedias.value[remotePeerId].dataConn?.on('open', () => {
-        // 接続された先へ表示名を送信
+        // 接続された先へ表示名を要求
         const sendName = new DataConnData()
-        sendName.type = 'display_name'
+        sendName.type = 'request_display_name'
         sendName.senderPeerId = myPeerId.value
         sendName.message = myName.value
         peerMedias.value[remotePeerId].dataConn?.send(sendName)
-
-        // 接続されたことの告知 送信
-        const sendData = new DataConnData()
-        sendData.type = 'message'
-        sendData.senderPeerId = myPeerId.value
-        sendData.message = '接続しました。'
-        peerMedias.value[remotePeerId].dataConn?.send(sendData)
-        dataConnData.value.push(sendData)
+        // console.log('send: ', sendName)
       })
 
       // Peer DataConn データ受信
       peerMedias.value[remotePeerId].dataConn?.on('data', (dataUnknown: unknown) => {
+        let sendName: DataConnData | undefined = undefined
         const data = dataUnknown as DataConnData
         switch (data.type) {
-          case 'display_name':
+          case 'request_display_name':
+            // 接続された先の表示名を格納
+            // console.log('received: ', data)
+            peerMedias.value[remotePeerId].displayName = data.message
+            // 接続された先へ表示名を要求
+            sendName = new DataConnData()
+            sendName.type = 'send_display_name'
+            sendName.senderPeerId = myPeerId.value
+            sendName.message = myName.value
+            peerMedias.value[remotePeerId].dataConn?.send(sendName)
+            // console.log('send: ', sendName)
+            break
+          case 'send_display_name':
+            // 接続された先の表示名を格納
+            // console.log('received: ', data)
             peerMedias.value[remotePeerId].displayName = data.message
             break
           case 'message':
@@ -441,6 +457,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     Object.keys(peerMedias.value).forEach((remotePeerId) => {
       if (remotePeerId !== myPeerId.value) {
         peerMedias.value[remotePeerId].dataConn?.send(sendData)
+        // console.log('send: ', sendData)
       }
     })
     dataConnData.value.push(sendData)
@@ -545,10 +562,11 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     Object.keys(peerMedias.value).forEach(async (remotePeerId) => {
       // 接続された先へ表示名を送信
       const sendName = new DataConnData()
-      sendName.type = 'display_name'
+      sendName.type = 'request_display_name'
       sendName.senderPeerId = myPeerId.value
       sendName.message = myName.value
       await peerMedias.value[remotePeerId].dataConn?.send(sendName)
+      // console.log('send: ', sendName)
     })
   }
 

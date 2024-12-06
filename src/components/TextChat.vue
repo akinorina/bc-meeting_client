@@ -13,7 +13,6 @@ watch(webrtcStore.dataConnData, async () => {
 })
 
 onMounted(async () => {
-  console.log('--- TextChat : onMounted() ---')
   await showNewestLine()
 })
 
@@ -28,7 +27,6 @@ const submitChat = () => {
 const showNewestLine = async () => {
   await nextTick()
   const obj = document.getElementById('chatBase') as HTMLElement
-  console.log('obj.scrollHeight', obj.scrollHeight)
   obj.scrollTop = obj.scrollHeight
 }
 </script>
