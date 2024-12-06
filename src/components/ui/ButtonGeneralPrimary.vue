@@ -29,8 +29,8 @@ const hideButtonExplaining = () => {
   >
     <slot></slot>
     <div
-      class="explanation p-0 m-0 text-black bg-slate-50"
-      :class="{ 'show': buttonExplaining }"
+      class="explanation m-0 bg-slate-50 p-0 text-black"
+      :class="{ show: buttonExplaining }"
       v-if="$slots.explain"
     >
       <slot name="explain"></slot>

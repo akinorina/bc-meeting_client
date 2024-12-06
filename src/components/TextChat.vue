@@ -3,7 +3,6 @@ import { ref, watch, nextTick, onMounted } from 'vue'
 import { useWebrtcStore } from '../stores/webrtc'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import InputText from '@/components/ui/InputText.vue'
-import ButtonGeneralSecondary from './ui/ButtonGeneralSecondary.vue';
 
 const webrtcStore = useWebrtcStore()
 const messageText = ref('')
@@ -49,14 +48,14 @@ const showNewestLine = async () => {
       </div>
     </div>
     <div class="chat__input">
-        <form @submit.prevent="submitChat">
-          <div class="w-full">
-            <InputText class="input-text m-0 py-2" v-model="messageText" />
-            <ButtonGeneralPrimary type="submit" class="btn-text m-0 py-2 text-sm">
-              送信
-            </ButtonGeneralPrimary>
-          </div>
-        </form>
+      <form @submit.prevent="submitChat">
+        <div class="w-full">
+          <InputText class="input-text m-0 py-2" v-model="messageText" />
+          <ButtonGeneralPrimary type="submit" class="btn-text m-0 py-2 text-sm">
+            送信
+          </ButtonGeneralPrimary>
+        </div>
+      </form>
     </div>
   </div>
 </template>

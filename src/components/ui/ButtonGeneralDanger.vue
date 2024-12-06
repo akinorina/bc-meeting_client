@@ -25,13 +25,10 @@ const hideButtonExplaining = () => {
     @mouseout="hideButtonExplaining"
   >
     <slot></slot>
-    <div
-      class="explanation p-0 m-0 text-black bg-slate-50"
-      :class="{ 'show': buttonExplaining }"
-    >
+    <div class="explanation m-0 bg-slate-50 p-0 text-black" :class="{ show: buttonExplaining }">
       <slot name="explain"></slot>
     </div>
-      <!-- v-if="$slots.explain" -->
+    <!-- v-if="$slots.explain" -->
   </button>
 </template>
 
