@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import { useWebrtcStore } from '../stores/webrtc'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
 import InputText from '@/components/ui/InputText.vue'
+import ButtonGeneralSecondary from './ui/ButtonGeneralSecondary.vue';
 
 const webrtcStore = useWebrtcStore()
 const messageText = ref('')
 
 watch(webrtcStore.dataConnData, async () => {
-  await nextTick()
-  const obj = document.getElementById('chatBase') as HTMLElement
-  obj.scrollTop = obj.scrollHeight
+  await showNewestLine()
+})
+
+onMounted(async () => {
+  await showNewestLine()
 })
 
 const submitChat = () => {
@@ -20,12 +23,18 @@ const submitChat = () => {
   // clear text.
   messageText.value = ''
 }
+
+const showNewestLine = async () => {
+  await nextTick()
+  const obj = document.getElementById('chatBase') as HTMLElement
+  obj.scrollTop = obj.scrollHeight
+}
 </script>
 
 <template>
-  <div class="chat h-full w-full">
-    <div class="h-8 text-center font-bold">チャット</div>
-    <div class="chat__content overflow-y-auto" id="chatBase">
+  <div class="chat">
+    <div class="m-0 p-3 font-bold">チャット</div>
+    <div class="chat__content" id="chatBase">
       <div v-for="(item, idx) in webrtcStore.dataConnData" :key="idx">
         <div class="flex" :class="{ 'justify-end': item.senderPeerId === webrtcStore.myPeerId }">
           <div class="m-2 max-w-64 p-0">
@@ -40,14 +49,14 @@ const submitChat = () => {
       </div>
     </div>
     <div class="chat__input">
-      <form @submit.prevent="submitChat">
-        <div class="w-full">
-          <InputText class="input-text m-0 py-2" v-model="messageText" />
-          <ButtonGeneralPrimary type="submit" class="btn-text m-0 py-2 text-sm">
-            送信
-          </ButtonGeneralPrimary>
-        </div>
-      </form>
+        <form @submit.prevent="submitChat">
+          <div class="w-full">
+            <InputText class="input-text m-0 py-2" v-model="messageText" />
+            <ButtonGeneralPrimary type="submit" class="btn-text m-0 py-2 text-sm">
+              送信
+            </ButtonGeneralPrimary>
+          </div>
+        </form>
     </div>
   </div>
 </template>
@@ -55,16 +64,17 @@ const submitChat = () => {
 <style lang="scss" scoped>
 .chat {
   width: 100%;
-  height: calc(100% - 10px);
+  height: 100%;
 
   &__content {
     width: 100%;
-    height: calc(100% - 32px - 64px);
-    background-color: #e0e0e0;
+    height: calc(100% - 50px - 65px);
+    overflow-y: auto;
+    background-color: #c0c0c0;
   }
   &__input {
     width: 100%;
-    height: 64px;
+    height: 65px;
     padding: 10px;
 
     .input-text {

@@ -16,53 +16,51 @@ const emit = defineEmits(['change'])
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto" style="background-color: #c0c0c0">
-    <div class="background-image border-0 border-blue-500">
-      <div class="background-image__images">
-        <div class="text-bold p-2 text-sm">通常</div>
-        <div class="flex flex-wrap justify-start gap-1">
-          <template v-for="(item, sKey) in videoModeData" :key="sKey">
-            <div
-              class="vbg"
-              :class="{ selected: model === sKey }"
-              v-if="item.type === 'normal'"
-              @click="model = sKey"
-            >
-              <img :src="item.url" class="vbg__image" />
-              <input type="radio" class="vbg__radio" :value="sKey" v-model="model" />
-            </div>
-          </template>
-        </div>
+  <div class="background-image">
+    <div class="background-image__images">
+      <div class="text-bold p-2 text-sm">通常</div>
+      <div class="flex flex-wrap justify-start gap-1">
+        <template v-for="(item, sKey) in videoModeData" :key="sKey">
+          <div
+            class="vbg"
+            :class="{ selected: model === sKey }"
+            v-if="item.type === 'normal'"
+            @click="model = sKey"
+          >
+            <img :src="item.url" class="vbg__image" />
+            <input type="radio" class="vbg__radio" :value="sKey" v-model="model" />
+          </div>
+        </template>
+      </div>
 
-        <div class="text-bold p-2 text-sm">ぼかし</div>
-        <div class="flex flex-wrap justify-start gap-1">
-          <template v-for="(item, sKey) in videoModeData" :key="sKey">
-            <div
-              class="vbg"
-              :class="{ selected: model === sKey }"
-              v-if="item.type === 'blur'"
-              @click="model = sKey"
-            >
-              <img :src="item.url" class="vbg__image" />
-              <input type="radio" class="vbg__radio" :value="sKey" v-model="model" />
-            </div>
-          </template>
-        </div>
+      <div class="text-bold p-2 text-sm">ぼかし</div>
+      <div class="flex flex-wrap justify-start gap-1">
+        <template v-for="(item, sKey) in videoModeData" :key="sKey">
+          <div
+            class="vbg"
+            :class="{ selected: model === sKey }"
+            v-if="item.type === 'blur'"
+            @click="model = sKey"
+          >
+            <img :src="item.url" class="vbg__image" />
+            <input type="radio" class="vbg__radio" :value="sKey" v-model="model" />
+          </div>
+        </template>
+      </div>
 
-        <div class="text-bold p-2 text-sm">画像</div>
-        <div class="flex flex-wrap justify-start gap-1">
-          <template v-for="(item, sKey) in videoModeData" :key="sKey">
-            <div
-              class="vbg"
-              :class="{ selected: model === sKey }"
-              v-if="item.type === 'image'"
-              @click="model = sKey"
-            >
-              <img :src="item.url" class="vbg__image" />
-              <input type="radio" class="vbg__radio" :value="sKey" v-model="model" />
-            </div>
-          </template>
-        </div>
+      <div class="text-bold p-2 text-sm">画像</div>
+      <div class="flex flex-wrap justify-start gap-1">
+        <template v-for="(item, sKey) in videoModeData" :key="sKey">
+          <div
+            class="vbg"
+            :class="{ selected: model === sKey }"
+            v-if="item.type === 'image'"
+            @click="model = sKey"
+          >
+            <img :src="item.url" class="vbg__image" />
+            <input type="radio" class="vbg__radio" :value="sKey" v-model="model" />
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -70,9 +68,10 @@ const emit = defineEmits(['change'])
 
 <style lang="scss" scoped>
 .background-image {
-  min-height: 500px;
+  height: 100%;
   overflow-y: auto;
-  background-color: #a0a0a0;
+  background-color: #e2e8f0;
+  padding: 4px;
 
   &__images {
     width: 100%;
@@ -80,8 +79,8 @@ const emit = defineEmits(['change'])
     margin: 0 auto;
 
     .vbg {
-      width: 132px;
-      margin: 10px 1px;
+      width: 128px;
+      margin: 5px 2px;
       position: relative;
 
       &_image {
@@ -99,7 +98,7 @@ const emit = defineEmits(['change'])
       }
     }
     .vbg.selected {
-      border: 3px black solid;
+      border: 3px #000000 solid;
     }
   }
 }
