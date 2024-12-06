@@ -649,10 +649,7 @@ const doReload = () => {
               <!-- // mic on/off -->
 
               <!-- 設定 -->
-              <ButtonGeneralPrimary
-                class="me-1 h-12 w-12 px-0"
-                @click="openSettingsSp('settings')"
-              >
+              <ButtonGeneralPrimary class="me-1 h-12 w-12 px-0" @click="openSettingsSp('settings')">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -793,8 +790,7 @@ const doReload = () => {
                       'my-video-mirrored':
                         myVideoMirrored &&
                         videoMode !== 'alt-text' &&
-                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
-                          webrtcStore.myPeerId
+                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
                     }"
                     :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
                     autoplay
@@ -964,8 +960,7 @@ const doReload = () => {
                       'my-video-mirrored':
                         myVideoMirrored &&
                         videoMode !== 'alt-text' &&
-                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId ===
-                          webrtcStore.myPeerId
+                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
                     }"
                     :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
                     autoplay
@@ -1060,13 +1055,13 @@ const doReload = () => {
           <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
             <div class="rightside__contents">
               <template v-if="selectedTabPc === 'chat'">
-                <div class="w-full h-full border-0 border-red-500 border-dashed">
+                <div class="h-full w-full border-0 border-dashed border-red-500">
                   <TextChat />
                 </div>
               </template>
 
               <template v-else-if="selectedTabPc === 'settings'">
-                <div class="w-full h-full overflow-y-auto">
+                <div class="h-full w-full overflow-y-auto">
                   <div class="m-0 p-3 font-bold">設定</div>
                   <SettingParts
                     class="mx-3"
@@ -1081,11 +1076,11 @@ const doReload = () => {
 
               <!-- 背景設定 -->
               <template v-else-if="selectedTabPc === 'virtual-background'">
-                <div class="w-full h-full border-0 border-red-500 border-dashed">
+                <div class="h-full w-full border-0 border-dashed border-red-500">
                   <div class="m-0 p-3 font-bold">バーチャル背景 設定</div>
-                  <div style="height: calc(100% - 50px);">
+                  <div style="height: calc(100% - 50px)">
                     <SelectVirtualBackground
-                      class="px-5 border-0 border-blue-500 border-dashed"
+                      class="border-0 border-dashed border-blue-500 px-5"
                       :videoModeData="videoModeData"
                       v-model="videoMode"
                       @change="changeVideoMode"
@@ -1142,32 +1137,23 @@ const doReload = () => {
     <div class="w-64 p-3">
       <div class="text-center">
         <div class="font-bold">お願い</div>
-        <div class="m-3">
-          カメラとマイクの使用を許可してください。
-        </div>
-        <ButtonGeneralPrimary
-          class="w-24 h-12"
-          @click="doReload"
-        >
-          OK
-        </ButtonGeneralPrimary>
+        <div class="m-3">カメラとマイクの使用を許可してください。</div>
+        <ButtonGeneralPrimary class="h-12 w-24" @click="doReload"> OK </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
 
   <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
-    <div class="common-dialog w-80 sm:w-[37.5rem] p-3">
+    <div class="common-dialog w-80 p-3 sm:w-[37.5rem]">
       <div class="common-dialog__contents">
         <template v-if="selectedTabSp === 'chat'">
           <TextChat />
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
-          <div class="w-full h-full border-0 border-red-500 border-dashed">
-            <div class="m-0 p-3 font-bold border-0 border-red-500 border-dashed">設定</div>
-            <div
-              style="height: calc(100% - 60px); overflow-y: auto"
-            >
+          <div class="h-full w-full border-0 border-dashed border-red-500">
+            <div class="m-0 border-0 border-dashed border-red-500 p-3 font-bold">設定</div>
+            <div style="height: calc(100% - 60px); overflow-y: auto">
               <SettingParts
                 v-model:my-video-mirrored="myVideoMirrored"
                 v-model:my-display-name="myDisplayName"
@@ -1180,7 +1166,10 @@ const doReload = () => {
         </template>
         <template v-else-if="selectedTabSp === 'virtual-background'">
           <div class="text-center font-bold">バーチャル背景 設定</div>
-          <div class="h-96 w-full overflow-y-auto border border-black p-0 bg-slate-200" style="height: calc(100% - 26px);">
+          <div
+            class="h-96 w-full overflow-y-auto border border-black bg-slate-200 p-0"
+            style="height: calc(100% - 26px)"
+          >
             <SelectVirtualBackground
               :videoModeData="videoModeData"
               v-model="videoMode"

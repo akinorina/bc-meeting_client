@@ -159,13 +159,8 @@ const emit = defineEmits([
       <!-- // 設定 -->
 
       <!-- 退室 -->
-      <ButtonGeneralDanger
-        class="w-18 m-0 me-2 h-12 p-0"
-        @click="emit('exit-room')"
-      >
-        <template #default>
-        退室
-        </template>
+      <ButtonGeneralDanger class="w-18 m-0 me-2 h-12 p-0" @click="emit('exit-room')">
+        <template #default> 退室 </template>
         <template #explain>退室します</template>
       </ButtonGeneralDanger>
       <!-- // 退室 -->
@@ -176,7 +171,7 @@ const emit = defineEmits([
       <div class="mx-3" style="width: 128px"></div>
       <!-- // dummy -->
 
-      <div class="mx-3 flex justify-center items-center">
+      <div class="mx-3 flex items-center justify-center">
         <!-- change View mode -->
         <ButtonGeneralPrimary class="me-2 h-12 w-12" @click="emit('change-view-mode')">
           <svg
@@ -292,7 +287,7 @@ const emit = defineEmits([
         <!-- // toggle Audio -->
       </div>
 
-      <div class="flex mx-3 justify-center items-center">
+      <div class="mx-3 flex items-center justify-center">
         <!-- 設定 -->
         <ButtonGeneralSecondary class="me-2 h-12 w-12" @click="emit('open-settings')">
           <svg
