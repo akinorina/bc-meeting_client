@@ -7,6 +7,8 @@ import ModalGeneral from '@/components/ModalGeneral.vue'
 import InputCheckbox from '@/components/ui/InputCheckbox.vue'
 import InputText from '@/components/ui/InputText.vue'
 import { RouterLink } from 'vue-router'
+import backgroundData from '@/assets/background.json'
+import type { BackgroundSettingObject } from '@/lib'
 
 const mediaDeviceStore = useMediaDeviceStore()
 const mediaStreamStore = useMediaStreamStore()
@@ -26,23 +28,14 @@ watch(altText, () => {
   mediaStreamStore.altText = altText.value
 })
 
-// バーチャル背景 設定
-// const myBackgroundImage = ref('')
-
 // 設定ダイアログ
 const modalSettings = ref()
 
 // バーチャル背景 mediaStream 設定
 // video mode
-const videoMode = ref('normal:0')
-const videoModeTmp = ref('normal:0')
-const videoModes = ref({
-  'normal:0': '通常',
-  'blur:10': 'ぼかし10',
-  'blur:30': 'ぼかし30',
-  'image:/bgimage1.jpg': '壁紙１',
-  'image:/bgimage2.jpg': '壁紙２'
-})
+const videoMode = ref('normal')
+const videoModeTmp = ref('normal')
+const videoModeData = ref<BackgroundSettingObject>(backgroundData as BackgroundSettingObject)
 
 onMounted(async () => {
   // canvas text
@@ -69,38 +62,6 @@ onBeforeUnmount(async () => {
     mediaStream.value.removeTrack(tr)
   })
 })
-
-/*
-// // MediaStream開く
-// const openMediaStreams = async () => {
-//   switch (videoMode.value) {
-//     case 'normal':
-//       await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-//       break
-//     case 'alt-text':
-//       await mediaStreamStore.openAltText()
-//       break
-//     default:
-//       mediaStreamStore.bgImageUrl = videoMode.value
-//       await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-//       break
-//   }
-// }
-// // MediaStream閉じる
-// const closeMediaStreams = async () => {
-//   switch (videoMode.value) {
-//     case 'normal':
-//       await mediaStreamStore.closeNormal()
-//       break
-//     case 'alt-text':
-//       await mediaStreamStore.closeAltText()
-//       break
-//     default:
-//       await mediaStreamStore.closeVirtualBackground()
-//       break
-//   }
-// }
-*/
 
 // video on/off
 const toggleVideo = async () => {
@@ -221,9 +182,8 @@ const changeBackground = async () => {
     mediaStream.value.removeTrack(tr)
   })
 
-  const selected = videoMode.value.match(/(.+):(.+)/)
-  if (selected) {
-    switch (selected[1]) {
+  if (videoMode.value) {
+    switch (videoModeData.value[videoMode.value].type) {
       case 'normal':
         // Normal のVideoトラックを mediaStream に追加
         mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
@@ -239,9 +199,9 @@ const changeBackground = async () => {
       case 'blur':
       case 'image':
         // VirtualBackground パラメータ設定
-        mediaStreamStore.virtualMode = selected[1]
-        mediaStreamStore.backgroundBlur = parseInt(selected[2])
-        mediaStreamStore.bgImageUrl = selected[2]
+        mediaStreamStore.virtualMode = videoModeData.value[videoMode.value].type
+        mediaStreamStore.backgroundBlur = videoModeData.value[videoMode.value].blur
+        mediaStreamStore.bgImageUrl = videoModeData.value[videoMode.value].url
 
         // VirtualBackground 再起動
         mediaStreamStore.closeVirtualBackground()
@@ -262,7 +222,7 @@ const changeBackground = async () => {
     <div class="flex justify-center">
       <video
         class="max-h-96 max-w-full bg-slate-100"
-        :class="{ 'video-mirrored': myVideoMirrored && trackStatus.video }"
+        :class="{ 'video-mirrored': myVideoMirrored && videoMode !== 'alt-text' }"
         :srcObject.prop="mediaStream"
         autoplay
         muted
@@ -378,9 +338,9 @@ const changeBackground = async () => {
         <!-- select a virtual background. -->
         <div class="">
           <select class="mt-3 w-64 border p-3" v-model="videoMode" @change="changeBackground">
-            <template v-for="(val, sKey) in videoModes" :key="sKey">
+            <template v-for="(val, sKey) in videoModeData" :key="sKey">
               <option :value="sKey">
-                {{ val }}
+                {{ val.label }}
               </option>
             </template>
           </select>

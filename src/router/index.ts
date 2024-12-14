@@ -34,11 +34,6 @@ const router = createRouter({
       component: () => import('../views/samples/MediaView.vue')
     },
     {
-      path: '/samples/tf',
-      name: 'samples_tf',
-      component: () => import('../views/samples/TfView.vue')
-    },
-    {
       path: '/signin',
       name: 'sign-in',
       component: () => import('../views/auth/SigninView.vue')
