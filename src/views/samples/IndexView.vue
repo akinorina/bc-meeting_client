@@ -50,11 +50,11 @@ import VccHeader from '@/components/VccHeader.vue'
         </div>
 
         <div class="">
-          <router-link :to="{ name: 'samples_tf' }" class="">
+          <router-link :to="{ name: 'samples_audio' }" class="">
             <div class="">
               <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
-                <h5 class="">Tensor Flow</h5>
-                <p class="">ML のサンプルです。</p>
+                <h5 class="">Volume Meter</h5>
+                <p class="">Mic 入力の Volume Meter サンプルです。</p>
               </div>
             </div>
           </router-link>
