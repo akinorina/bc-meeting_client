@@ -74,7 +74,7 @@ const invitedEmailAddress = ref<string>('')
 const statusEnterRoom = ref(false)
 
 // view mode (speaker|matrix)
-const viewMode = ref<'speaker' | 'matrix'>('speaker')
+const viewMode = ref<'speaker' | 'matrix'>('matrix')
 
 // Speaker View - 現在のスピーカーの Peer ID.
 const targetSpeakerPeerId = ref('')
@@ -87,6 +87,11 @@ const modalSendInvitaionSuccess = ref()
 
 // Modal: getUserMedia() 失敗
 const modalFailureGettingUserMedia = ref()
+
+// Modal: Alert メッセージ
+const modalAlertMessage = ref()
+const textAlertType = ref('')
+const textAlertMessage = ref('')
 
 // Modal: 設定
 const modalSettings = ref()
@@ -167,27 +172,43 @@ const unloadFunc = async () => {
 }
 
 webrtcStore.peerOnCallCallback = async (options: any) => {
-  console.info('----- webrtcStore.peerOnCallCallback() -----')
+  // console.info('----- webrtcStore.peerOnCallCallback() -----')
   if (options.peer_id) {
-    console.info('options.peer_id', options.peer_id)
+    // console.info('options.peer_id', options.peer_id)
+    // Spearkerモード時のターゲットに設定
     targetSpeakerPeerId.value = options.peer_id
   }
 }
 
 webrtcStore.peerOnErrorCallback = async (options: any) => {
-  console.info('----- webrtcStore.peerOnErrorCallback() -----')
+  // console.info('----- webrtcStore.peerOnErrorCallback() -----')
   if (options.type) {
-    console.info('options.type   :', options.type)
-    console.info('options.peer_id:', options.peer_id)
+    // console.info('options.type   :', options.type)
+    // console.info('options.peer_id:', options.peer_id)
+    if (options.type === 'peer-unavailable') {
+      // 接続できなかった peer_id 要素を削除後、Speakerモードの target を再設定
+      if (Object.keys(webrtcStore.peerMedias).length >= 2) {
+        // 他の人との接続があれば、Spearkerモードでは他の人をターゲットにする
+        Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
+          if (peerId !== webrtcStore.myPeerId) {
+            targetSpeakerPeerId.value = peerId
+          }
+        })
+      } else {
+        // 他の人との接続が無い（自分のみ）であれば、Speakerモードでは自分をターゲットにする
+        targetSpeakerPeerId.value = webrtcStore.myPeerId
+      }
+    }
   }
 }
 
 webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
-  console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
-  if (options) {
-    console.info('options.peer_id:', options.peer_id)
-  }
+  // console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
+  // if (options) {
+  //   console.info('options.peer_id:', options.peer_id)
+  // }
 
+  // 接続を切断した peer_id 要素を削除後、Speakerモードの target を再設定
   if (Object.keys(webrtcStore.peerMedias).length >= 2) {
     // 他の人との接続があれば、Spearkerモードでは他の人をターゲットにする
     Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
@@ -246,7 +267,7 @@ const enterRoom = async () => {
 }
 
 // Roomからの退室
-const exitRoom = async () => {
+const exitRoom = async (options: any = {}) => {
   // 状態: 退室
   statusEnterRoom.value = false
 
@@ -262,12 +283,31 @@ const exitRoom = async () => {
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
+
+  if (options.alertMessage) {
+    textAlertMessage.value = options.alertMessage
+    textAlertType.value = options.alertType
+    modalAlertMessage.value.open()
+  }
 }
 
 // PeerConn 状態をチェック、改善処理
 const checkStatusPeerConn = async () => {
   // status
   const res = await roomStore.statusRoom(roomHash.value)
+  // Room入室中の peer_id のうち、自身の peer_id が存在するか確認
+  let isAvailableMyPeerId = false
+  res.attenders.forEach((item: any) => {
+    if (item.peer_id === webrtcStore.myPeerId) {
+      isAvailableMyPeerId = true
+    }
+  })
+  if (!isAvailableMyPeerId) {
+    // Room入室中の一覧に自身の peer_id が無い => 一度退室いただく。
+    const options = { alertType: 'エラー', alertMessage: "必要であれば、再度ご入室してください。" }
+    await exitRoom(options)
+    return
+  }
   webrtcStore.checkMedias(res)
 }
 
@@ -1139,6 +1179,16 @@ const doReload = () => {
         <div class="font-bold">お願い</div>
         <div class="m-3">カメラとマイクの使用を許可してください。</div>
         <ButtonGeneralPrimary class="h-12 w-24" @click="doReload"> OK </ButtonGeneralPrimary>
+      </div>
+    </div>
+  </ModalGeneral>
+
+  <ModalGeneral ref="modalAlertMessage">
+    <div class="w-64 p-3">
+      <div class="text-center">
+        <div class="font-bold">{{ textAlertType }}</div>
+        <div class="m-3">{{ textAlertMessage }}</div>
+        <ButtonGeneralPrimary class="h-12 w-24" @click="modalAlertMessage.close()"> OK </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>
