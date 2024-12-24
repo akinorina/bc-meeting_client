@@ -202,7 +202,7 @@ webrtcStore.peerOnErrorCallback = async (options: any) => {
   }
 }
 
-webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
+webrtcStore.mediaConnOnCloseCallback = async (/* options: any */) => {
   // console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
   // if (options) {
   //   console.info('options.peer_id:', options.peer_id)
@@ -304,7 +304,7 @@ const checkStatusPeerConn = async () => {
   })
   if (!isAvailableMyPeerId) {
     // Room入室中の一覧に自身の peer_id が無い => 一度退室いただく。
-    const options = { alertType: 'エラー', alertMessage: "必要であれば、再度ご入室してください。" }
+    const options = { alertType: 'エラー', alertMessage: '必要であれば、再度ご入室してください。' }
     await exitRoom(options)
     return
   }
@@ -1188,7 +1188,9 @@ const doReload = () => {
       <div class="text-center">
         <div class="font-bold">{{ textAlertType }}</div>
         <div class="m-3">{{ textAlertMessage }}</div>
-        <ButtonGeneralPrimary class="h-12 w-24" @click="modalAlertMessage.close()"> OK </ButtonGeneralPrimary>
+        <ButtonGeneralPrimary class="h-12 w-24" @click="modalAlertMessage.close()">
+          OK
+        </ButtonGeneralPrimary>
       </div>
     </div>
   </ModalGeneral>

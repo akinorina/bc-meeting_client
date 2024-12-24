@@ -151,7 +151,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
         // on data: Data接続 error
         peerMedias.value[remotePeerId].dataConn?.on('error', (error: unknown) => {
-          // console.error('--- dataConn.on(error) ---', error)
+          console.error('--- dataConn.on(error) ---', error)
         })
       })
 
@@ -213,7 +213,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
         // on media: error
         peerMedias.value[remotePeerId].mediaConn?.on('error', (error: any) => {
-          // console.error('--- mediaConn.on(error) ---', error)
+          console.error('--- mediaConn.on(error) ---', error)
           // console.error('mediaconn error name', error.name)
           // console.error('mediaconn error type', error.type)
           // console.error('mediaconn error message', error.message)
@@ -227,7 +227,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peer接続が切断された
     peer.value.on('disconnected', (currentId: string) => {
-      // console.warn('--- peer.on(disconnected) ---', currentId)
+      console.warn('--- peer.on(disconnected) ---', currentId)
     })
 
     // on: Peer接続が破壊され、再接続できない
@@ -330,7 +330,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       })
 
       peerMedias.value[remotePeerId].mediaConn?.on('error', async (error: unknown) => {
-        // console.error('--- mediaConn: peer on(error) ---', error)
+        console.error('--- mediaConn: peer on(error) ---', error)
       })
 
       // Peer DataConn 接続確立
@@ -383,7 +383,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       // Peer DataConn エラー
       peerMedias.value[remotePeerId].dataConn?.on('error', (error: unknown) => {
-        // console.error('--- dataConn: peer on(error) ---', error)
+        console.error('--- dataConn: peer on(error) ---', error)
       })
 
       // peer.on(call) callback
