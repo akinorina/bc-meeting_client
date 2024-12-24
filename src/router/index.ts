@@ -39,6 +39,11 @@ const router = createRouter({
       component: () => import('../views/samples/AudioView.vue')
     },
     {
+      path: '/samples/draggable',
+      name: 'samples_draggable',
+      component: () => import('../views/samples/DraggableView.vue')
+    },
+    {
       path: '/signin',
       name: 'sign-in',
       component: () => import('../views/auth/SigninView.vue')
