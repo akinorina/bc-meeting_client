@@ -314,7 +314,10 @@ const checkStatusPeerConn = async () => {
 // 音声出力の大きなUserの Peer ID を取得
 const getTargetUser = () => {
   const maxVolumePeerData = webrtcStore.getTargetUserPeerId()
-  if (maxVolumePeerData.volume > VOLUME_VALID_VALUE && maxVolumePeerData.peerId !== webrtcStore.myPeerId) {
+  if (
+    maxVolumePeerData.volume > VOLUME_VALID_VALUE &&
+    maxVolumePeerData.peerId !== webrtcStore.myPeerId
+  ) {
     // volume値がある程度あるなら、ターゲットを変更
     targetSpeakerPeerId.value = maxVolumePeerData.peerId
   }
@@ -481,12 +484,18 @@ const selectSettingsSp = (value: '' | 'chat' | 'settings' | 'virtual-background'
 // [Tablet / PC]: settings: 右サイド・設定欄 : '' | 'chat' | 'settings' | 'virtual-background'
 const selectedTabPc = ref<'' | 'chat' | 'settings' | 'virtual-background'>('')
 // [Tablet / PC]: 設定ダイアログ: タブを選択
-const selectSettingsPc = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
-  if (selectedTabPc.value === value) {
-    selectedTabPc.value = ''
+const selectSettingsPc = (
+  value: '' | 'chat' | 'settings' | 'virtual-background',
+  selectFrom: 'rightside-menu' | 'meeting-controller' = 'rightside-menu'
+) => {
+  if (selectFrom === 'meeting-controller') {
+    if (selectedTabPc.value === '') {
+      selectedTabPc.value = 'settings'
+    } else {
+      selectedTabPc.value = ''
+    }
   } else {
     selectedTabPc.value = value
-
     if (selectedTabPc.value === 'settings') {
       mediaDeviceStore.makeDeviceList()
     }
@@ -843,7 +852,7 @@ const doReload = () => {
                       v-if="pm.available"
                     >
                       <video
-                        class="border-0 border-dashed border-red-500 p-1"
+                        class="p-1"
                         :class="{
                           'my-video-mirrored':
                             myVideoMirrored &&
@@ -1202,10 +1211,10 @@ const doReload = () => {
           </div>
 
           <!-- Rightside -->
-          <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
+          <div class="rightside overflow-y-auto bg-slate-50" v-if="selectedTabPc !== ''">
             <div class="rightside__contents">
               <template v-if="selectedTabPc === 'chat'">
-                <div class="h-full w-full border-0 border-dashed border-red-500">
+                <div class="h-full w-full">
                   <TextChat />
                 </div>
               </template>
@@ -1226,11 +1235,11 @@ const doReload = () => {
 
               <!-- 背景設定 -->
               <template v-else-if="selectedTabPc === 'virtual-background'">
-                <div class="h-full w-full border-0 border-dashed border-red-500">
+                <div class="h-full w-full">
                   <div class="m-0 p-3 font-bold">バーチャル背景 設定</div>
                   <div style="height: calc(100% - 50px)">
                     <SelectVirtualBackground
-                      class="border-0 border-dashed border-blue-500 px-5"
+                      class="px-5"
                       :videoModeData="videoModeData"
                       v-model="videoMode"
                       @change="changeVideoMode"
@@ -1243,9 +1252,9 @@ const doReload = () => {
             <div class="rightside__menu">
               <RightsideMenu
                 :selected="selectedTabPc"
-                @open-chat="selectSettingsPc('chat')"
-                @open-settings="selectSettingsPc('settings')"
-                @open-bg="selectSettingsPc('virtual-background')"
+                @open-chat="selectSettingsPc('chat', 'rightside-menu')"
+                @open-settings="selectSettingsPc('settings', 'rightside-menu')"
+                @open-bg="selectSettingsPc('virtual-background', 'rightside-menu')"
               />
             </div>
           </div>
@@ -1263,7 +1272,7 @@ const doReload = () => {
             @toggle-video="toggleVideo"
             @toggle-audio="toggleAudio"
             @exit-room="exitRoom"
-            @open-settings="selectSettingsPc('settings')"
+            @open-settings="selectSettingsPc('settings', 'meeting-controller')"
           />
         </div>
         <!-- // footer -->
@@ -1313,8 +1322,8 @@ const doReload = () => {
           <TextChat />
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
-          <div class="h-full w-full border-0 border-dashed border-red-500">
-            <div class="m-0 border-0 border-dashed border-red-500 p-3 font-bold">設定</div>
+          <div class="h-full w-full">
+            <div class="m-0 p-3 font-bold">設定</div>
             <div style="height: calc(100% - 60px); overflow-y: auto">
               <SettingParts
                 v-model:my-video-mirrored="myVideoMirrored"

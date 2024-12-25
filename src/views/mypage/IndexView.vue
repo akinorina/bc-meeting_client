@@ -195,12 +195,7 @@ const contactRoom = async (roomHash: string) => {
         </div>
         <div class="m-3">
           <div class="font-bold">Room hash</div>
-          <InputText
-            class="border-0"
-            style="width: 100%"
-            readonly
-            v-model="roomStore.room.room_hash"
-          />
+          <InputText class="" style="width: 100%" readonly v-model="roomStore.room.room_hash" />
         </div>
       </div>
       <div class="m-3 text-center">

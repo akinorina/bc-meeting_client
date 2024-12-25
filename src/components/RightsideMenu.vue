@@ -9,7 +9,7 @@ const emit = defineEmits(['open-chat', 'open-settings', 'open-bg'])
 
 <template>
   <div
-    class="my-0 flex w-full cursor-pointer gap-1 border-0 border-slate-100 bg-slate-100 py-0 text-center font-bold text-black"
+    class="my-0 flex w-full cursor-pointer gap-1 bg-slate-100 py-0 text-center font-bold text-black"
   >
     <div
       class="w-1/3 bg-slate-200 py-2 hover:bg-slate-50"
