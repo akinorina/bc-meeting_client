@@ -22,6 +22,9 @@ import type { BackgroundSettingObject } from '@/lib'
 import backgroundData from '@/assets/background.json'
 import SettingParts from '@/components/SettingParts.vue'
 
+// Speaker view 有効ボリューム minimum値
+const VOLUME_VALID_VALUE = 10
+
 const router = useRouter()
 const route = useRoute()
 
@@ -81,6 +84,7 @@ const targetSpeakerPeerId = ref('')
 
 // check interval ID.
 let cIId: any = null
+let cIId2: any = null
 
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
@@ -262,6 +266,11 @@ const enterRoom = async () => {
     checkStatusPeerConn()
   }, 5000)
 
+  // 相手の disconnect 不良への対応
+  cIId2 = setInterval(() => {
+    getTargetUser()
+  }, 1000)
+
   // 状態: 入室
   statusEnterRoom.value = true
 }
@@ -274,6 +283,10 @@ const exitRoom = async (options: any = {}) => {
   if (cIId !== null) {
     await clearInterval(cIId)
     cIId = null
+  }
+  if (cIId2 !== null) {
+    await clearInterval(cIId2)
+    cIId2 = null
   }
 
   targetSpeakerPeerId.value = webrtcStore.myPeerId
@@ -296,6 +309,16 @@ const checkStatusPeerConn = async () => {
   // status
   const res = await roomStore.statusRoom(roomHash.value)
   webrtcStore.checkMedias(res)
+}
+
+// 音声出力の大きなUserの Peer ID を取得
+const getTargetUser = () => {
+  const maxVolumePeerData = webrtcStore.getTargetUserPeerId()
+  if (maxVolumePeerData.volume > VOLUME_VALID_VALUE) {
+    // volume値がある程度あるなら、ターゲットを変更
+    console.log('max > ', maxVolumePeerData.name, maxVolumePeerData.peerId)
+    targetSpeakerPeerId.value = maxVolumePeerData.peerId
+  }
 }
 
 // バーチャル背景 mediaStream 切替
@@ -784,7 +807,8 @@ const doReload = () => {
                     class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
                   >
                     <div class="">
-                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }} :
+                      {{ Math.floor(webrtcStore.peerMedias[targetSpeakerPeerId].volume * 100) / 100  }}
                     </div>
                   </div>
                 </template>
@@ -821,7 +845,8 @@ const doReload = () => {
                         class="speakers__list__item--label bg-black text-xs font-bold text-white"
                       >
                         <div class="">
-                          {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                          {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
+                          {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
                         </div>
                       </div>
                     </div>
@@ -889,7 +914,8 @@ const doReload = () => {
                   <div
                     class="matrix-view__item__label text-white bg-black text-xl"
                   >
-                    {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                    {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
+                    {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
                   </div>
                 </div>
               </template>
@@ -946,7 +972,8 @@ const doReload = () => {
                     class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
                   >
                     <div class="">
-                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }} :
+                      {{ Math.floor(webrtcStore.peerMedias[targetSpeakerPeerId].volume * 100) / 100  }}
                     </div>
                   </div>
                 </template>
@@ -987,7 +1014,8 @@ const doReload = () => {
                       <div
                         class="speakers__list__item--label text-white bg-black text-xs"
                       >
-                        {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                        {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
+                        {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
                       </div>
                     </div>
                   </template>
@@ -1056,7 +1084,8 @@ const doReload = () => {
                     <div
                       class="matrix-view__items__item__label text-white bg-black text-xl"
                     >
-                      {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                      {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
+                      {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
                     </div>
                   </div>
                 </template>

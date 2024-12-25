@@ -2,6 +2,7 @@ import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Peer } from 'peerjs'
 import type { MediaConnection, DataConnection, PeerOptions } from 'peerjs'
+import VolumeMeter from '@/worklet/VolumeMeterProcessor.js?url'
 
 export class PeerMedia {
   peerId: string = ''
@@ -10,6 +11,11 @@ export class PeerMedia {
   available: boolean = false
   dataConn: DataConnection | undefined = undefined
   displayName: string = ''
+  audioContext: AudioContext | undefined = undefined
+  audioSrcNode: MediaStreamAudioSourceNode | undefined = undefined
+  volumeWorkletNode: AudioWorkletNode | undefined = undefined
+  volume: number = 0
+  speakOrderValue: number = 100
 }
 interface PeerMediaObject {
   [key: string]: PeerMedia
@@ -22,6 +28,9 @@ export class DataConnData {
 }
 
 export const useWebrtcStore = defineStore('webrtc', () => {
+  // Speaker view 有効ボリューム minimum値
+  const VOLUME_VALID_VALUE = 10
+
   // my peer name.
   const myName = ref('')
 
@@ -42,6 +51,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   watch(peerMedias, () => {
     numOfPeers.value = Object.keys(peerMedias).length
   })
+  // Audio出力によるターゲットユーザー決定用データ
+  const userAudioOrders = ref<any[]>([])
 
   // 送受信メッセージデータ
   const dataConnData = ref<DataConnData[]>([])
@@ -155,7 +166,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         })
       })
 
-      // on: Peer Media接続 呼び出しあり
+      // on: Peer Media接続 - 相手からの接続
       peer.value.on('call', (call: MediaConnection) => {
         // console.info('--- peer.on(call) ---')
         if (myMediaStream.value === null) {
@@ -176,10 +187,28 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         peerMedias.value[remotePeerId].mediaConn?.answer(myMediaStream.value)
 
         // on media: Remote Peer のストリーム取得時
-        peerMedias.value[remotePeerId].mediaConn?.on('stream', (remoteStream: MediaStream) => {
-          peerMedias.value[remotePeerId].mediaStream = remoteStream
-          peerMedias.value[remotePeerId].available = true
-        })
+        peerMedias.value[remotePeerId].mediaConn?.on(
+          'stream',
+          async (remoteStream: MediaStream) => {
+            peerMedias.value[remotePeerId].mediaStream = remoteStream
+            peerMedias.value[remotePeerId].available = true
+
+            peerMedias.value[remotePeerId].audioContext = new AudioContext()
+            await peerMedias.value[remotePeerId].audioContext.audioWorklet.addModule(VolumeMeter)
+            peerMedias.value[remotePeerId].audioSrcNode =
+              peerMedias.value[remotePeerId].audioContext.createMediaStreamSource(remoteStream)
+            peerMedias.value[remotePeerId].volumeWorkletNode = new AudioWorkletNode(
+              peerMedias.value[remotePeerId].audioContext,
+              'volume-meter'
+            )
+            peerMedias.value[remotePeerId].volumeWorkletNode.port.onmessage = ({ data }) => {
+              peerMedias.value[remotePeerId].volume = data * 500
+            }
+            peerMedias.value[remotePeerId].audioSrcNode.connect(
+              peerMedias.value[remotePeerId].volumeWorkletNode
+            )
+          }
+        )
 
         // on media: Media接続 切断
         peerMedias.value[remotePeerId].mediaConn?.on('close', () => {
@@ -279,10 +308,30 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       if (!peerMedias.value[remotePeerId]) {
         peerMedias.value[remotePeerId] = new PeerMedia()
       }
+
+      // media
       peerMedias.value[remotePeerId].available = true
       peerMedias.value[remotePeerId].peerId = remotePeerId
       peerMedias.value[remotePeerId].mediaConn = undefined
       peerMedias.value[remotePeerId].mediaStream = myMediaStream.value
+
+      peerMedias.value[remotePeerId].audioContext = new AudioContext()
+      await peerMedias.value[remotePeerId].audioContext.audioWorklet.addModule(VolumeMeter)
+      peerMedias.value[remotePeerId].audioSrcNode = peerMedias.value[
+        remotePeerId
+      ].audioContext.createMediaStreamSource(myMediaStream.value)
+      peerMedias.value[remotePeerId].volumeWorkletNode = new AudioWorkletNode(
+        peerMedias.value[remotePeerId].audioContext,
+        'volume-meter'
+      )
+      peerMedias.value[remotePeerId].volumeWorkletNode.port.onmessage = ({ data }) => {
+        peerMedias.value[remotePeerId].volume = data * 500
+      }
+      peerMedias.value[remotePeerId].audioSrcNode.connect(
+        peerMedias.value[remotePeerId].volumeWorkletNode
+      )
+
+      // data
       peerMedias.value[remotePeerId].dataConn = undefined
       peerMedias.value[remotePeerId].displayName = displayName
     } else {
@@ -296,9 +345,24 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       peerMedias.value[remotePeerId].dataConn = peer.value?.connect(remotePeerId, {})
       peerMedias.value[remotePeerId].displayName = displayName
 
-      peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: MediaStream) {
+      peerMedias.value[remotePeerId].mediaConn?.on('stream', async (remoteStream: MediaStream) => {
         peerMedias.value[remotePeerId].mediaStream = remoteStream
         peerMedias.value[remotePeerId].available = true
+
+        peerMedias.value[remotePeerId].audioContext = new AudioContext()
+        await peerMedias.value[remotePeerId].audioContext.audioWorklet.addModule(VolumeMeter)
+        peerMedias.value[remotePeerId].audioSrcNode =
+          peerMedias.value[remotePeerId].audioContext.createMediaStreamSource(remoteStream)
+        peerMedias.value[remotePeerId].volumeWorkletNode = new AudioWorkletNode(
+          peerMedias.value[remotePeerId].audioContext,
+          'volume-meter'
+        )
+        peerMedias.value[remotePeerId].volumeWorkletNode.port.onmessage = ({ data }) => {
+          peerMedias.value[remotePeerId].volume = data * 500
+        }
+        peerMedias.value[remotePeerId].audioSrcNode.connect(
+          peerMedias.value[remotePeerId].volumeWorkletNode
+        )
       })
 
       peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
@@ -309,6 +373,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
             .forEach((track: MediaStreamTrack) => track.stop())
           // MediaStream 削除
           delete peerMedias.value[remotePeerId].mediaStream
+          // audio source node 削除
+          peerMedias.value[remotePeerId].audioSrcNode?.disconnect()
+          // volume worklet node 削除
+          peerMedias.value[remotePeerId].volumeWorkletNode?.disconnect()
         }
         if (peerMedias.value[remotePeerId].mediaConn) {
           // MediaConnection CLOSE
@@ -413,6 +481,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
             ?.getTracks()
             .forEach((track: MediaStreamTrack) => track.stop())
           delete peerMedias.value[peerId].mediaStream
+          // audio source node 削除
+          peerMedias.value[peerId].audioSrcNode?.disconnect()
+          // volume worklet node 削除
+          peerMedias.value[peerId].volumeWorkletNode?.disconnect()
         }
 
         // MediaConnection CLOSE
@@ -510,6 +582,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
               ?.getTracks()
               .forEach((track: MediaStreamTrack) => track.stop())
             delete peerMedias.value[peerId].mediaStream
+            // audio source node 削除
+            peerMedias.value[peerId].audioSrcNode?.disconnect()
+            // volume worklet node 削除
+            peerMedias.value[peerId].volumeWorkletNode?.disconnect()
           }
 
           if (peerMedias.value[peerId].mediaConn) {
@@ -562,6 +638,29 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     return targetDisplayName
   }
 
+  // ターゲット Peer ID. 取得
+  function getTargetUserPeerId() {
+    userAudioOrders.value = []
+    Object.keys(peerMedias.value).forEach((peerId) => {
+      //
+      peerMedias.value[peerId].speakOrderValue--
+      //
+      const newItem = {
+        peerId: peerId,
+        name: peerMedias.value[peerId].displayName,
+        volume:
+          peerMedias.value[peerId].volume < VOLUME_VALID_VALUE ? 0 : peerMedias.value[peerId].volume
+      }
+      userAudioOrders.value.push(newItem)
+    })
+    // sort volume 大きい順
+    userAudioOrders.value.sort((a: any, b: any) => {
+      return a.volume < b.volume ? 1 : a.volume === b.volume ? 0 : -1
+    })
+
+    return userAudioOrders.value[0]
+  }
+
   // 表示名をすべての人に送信
   function sendMyNameToAll() {
     Object.keys(peerMedias.value).forEach(async (remotePeerId) => {
@@ -598,6 +697,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     replaceAudioTrackToPeerConnection,
     changeVideoEnabledToPeerConnection,
     changeAudioEnabledToPeerConnection,
+    getTargetUserPeerId,
     showInfoLog
   }
 })

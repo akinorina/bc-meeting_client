@@ -10,6 +10,9 @@ const { type = 'button', disabled = false } = defineProps<Props>()
 const buttonExplaining = ref(false)
 const showButtonExplaining = () => {
   buttonExplaining.value = true
+  setTimeout(() => {
+    buttonExplaining.value = false
+  }, 5000)
 }
 const hideButtonExplaining = () => {
   buttonExplaining.value = false

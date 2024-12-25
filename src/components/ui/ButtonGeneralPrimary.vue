@@ -12,7 +12,7 @@ const showButtonExplaining = () => {
   buttonExplaining.value = true
   setTimeout(() => {
     buttonExplaining.value = false
-  }, 100000)
+  }, 5000)
 }
 const hideButtonExplaining = () => {
   buttonExplaining.value = false

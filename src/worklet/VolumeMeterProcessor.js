@@ -1,6 +1,6 @@
 /* global currentTime */
 const SMOOTHING_FACTOR = 0.8
-const FRAME_PER_SECOND = 60
+const FRAME_PER_SECOND = 50
 const FRAME_INTERVAL = 1 / FRAME_PER_SECOND
 
 /**
