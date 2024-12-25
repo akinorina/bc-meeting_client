@@ -92,7 +92,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         if (!peerMedias.value[remotePeerId]) {
           peerMedias.value[remotePeerId] = new PeerMedia()
         }
-        peerMedias.value[remotePeerId].available = true
+        peerMedias.value[remotePeerId].available = false
         peerMedias.value[remotePeerId].peerId = remotePeerId
         peerMedias.value[remotePeerId].dataConn = conn
 
@@ -166,7 +166,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         if (!peerMedias.value[remotePeerId]) {
           peerMedias.value[remotePeerId] = new PeerMedia()
         }
-        peerMedias.value[remotePeerId].available = true
+        peerMedias.value[remotePeerId].available = false
         peerMedias.value[remotePeerId].peerId = remotePeerId
 
         // media接続を確保
@@ -178,6 +178,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         // on media: Remote Peer のストリーム取得時
         peerMedias.value[remotePeerId].mediaConn?.on('stream', (remoteStream: MediaStream) => {
           peerMedias.value[remotePeerId].mediaStream = remoteStream
+          peerMedias.value[remotePeerId].available = true
         })
 
         // on media: Media接続 切断
@@ -289,7 +290,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       if (!peerMedias.value[remotePeerId]) {
         peerMedias.value[remotePeerId] = new PeerMedia()
       }
-      peerMedias.value[remotePeerId].available = true
+      peerMedias.value[remotePeerId].available = false
       peerMedias.value[remotePeerId].peerId = remotePeerId
       peerMedias.value[remotePeerId].mediaConn = peer.value.call(remotePeerId, myMediaStream.value)
       peerMedias.value[remotePeerId].dataConn = peer.value?.connect(remotePeerId, {})
@@ -297,6 +298,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
       peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: MediaStream) {
         peerMedias.value[remotePeerId].mediaStream = remoteStream
+        peerMedias.value[remotePeerId].available = true
       })
 
       peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {

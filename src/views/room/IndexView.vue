@@ -295,19 +295,6 @@ const exitRoom = async (options: any = {}) => {
 const checkStatusPeerConn = async () => {
   // status
   const res = await roomStore.statusRoom(roomHash.value)
-  // Room入室中の peer_id のうち、自身の peer_id が存在するか確認
-  let isAvailableMyPeerId = false
-  res.attenders.forEach((item: any) => {
-    if (item.peer_id === webrtcStore.myPeerId) {
-      isAvailableMyPeerId = true
-    }
-  })
-  if (!isAvailableMyPeerId) {
-    // Room入室中の一覧に自身の peer_id が無い => 一度退室いただく。
-    const options = { alertType: 'エラー', alertMessage: '必要であれば、再度ご入室してください。' }
-    await exitRoom(options)
-    return
-  }
   webrtcStore.checkMedias(res)
 }
 
@@ -805,13 +792,12 @@ const doReload = () => {
 
               <div class="speakers w-screen overflow-x-auto">
                 <div class="speakers__list flex flex-nowrap justify-start">
-                  <div
-                    class="speakers__list__item flex items-center"
-                    v-for="pm in webrtcStore.peerMedias"
-                    :key="pm.peerId"
-                    @click="chooseSpeaker(pm.peerId)"
-                  >
-                    <template v-if="pm.available">
+                  <template v-for="pm in webrtcStore.peerMedias" :key="pm.peerId">
+                    <div
+                      class="speakers__list__item flex items-center"
+                      @click="chooseSpeaker(pm.peerId)"
+                      v-if="pm.available"
+                    >
                       <video
                         class="p-1 border-0 border-red-500 border-dashed"
                         :class="{
@@ -838,8 +824,8 @@ const doReload = () => {
                           {{ webrtcStore.peerMedias[pm.peerId].displayName }}
                         </div>
                       </div>
-                    </template>
-                  </div>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -847,41 +833,40 @@ const doReload = () => {
 
             <!-- ViewMode: Matrix -->
             <div class="matrix-view" v-else-if="viewMode === 'matrix'">
-              <div
-                class="matrix-view__item flex items-center border border-slate-900"
-                :class="{
-                  'w-full':
-                    1 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 2,
-                  'w-1/2':
-                    3 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 4,
-                  'w-1/3':
-                    5 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 12,
-                  'w-1/4':
-                    13 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 20,
-                  'h-full':
-                    1 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 1,
-                  'h-1/2':
-                    2 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 6,
-                  'h-1/3':
-                    7 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 9,
-                  'h-1/4':
-                    10 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 16,
-                  'h-1/5':
-                    17 <= Object.keys(webrtcStore.peerMedias).length &&
-                    Object.keys(webrtcStore.peerMedias).length <= 20
-                }"
-                v-for="(pm, peerId) in webrtcStore.peerMedias"
-                :key="peerId"
-              >
-                <template v-if="pm.available">
+              <template v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId">
+                <div
+                  class="matrix-view__item flex items-center border border-slate-900"
+                  :class="{
+                    'w-full':
+                      1 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 2,
+                    'w-1/2':
+                      3 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 4,
+                    'w-1/3':
+                      5 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 12,
+                    'w-1/4':
+                      13 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 20,
+                    'h-full':
+                      1 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 1,
+                    'h-1/2':
+                      2 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 6,
+                    'h-1/3':
+                      7 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 9,
+                    'h-1/4':
+                      10 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 16,
+                    'h-1/5':
+                      17 <= Object.keys(webrtcStore.peerMedias).length &&
+                      Object.keys(webrtcStore.peerMedias).length <= 20
+                  }"
+                  v-if="pm.available"
+                >
                   <video
                     class="h-full w-full"
                     :class="{
@@ -906,8 +891,8 @@ const doReload = () => {
                   >
                     {{ webrtcStore.peerMedias[pm.peerId].displayName }}
                   </div>
-                </template>
-              </div>
+                </div>
+              </template>
             </div>
             <!-- // ViewMode: Matrix -->
           </div>
@@ -971,13 +956,15 @@ const doReload = () => {
               <!-- speakers list -->
               <div class="speakers border-2 border-slate-900">
                 <div class="speakers__list flex flex-nowrap justify-start items-center">
-                  <div
-                    class="speakers__list__item flex items-center"
+                  <template
                     v-for="pm in webrtcStore.peerMedias"
                     :key="pm.peerId"
-                    @click="chooseSpeaker(pm.peerId)"
                   >
-                    <template v-if="pm.available">
+                    <div
+                      class="speakers__list__item flex items-center"
+                      @click="chooseSpeaker(pm.peerId)"
+                      v-if="pm.available"
+                    >
                       <video
                         class="h-24 border border-slate-700"
                         :class="{
@@ -1002,8 +989,8 @@ const doReload = () => {
                       >
                         {{ webrtcStore.peerMedias[pm.peerId].displayName }}
                       </div>
-                    </template>
-                  </div>
+                    </div>
+                  </template>
                 </div>
               </div>
               <!-- // speakers list -->
@@ -1013,41 +1000,40 @@ const doReload = () => {
             <!-- ViewMode: Matrix -->
             <div class="matrix-view" v-else-if="viewMode === 'matrix'">
               <div class="matrix-view__items flex flex-wrap items-center justify-center">
-                <div
-                  class="matrix-view__items__item flex items-center justify-center border border-slate-700"
-                  :class="{
-                    'w-full':
-                      1 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 2,
-                    'w-1/2':
-                      3 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 4,
-                    'w-1/3':
-                      5 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 12,
-                    'w-1/4':
-                      13 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 20,
-                    'h-full':
-                      1 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 1,
-                    'h-1/2':
-                      2 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 6,
-                    'h-1/3':
-                      7 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 9,
-                    'h-1/4':
-                      10 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 16,
-                    'h-1/5':
-                      17 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 20
-                  }"
-                  v-for="(pm, peerId) in webrtcStore.peerMedias"
-                  :key="peerId"
-                >
-                  <template v-if="pm.available">
+                <template v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId">
+                  <div
+                    class="matrix-view__items__item flex items-center justify-center border border-slate-700"
+                    :class="{
+                      'w-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 2,
+                      'w-1/2':
+                        3 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 4,
+                      'w-1/3':
+                        5 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 12,
+                      'w-1/4':
+                        13 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20,
+                      'h-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 1,
+                      'h-1/2':
+                        2 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 6,
+                      'h-1/3':
+                        7 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 9,
+                      'h-1/4':
+                        10 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 16,
+                      'h-1/5':
+                        17 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20
+                    }"
+                    v-if="pm.available"
+                  >
                     <video
                       class="h-full w-full"
                       :class="{
@@ -1072,8 +1058,8 @@ const doReload = () => {
                     >
                       {{ webrtcStore.peerMedias[pm.peerId].displayName }}
                     </div>
-                  </template>
-                </div>
+                  </div>
+                </template>
               </div>
             </div>
             <!-- // ViewMode: Matrix -->
