@@ -34,9 +34,14 @@ const router = createRouter({
       component: () => import('../views/samples/MediaView.vue')
     },
     {
-      path: '/samples/tf',
-      name: 'samples_tf',
-      component: () => import('../views/samples/TfView.vue')
+      path: '/samples/audio',
+      name: 'samples_audio',
+      component: () => import('../views/samples/AudioView.vue')
+    },
+    {
+      path: '/samples/draggable',
+      name: 'samples_draggable',
+      component: () => import('../views/samples/DraggableView.vue')
     },
     {
       path: '/signin',

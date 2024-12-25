@@ -3,12 +3,16 @@ import { ref } from 'vue'
 
 export interface Props {
   type?: any
+  disabled?: boolean
 }
-const { type = 'button' } = defineProps<Props>()
+const { type = 'button', disabled = false } = defineProps<Props>()
 
 const buttonExplaining = ref(false)
 const showButtonExplaining = () => {
   buttonExplaining.value = true
+  setTimeout(() => {
+    buttonExplaining.value = false
+  }, 5000)
 }
 const hideButtonExplaining = () => {
   buttonExplaining.value = false
@@ -19,6 +23,7 @@ const hideButtonExplaining = () => {
   <button
     :type="type"
     class="relative rounded-md bg-sky-400 px-3 py-1 text-slate-50 hover:bg-sky-500"
+    :disabled="disabled"
     @mouseover="showButtonExplaining"
     @mouseout="hideButtonExplaining"
   >

@@ -2,6 +2,7 @@ import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { Peer } from 'peerjs'
 import type { MediaConnection, DataConnection, PeerOptions } from 'peerjs'
+import VolumeMeter from '@/worklet/VolumeMeterProcessor.js?url'
 
 export class PeerMedia {
   peerId: string = ''
@@ -10,6 +11,11 @@ export class PeerMedia {
   available: boolean = false
   dataConn: DataConnection | undefined = undefined
   displayName: string = ''
+  audioContext: AudioContext | undefined = undefined
+  audioSrcNode: MediaStreamAudioSourceNode | undefined = undefined
+  volumeWorkletNode: AudioWorkletNode | undefined = undefined
+  volume: number = 0
+  speakOrderValue: number = 100
 }
 interface PeerMediaObject {
   [key: string]: PeerMedia
@@ -22,6 +28,9 @@ export class DataConnData {
 }
 
 export const useWebrtcStore = defineStore('webrtc', () => {
+  // Speaker view 有効ボリューム minimum値
+  const VOLUME_VALID_VALUE = 10
+
   // my peer name.
   const myName = ref('')
 
@@ -42,6 +51,8 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   watch(peerMedias, () => {
     numOfPeers.value = Object.keys(peerMedias).length
   })
+  // Audio出力によるターゲットユーザー決定用データ
+  const userAudioOrders = ref<any[]>([])
 
   // 送受信メッセージデータ
   const dataConnData = ref<DataConnData[]>([])
@@ -80,24 +91,24 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peerサーバー接続確立
     peer.value.on('open', () => {
-      console.info('--- peer.on(open) ---')
+      // console.info('--- peer.on(open) ---')
       if (!peer.value) return
 
       myPeerId.value = peer.value && peer.value.id ? peer.value.id : ''
 
       // on: Peer Data接続 - 相手からの接続
       peer.value.on('connection', (conn: DataConnection) => {
-        console.info('--- peer.on(connection) ---')
+        // console.info('--- peer.on(connection) ---')
         const remotePeerId = conn.peer
         if (!peerMedias.value[remotePeerId]) {
           peerMedias.value[remotePeerId] = new PeerMedia()
         }
-        peerMedias.value[remotePeerId].available = true
+        peerMedias.value[remotePeerId].available = false
         peerMedias.value[remotePeerId].peerId = remotePeerId
         peerMedias.value[remotePeerId].dataConn = conn
 
         // on data: Data接続 確立
-        peerMedias.value[remotePeerId].dataConn?.on('open', async () => {
+        peerMedias.value[remotePeerId].dataConn.on('open', async () => {
           if (myPeerId.value === '') {
             throw new Error('not enough data: myPeerId.value')
           }
@@ -111,7 +122,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         })
 
         // on data: Data接続 受信
-        peerMedias.value[remotePeerId].dataConn?.on('data', (dataUnknown: unknown) => {
+        peerMedias.value[remotePeerId].dataConn.on('data', (dataUnknown: unknown) => {
           let sendName: DataConnData | undefined = undefined
           const data = dataUnknown as DataConnData
           switch (data.type) {
@@ -140,7 +151,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         })
 
         // on data: Data接続 切断された
-        peerMedias.value[remotePeerId].dataConn?.on('close', () => {
+        peerMedias.value[remotePeerId].dataConn.on('close', () => {
           if (peerMedias.value[remotePeerId].dataConn) {
             // dataConn 切断 & clean up.
             peerMedias.value[remotePeerId].dataConn?.close()
@@ -150,14 +161,14 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         })
 
         // on data: Data接続 error
-        peerMedias.value[remotePeerId].dataConn?.on('error', (error: unknown) => {
+        peerMedias.value[remotePeerId].dataConn.on('error', (error: unknown) => {
           console.error('--- dataConn.on(error) ---', error)
         })
       })
 
-      // on: Peer Media接続 呼び出しあり
+      // on: Peer Media接続 - 相手からの接続
       peer.value.on('call', (call: MediaConnection) => {
-        console.info('--- peer.on(call) ---')
+        // console.info('--- peer.on(call) ---')
         if (myMediaStream.value === null) {
           throw new Error('not enough data: myMediaStream.value')
         }
@@ -166,23 +177,40 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         if (!peerMedias.value[remotePeerId]) {
           peerMedias.value[remotePeerId] = new PeerMedia()
         }
-        peerMedias.value[remotePeerId].available = true
+        peerMedias.value[remotePeerId].available = false
         peerMedias.value[remotePeerId].peerId = remotePeerId
 
         // media接続を確保
         peerMedias.value[remotePeerId].mediaConn = call
 
         // Peer Media接続へ応答
-        peerMedias.value[remotePeerId].mediaConn?.answer(myMediaStream.value)
+        peerMedias.value[remotePeerId].mediaConn.answer(myMediaStream.value)
 
         // on media: Remote Peer のストリーム取得時
-        peerMedias.value[remotePeerId].mediaConn?.on('stream', (remoteStream: MediaStream) => {
+        peerMedias.value[remotePeerId].mediaConn.on('stream', async (remoteStream: MediaStream) => {
           peerMedias.value[remotePeerId].mediaStream = remoteStream
+          peerMedias.value[remotePeerId].available = true
+
+          // audio worklet node 生成 & 接続
+          peerMedias.value[remotePeerId].audioContext = new AudioContext()
+          await peerMedias.value[remotePeerId].audioContext.audioWorklet.addModule(VolumeMeter)
+          peerMedias.value[remotePeerId].audioSrcNode =
+            peerMedias.value[remotePeerId].audioContext.createMediaStreamSource(remoteStream)
+          peerMedias.value[remotePeerId].volumeWorkletNode = new AudioWorkletNode(
+            peerMedias.value[remotePeerId].audioContext,
+            'volume-meter'
+          )
+          peerMedias.value[remotePeerId].volumeWorkletNode.port.onmessage = ({ data }) => {
+            peerMedias.value[remotePeerId].volume = data * 500
+          }
+          peerMedias.value[remotePeerId].audioSrcNode.connect(
+            peerMedias.value[remotePeerId].volumeWorkletNode
+          )
         })
 
         // on media: Media接続 切断
-        peerMedias.value[remotePeerId].mediaConn?.on('close', () => {
-          console.error('--- mediaConn.on(close) ---')
+        peerMedias.value[remotePeerId].mediaConn.on('close', () => {
+          // console.error('--- mediaConn.on(close) ---')
 
           // closeした MediaStream停止
           peerMedias.value[remotePeerId].mediaStream
@@ -212,11 +240,11 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         })
 
         // on media: error
-        peerMedias.value[remotePeerId].mediaConn?.on('error', (error: any) => {
+        peerMedias.value[remotePeerId].mediaConn.on('error', (error: any) => {
           console.error('--- mediaConn.on(error) ---', error)
-          console.error('mediaconn error name', error.name)
-          console.error('mediaconn error type', error.type)
-          console.error('mediaconn error message', error.message)
+          // console.error('mediaconn error name', error.name)
+          // console.error('mediaconn error type', error.type)
+          // console.error('mediaconn error message', error.message)
         })
 
         // peer.on(call) callback
@@ -232,22 +260,22 @@ export const useWebrtcStore = defineStore('webrtc', () => {
 
     // on: Peer接続が破壊され、再接続できない
     peer.value.on('close', () => {
-      console.warn('--- peer.on(close) ---')
+      // console.warn('--- peer.on(close) ---')
       myPeerId.value = ''
     })
 
     // on: error
     peer.value.on('error', (err) => {
-      console.error('=== Peer on(error) ===', err)
-      console.error('peer error', err.type)
-      console.error('peer error', err.message)
-      console.error('peer error', err.name)
-      console.error('peer error', err.stack)
-      console.error('peer error', err)
-      console.info('peer id', peer.value?.id)
-      console.info('connections', peer.value?.connections)
-      console.info('disconnected', peer.value?.disconnected)
-      console.info('destroyed', peer.value?.destroyed)
+      // console.error('=== Peer on(error) ===', err)
+      // console.error('peer error', err.type)
+      // console.error('peer error', err.message)
+      // console.error('peer error', err.name)
+      // console.error('peer error', err.stack)
+      // console.error('peer error', err)
+      // console.info('peer id', peer.value?.id)
+      // console.info('connections', peer.value?.connections)
+      // console.info('disconnected', peer.value?.disconnected)
+      // console.info('destroyed', peer.value?.destroyed)
 
       const options: any = {}
       if (err.type === 'peer-unavailable') {
@@ -257,6 +285,9 @@ export const useWebrtcStore = defineStore('webrtc', () => {
           // console.info('error peer id.', ma[1])
           options.type = 'peer-unavailable'
           options.peer_id = ma[1]
+
+          // 接続できなかった peer_id の peerMedias要素を削除
+          delete peerMedias.value[options.peer_id]
         }
 
         peerOnErrorCallback.value(options)
@@ -275,27 +306,69 @@ export const useWebrtcStore = defineStore('webrtc', () => {
       if (!peerMedias.value[remotePeerId]) {
         peerMedias.value[remotePeerId] = new PeerMedia()
       }
+
+      // media
       peerMedias.value[remotePeerId].available = true
       peerMedias.value[remotePeerId].peerId = remotePeerId
       peerMedias.value[remotePeerId].mediaConn = undefined
       peerMedias.value[remotePeerId].mediaStream = myMediaStream.value
+
+      // audio worklet node 生成 & 接続
+      peerMedias.value[remotePeerId].audioContext = new AudioContext()
+      await peerMedias.value[remotePeerId].audioContext.audioWorklet.addModule(VolumeMeter)
+      peerMedias.value[remotePeerId].audioSrcNode = peerMedias.value[
+        remotePeerId
+      ].audioContext.createMediaStreamSource(myMediaStream.value)
+      peerMedias.value[remotePeerId].volumeWorkletNode = new AudioWorkletNode(
+        peerMedias.value[remotePeerId].audioContext,
+        'volume-meter'
+      )
+      peerMedias.value[remotePeerId].volumeWorkletNode.port.onmessage = ({ data }) => {
+        peerMedias.value[remotePeerId].volume = data * 500
+      }
+      peerMedias.value[remotePeerId].audioSrcNode.connect(
+        peerMedias.value[remotePeerId].volumeWorkletNode
+      )
+
+      // dataConnection: 自身への接続不要
       peerMedias.value[remotePeerId].dataConn = undefined
+
+      // 自身の表示名を設定
       peerMedias.value[remotePeerId].displayName = displayName
     } else {
       // 他のPeerId
       if (!peerMedias.value[remotePeerId]) {
         peerMedias.value[remotePeerId] = new PeerMedia()
       }
-      peerMedias.value[remotePeerId].available = true
+      peerMedias.value[remotePeerId].available = false
       peerMedias.value[remotePeerId].peerId = remotePeerId
       peerMedias.value[remotePeerId].mediaConn = peer.value.call(remotePeerId, myMediaStream.value)
       peerMedias.value[remotePeerId].dataConn = peer.value?.connect(remotePeerId, {})
       peerMedias.value[remotePeerId].displayName = displayName
 
-      peerMedias.value[remotePeerId].mediaConn?.on('stream', function (remoteStream: MediaStream) {
+      // on media: Remote Peer のストリーム取得時
+      peerMedias.value[remotePeerId].mediaConn?.on('stream', async (remoteStream: MediaStream) => {
         peerMedias.value[remotePeerId].mediaStream = remoteStream
+        peerMedias.value[remotePeerId].available = true
+
+        // audio worklet node 生成 & 接続
+        peerMedias.value[remotePeerId].audioContext = new AudioContext()
+        await peerMedias.value[remotePeerId].audioContext.audioWorklet.addModule(VolumeMeter)
+        peerMedias.value[remotePeerId].audioSrcNode =
+          peerMedias.value[remotePeerId].audioContext.createMediaStreamSource(remoteStream)
+        peerMedias.value[remotePeerId].volumeWorkletNode = new AudioWorkletNode(
+          peerMedias.value[remotePeerId].audioContext,
+          'volume-meter'
+        )
+        peerMedias.value[remotePeerId].volumeWorkletNode.port.onmessage = ({ data }) => {
+          peerMedias.value[remotePeerId].volume = data * 500
+        }
+        peerMedias.value[remotePeerId].audioSrcNode.connect(
+          peerMedias.value[remotePeerId].volumeWorkletNode
+        )
       })
 
+      // on media: Media接続 切断
       peerMedias.value[remotePeerId].mediaConn?.on('close', async () => {
         if (peerMedias.value[remotePeerId].mediaStream) {
           // MediaStream 停止
@@ -304,10 +377,14 @@ export const useWebrtcStore = defineStore('webrtc', () => {
             .forEach((track: MediaStreamTrack) => track.stop())
           // MediaStream 削除
           delete peerMedias.value[remotePeerId].mediaStream
+          // audio source node 削除
+          peerMedias.value[remotePeerId].audioSrcNode?.disconnect()
+          // volume worklet node 削除
+          peerMedias.value[remotePeerId].volumeWorkletNode?.disconnect()
         }
         if (peerMedias.value[remotePeerId].mediaConn) {
           // MediaConnection CLOSE
-          peerMedias.value[remotePeerId].mediaConn?.close()
+          peerMedias.value[remotePeerId].mediaConn.close()
           // MediaConnection 削除
           delete peerMedias.value[remotePeerId].mediaConn
         }
@@ -326,6 +403,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
         }, 1000)
       })
 
+      // on media: error
       peerMedias.value[remotePeerId].mediaConn?.on('error', async (error: unknown) => {
         console.error('--- mediaConn: peer on(error) ---', error)
       })
@@ -408,6 +486,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
             ?.getTracks()
             .forEach((track: MediaStreamTrack) => track.stop())
           delete peerMedias.value[peerId].mediaStream
+          // audio source node 削除
+          peerMedias.value[peerId].audioSrcNode?.disconnect()
+          // volume worklet node 削除
+          peerMedias.value[peerId].volumeWorkletNode?.disconnect()
         }
 
         // MediaConnection CLOSE
@@ -505,6 +587,10 @@ export const useWebrtcStore = defineStore('webrtc', () => {
               ?.getTracks()
               .forEach((track: MediaStreamTrack) => track.stop())
             delete peerMedias.value[peerId].mediaStream
+            // audio source node 削除
+            peerMedias.value[peerId].audioSrcNode?.disconnect()
+            // volume worklet node 削除
+            peerMedias.value[peerId].volumeWorkletNode?.disconnect()
           }
 
           if (peerMedias.value[peerId].mediaConn) {
@@ -557,6 +643,29 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     return targetDisplayName
   }
 
+  // ターゲット Peer ID. 取得
+  function getTargetUserPeerId() {
+    userAudioOrders.value = []
+    Object.keys(peerMedias.value).forEach((peerId) => {
+      //
+      peerMedias.value[peerId].speakOrderValue--
+      //
+      const newItem = {
+        peerId: peerId,
+        name: peerMedias.value[peerId].displayName,
+        volume:
+          peerMedias.value[peerId].volume < VOLUME_VALID_VALUE ? 0 : peerMedias.value[peerId].volume
+      }
+      userAudioOrders.value.push(newItem)
+    })
+    // sort volume 大きい順
+    userAudioOrders.value.sort((a: any, b: any) => {
+      return a.volume < b.volume ? 1 : a.volume === b.volume ? 0 : -1
+    })
+
+    return userAudioOrders.value[0]
+  }
+
   // 表示名をすべての人に送信
   function sendMyNameToAll() {
     Object.keys(peerMedias.value).forEach(async (remotePeerId) => {
@@ -593,6 +702,7 @@ export const useWebrtcStore = defineStore('webrtc', () => {
     replaceAudioTrackToPeerConnection,
     changeVideoEnabledToPeerConnection,
     changeAudioEnabledToPeerConnection,
+    getTargetUserPeerId,
     showInfoLog
   }
 })

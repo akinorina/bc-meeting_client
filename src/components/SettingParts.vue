@@ -11,7 +11,7 @@ const emit = defineEmits(['change-display-name', 'change-video-input', 'change-a
 </script>
 
 <template>
-  <div class="border-0 border-dashed border-blue-500 p-0">
+  <div class="p-0">
     <div class="mx-0 mb-5 border px-2 py-5">
       <InputCheckbox class="" v-model="myVideoMirrored"> 自身の画像を鏡映反転する </InputCheckbox>
     </div>

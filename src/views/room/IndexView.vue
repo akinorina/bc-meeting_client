@@ -22,6 +22,9 @@ import type { BackgroundSettingObject } from '@/lib'
 import backgroundData from '@/assets/background.json'
 import SettingParts from '@/components/SettingParts.vue'
 
+// Speaker view 有効ボリューム minimum値
+const VOLUME_VALID_VALUE = 10
+
 const router = useRouter()
 const route = useRoute()
 
@@ -74,19 +77,25 @@ const invitedEmailAddress = ref<string>('')
 const statusEnterRoom = ref(false)
 
 // view mode (speaker|matrix)
-const viewMode = ref<'speaker' | 'matrix'>('speaker')
+const viewMode = ref<'speaker' | 'matrix'>('matrix')
 
 // Speaker View - 現在のスピーカーの Peer ID.
 const targetSpeakerPeerId = ref('')
 
 // check interval ID.
 let cIId: any = null
+let cIId2: any = null
 
 // Modal: 招待メール送信 完了
 const modalSendInvitaionSuccess = ref()
 
 // Modal: getUserMedia() 失敗
 const modalFailureGettingUserMedia = ref()
+
+// Modal: Alert メッセージ
+const modalAlertMessage = ref()
+const textAlertType = ref('')
+const textAlertMessage = ref('')
 
 // Modal: 設定
 const modalSettings = ref()
@@ -167,27 +176,43 @@ const unloadFunc = async () => {
 }
 
 webrtcStore.peerOnCallCallback = async (options: any) => {
-  console.info('----- webrtcStore.peerOnCallCallback() -----')
+  // console.info('----- webrtcStore.peerOnCallCallback() -----')
   if (options.peer_id) {
-    console.info('options.peer_id', options.peer_id)
+    // console.info('options.peer_id', options.peer_id)
+    // Spearkerモード時のターゲットに設定
     targetSpeakerPeerId.value = options.peer_id
   }
 }
 
 webrtcStore.peerOnErrorCallback = async (options: any) => {
-  console.info('----- webrtcStore.peerOnErrorCallback() -----')
+  // console.info('----- webrtcStore.peerOnErrorCallback() -----')
   if (options.type) {
-    console.info('options.type   :', options.type)
-    console.info('options.peer_id:', options.peer_id)
+    // console.info('options.type   :', options.type)
+    // console.info('options.peer_id:', options.peer_id)
+    if (options.type === 'peer-unavailable') {
+      // 接続できなかった peer_id 要素を削除後、Speakerモードの target を再設定
+      if (Object.keys(webrtcStore.peerMedias).length >= 2) {
+        // 他の人との接続があれば、Spearkerモードでは他の人をターゲットにする
+        Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
+          if (peerId !== webrtcStore.myPeerId) {
+            targetSpeakerPeerId.value = peerId
+          }
+        })
+      } else {
+        // 他の人との接続が無い（自分のみ）であれば、Speakerモードでは自分をターゲットにする
+        targetSpeakerPeerId.value = webrtcStore.myPeerId
+      }
+    }
   }
 }
 
-webrtcStore.mediaConnOnCloseCallback = async (options: any) => {
-  console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
-  if (options) {
-    console.info('options.peer_id:', options.peer_id)
-  }
+webrtcStore.mediaConnOnCloseCallback = async (/* options: any */) => {
+  // console.info('----- webrtcStore.mediaConnOnCloseCallback() -----')
+  // if (options) {
+  //   console.info('options.peer_id:', options.peer_id)
+  // }
 
+  // 接続を切断した peer_id 要素を削除後、Speakerモードの target を再設定
   if (Object.keys(webrtcStore.peerMedias).length >= 2) {
     // 他の人との接続があれば、Spearkerモードでは他の人をターゲットにする
     Object.keys(webrtcStore.peerMedias).forEach((peerId) => {
@@ -241,18 +266,27 @@ const enterRoom = async () => {
     checkStatusPeerConn()
   }, 5000)
 
+  // 相手の disconnect 不良への対応
+  cIId2 = setInterval(() => {
+    getTargetUser()
+  }, 1000)
+
   // 状態: 入室
   statusEnterRoom.value = true
 }
 
 // Roomからの退室
-const exitRoom = async () => {
+const exitRoom = async (options: any = {}) => {
   // 状態: 退室
   statusEnterRoom.value = false
 
   if (cIId !== null) {
     await clearInterval(cIId)
     cIId = null
+  }
+  if (cIId2 !== null) {
+    await clearInterval(cIId2)
+    cIId2 = null
   }
 
   targetSpeakerPeerId.value = webrtcStore.myPeerId
@@ -262,6 +296,12 @@ const exitRoom = async () => {
 
   // WebRTC - 退出
   webrtcStore.disconnectMedia()
+
+  if (options.alertMessage) {
+    textAlertMessage.value = options.alertMessage
+    textAlertType.value = options.alertType
+    modalAlertMessage.value.open()
+  }
 }
 
 // PeerConn 状態をチェック、改善処理
@@ -269,6 +309,18 @@ const checkStatusPeerConn = async () => {
   // status
   const res = await roomStore.statusRoom(roomHash.value)
   webrtcStore.checkMedias(res)
+}
+
+// 音声出力の大きなUserの Peer ID を取得
+const getTargetUser = () => {
+  const maxVolumePeerData = webrtcStore.getTargetUserPeerId()
+  if (
+    maxVolumePeerData.volume > VOLUME_VALID_VALUE &&
+    maxVolumePeerData.peerId !== webrtcStore.myPeerId
+  ) {
+    // volume値がある程度あるなら、ターゲットを変更
+    targetSpeakerPeerId.value = maxVolumePeerData.peerId
+  }
 }
 
 // バーチャル背景 mediaStream 切替
@@ -432,12 +484,18 @@ const selectSettingsSp = (value: '' | 'chat' | 'settings' | 'virtual-background'
 // [Tablet / PC]: settings: 右サイド・設定欄 : '' | 'chat' | 'settings' | 'virtual-background'
 const selectedTabPc = ref<'' | 'chat' | 'settings' | 'virtual-background'>('')
 // [Tablet / PC]: 設定ダイアログ: タブを選択
-const selectSettingsPc = (value: '' | 'chat' | 'settings' | 'virtual-background') => {
-  if (selectedTabPc.value === value) {
-    selectedTabPc.value = ''
+const selectSettingsPc = (
+  value: '' | 'chat' | 'settings' | 'virtual-background',
+  selectFrom: 'rightside-menu' | 'meeting-controller' = 'rightside-menu'
+) => {
+  if (selectFrom === 'meeting-controller') {
+    if (selectedTabPc.value === '') {
+      selectedTabPc.value = 'settings'
+    } else {
+      selectedTabPc.value = ''
+    }
   } else {
     selectedTabPc.value = value
-
     if (selectedTabPc.value === 'settings') {
       mediaDeviceStore.makeDeviceList()
     }
@@ -729,25 +787,72 @@ const doReload = () => {
       <!-- 入室(meeting)状態 -->
 
       <!-- xs: スマートフォン -->
-      <div class="mx-auto h-screen w-screen bg-slate-400 sm:hidden">
+      <div class="mx-auto h-screen w-screen bg-slate-800 sm:hidden">
         <!-- main -->
         <div class="main flex justify-start">
-          <div class="relative">
-            <template v-if="viewMode === 'speaker'">
-              <!-- speakers list -->
+          <div class="sp relative w-full">
+            <!-- ViewMode: Speaker -->
+            <div class="speaker-view" v-if="viewMode === 'speaker'">
               <div
-                class="speakers absolute bottom-0 left-0 z-20 w-screen overflow-x-auto rounded-sm bg-slate-300"
+                class="target-speaker relative flex flex-wrap justify-center bg-slate-800"
+                v-if="targetSpeakerPeerId !== ''"
               >
-                <div class="speakers-list flex flex-nowrap justify-start">
+                <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
+                  <video
+                    class="h-full w-full"
+                    :class="{
+                      'my-video-mirrored':
+                        myVideoMirrored &&
+                        videoMode !== 'alt-text' &&
+                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
+                    }"
+                    :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
+                    autoplay
+                    muted
+                    playsinline
+                  ></video>
                   <div
-                    class="speakers-list-item relative flex items-center"
-                    v-for="pm in webrtcStore.peerMedias"
-                    :key="pm.peerId"
-                    @click="chooseSpeaker(pm.peerId)"
+                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
                   >
-                    <template v-if="pm.available">
-                      <video
+                    <div class="flex items-center justify-start">
+                      <div class="">
+                        {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      </div>
+                      <div
                         class=""
+                        v-if="
+                          webrtcStore.peerMedias[targetSpeakerPeerId].volume > VOLUME_VALID_VALUE
+                        "
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          class="bi bi-soundwave"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="speakers w-screen overflow-x-auto">
+                <div class="speakers__list flex flex-nowrap justify-start">
+                  <template v-for="pm in webrtcStore.peerMedias" :key="pm.peerId">
+                    <div
+                      class="speakers__list__item flex items-center"
+                      @click="chooseSpeaker(pm.peerId)"
+                      v-if="pm.available"
+                    >
+                      <video
+                        class="p-1"
                         :class="{
                           'my-video-mirrored':
                             myVideoMirrored &&
@@ -766,53 +871,40 @@ const doReload = () => {
                         v-if="pm.peerId !== webrtcStore.myPeerId"
                       ></audio>
                       <div
-                        class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                        class="speakers__list__item--label flex items-center justify-start bg-black text-xs font-bold text-white"
                       >
-                        <div class="">
-                          {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                        <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                        <div
+                          class=""
+                          v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            class="bi bi-soundwave"
+                            viewBox="0 0 16 16"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                            />
+                          </svg>
                         </div>
                       </div>
-                    </template>
-                  </div>
+                    </div>
+                  </template>
                 </div>
               </div>
-              <!-- // speakers list -->
+            </div>
+            <!-- // ViewMode: Speaker -->
 
-              <!-- current speaker -->
-              <div
-                class="main-speaker-view relative flex flex-wrap justify-center bg-slate-500"
-                v-if="targetSpeakerPeerId !== ''"
-              >
-                <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
-                  <video
-                    class="h-full w-full"
-                    :class="{
-                      'my-video-mirrored':
-                        myVideoMirrored &&
-                        videoMode !== 'alt-text' &&
-                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
-                    }"
-                    :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
-                    autoplay
-                    muted
-                    playsinline
-                  ></video>
-                  <div
-                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
-                  >
-                    <div class="">
-                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
-                    </div>
-                  </div>
-                </template>
-              </div>
-              <!-- // current speaker -->
-            </template>
-
-            <template v-else>
-              <div class="main-matrix-view flex flex-wrap items-center justify-center">
+            <!-- ViewMode: Matrix -->
+            <div class="matrix-view" v-else-if="viewMode === 'matrix'">
+              <template v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId">
                 <div
-                  class="relative flex items-center border bg-slate-500"
+                  class="matrix-view__item flex items-center border border-slate-900"
                   :class="{
                     'w-full':
                       1 <= Object.keys(webrtcStore.peerMedias).length &&
@@ -842,46 +934,60 @@ const doReload = () => {
                       17 <= Object.keys(webrtcStore.peerMedias).length &&
                       Object.keys(webrtcStore.peerMedias).length <= 20
                   }"
-                  v-for="(pm, peerId) in webrtcStore.peerMedias"
-                  :key="peerId"
+                  v-if="pm.available"
                 >
-                  <template v-if="pm.available">
-                    <video
-                      class="h-full w-full"
-                      :class="{
-                        'my-video-mirrored':
-                          myVideoMirrored &&
-                          videoMode !== 'alt-text' &&
-                          pm.peerId === webrtcStore.myPeerId
-                      }"
-                      :srcObject.prop="pm.mediaStream"
-                      autoplay
-                      muted
-                      playsinline
-                    ></video>
-                    <audio
-                      class=""
-                      :srcObject.prop="pm.mediaStream"
-                      autoplay
-                      v-if="pm.peerId !== webrtcStore.myPeerId"
-                    ></audio>
+                  <video
+                    class="h-full w-full"
+                    :class="{
+                      'my-video-mirrored':
+                        myVideoMirrored &&
+                        videoMode !== 'alt-text' &&
+                        pm.peerId === webrtcStore.myPeerId
+                    }"
+                    :srcObject.prop="pm.mediaStream"
+                    autoplay
+                    muted
+                    playsinline
+                  ></video>
+                  <audio
+                    class=""
+                    :srcObject.prop="pm.mediaStream"
+                    autoplay
+                    v-if="pm.peerId !== webrtcStore.myPeerId"
+                  ></audio>
+                  <div
+                    class="matrix-view__item__label flex items-center justify-start bg-black text-xl text-white"
+                  >
+                    <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
                     <div
-                      class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                      class=""
+                      v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
                     >
-                      <div class="">
-                        {{ webrtcStore.peerMedias[pm.peerId].displayName }}
-                      </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="currentColor"
+                        class="bi bi-soundwave"
+                        viewBox="0 0 16 16"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                        />
+                      </svg>
                     </div>
-                  </template>
+                  </div>
                 </div>
-              </div>
-            </template>
+              </template>
+            </div>
+            <!-- // ViewMode: Matrix -->
           </div>
         </div>
         <!-- // main -->
 
         <!-- footer -->
-        <div class="footer flex h-16 items-center justify-between bg-slate-200">
+        <div class="footer">
           <MeetingController
             :viewMode="viewMode"
             :trackStatusVideo="trackStatus.video"
@@ -898,26 +1004,78 @@ const doReload = () => {
       <!-- // xs: スマートフォン -->
 
       <!-- sm: タブレット、パソコン -->
-      <div class="mx-auto hidden h-screen w-screen bg-slate-400 sm:block">
+      <div class="mx-auto hidden h-screen w-screen bg-slate-800 sm:block">
         <!-- main -->
         <div class="main flex justify-start">
-          <div class="pc-meeting relative" :class="{ 'pc-meeting-full': selectedTabPc === '' }">
+          <div
+            class="pc relative"
+            style="border: 0px red dashed"
+            :class="{ 'pc-full': selectedTabPc === '' }"
+          >
             <!-- ViewMode: Speaker -->
-            <template v-if="viewMode === 'speaker'">
-              <!-- speakers list -->
+            <div class="speaker-view" v-if="viewMode === 'speaker'">
               <div
-                class="absolute bottom-0 left-0 z-20 overflow-x-hidden rounded-sm border-2 border-slate-500 bg-slate-300"
+                class="target-speaker flex flex-wrap justify-center"
+                v-if="targetSpeakerPeerId !== ''"
               >
-                <div class="flex flex-nowrap justify-start">
+                <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
+                  <video
+                    class="h-full w-full"
+                    :class="{
+                      'my-video-mirrored':
+                        myVideoMirrored &&
+                        videoMode !== 'alt-text' &&
+                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
+                    }"
+                    :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
+                    autoplay
+                    muted
+                    playsinline
+                  ></video>
                   <div
-                    class="relative flex w-60 items-center"
-                    v-for="pm in webrtcStore.peerMedias"
-                    :key="pm.peerId"
-                    @click="chooseSpeaker(pm.peerId)"
+                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black text-xl font-bold text-white"
                   >
-                    <template v-if="pm.available">
+                    <div class="flex items-center justify-start">
+                      <div class="">
+                        {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      </div>
+                      <div
+                        class=""
+                        v-if="
+                          webrtcStore.peerMedias[targetSpeakerPeerId].volume > VOLUME_VALID_VALUE
+                        "
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          class="bi bi-soundwave"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <!-- // current speaker -->
+
+              <!-- speakers list -->
+              <div class="speakers border-2 border-slate-900">
+                <div class="speakers__list flex flex-nowrap items-center justify-start">
+                  <template v-for="pm in webrtcStore.peerMedias" :key="pm.peerId">
+                    <div
+                      class="speakers__list__item flex items-center"
+                      @click="chooseSpeaker(pm.peerId)"
+                      v-if="pm.available"
+                    >
                       <video
-                        class="h-36 w-96"
+                        class="h-24 border border-slate-700"
                         :class="{
                           'my-video-mirrored':
                             myVideoMirrored &&
@@ -936,88 +1094,73 @@ const doReload = () => {
                         v-if="pm.peerId !== webrtcStore.myPeerId"
                       ></audio>
                       <div
-                        class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                        class="speakers__list__item--label flex items-center justify-start bg-black text-xs text-white"
                       >
-                        <div class="">
-                          {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                        <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                        <div
+                          class=""
+                          v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            class="bi bi-soundwave"
+                            viewBox="0 0 16 16"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                            />
+                          </svg>
                         </div>
                       </div>
-                    </template>
-                  </div>
+                    </div>
+                  </template>
                 </div>
               </div>
               <!-- // speakers list -->
-
-              <!-- current speaker -->
-              <div
-                class="main-speaker-view relative flex flex-wrap justify-center bg-slate-500"
-                v-if="targetSpeakerPeerId !== ''"
-              >
-                <template v-if="webrtcStore.peerMedias[targetSpeakerPeerId].available">
-                  <video
-                    class="h-full w-full"
-                    :class="{
-                      'my-video-mirrored':
-                        myVideoMirrored &&
-                        videoMode !== 'alt-text' &&
-                        webrtcStore.peerMedias[targetSpeakerPeerId].peerId === webrtcStore.myPeerId
-                    }"
-                    :srcObject.prop="webrtcStore.peerMedias[targetSpeakerPeerId].mediaStream"
-                    autoplay
-                    muted
-                    playsinline
-                  ></video>
-                  <div
-                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
-                  >
-                    <div class="">
-                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
-                    </div>
-                  </div>
-                </template>
-              </div>
-              <!-- // current speaker -->
-            </template>
+            </div>
             <!-- // ViewMode: Speaker -->
 
             <!-- ViewMode: Matrix -->
-            <template v-else>
-              <div class="main-matrix-view flex flex-wrap items-center justify-center">
-                <div
-                  class="relative flex items-center border bg-slate-500"
-                  :class="{
-                    'w-full':
-                      1 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 2,
-                    'w-1/2':
-                      3 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 4,
-                    'w-1/3':
-                      5 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 12,
-                    'w-1/4':
-                      13 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 20,
-                    'h-full':
-                      1 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 1,
-                    'h-1/2':
-                      2 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 6,
-                    'h-1/3':
-                      7 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 9,
-                    'h-1/4':
-                      10 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 16,
-                    'h-1/5':
-                      17 <= Object.keys(webrtcStore.peerMedias).length &&
-                      Object.keys(webrtcStore.peerMedias).length <= 20
-                  }"
-                  v-for="(pm, peerId) in webrtcStore.peerMedias"
-                  :key="peerId"
-                >
-                  <template v-if="pm.available">
+            <div class="matrix-view" v-else-if="viewMode === 'matrix'">
+              <div class="matrix-view__items flex flex-wrap items-center justify-center">
+                <template v-for="(pm, peerId) in webrtcStore.peerMedias" :key="peerId">
+                  <div
+                    class="matrix-view__items__item flex items-center justify-center border border-slate-700"
+                    :class="{
+                      'w-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 2,
+                      'w-1/2':
+                        3 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 4,
+                      'w-1/3':
+                        5 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 12,
+                      'w-1/4':
+                        13 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20,
+                      'h-full':
+                        1 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 1,
+                      'h-1/2':
+                        2 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 6,
+                      'h-1/3':
+                        7 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 9,
+                      'h-1/4':
+                        10 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 16,
+                      'h-1/5':
+                        17 <= Object.keys(webrtcStore.peerMedias).length &&
+                        Object.keys(webrtcStore.peerMedias).length <= 20
+                    }"
+                    v-if="pm.available"
+                  >
                     <video
                       class="h-full w-full"
                       :class="{
@@ -1038,24 +1181,40 @@ const doReload = () => {
                       v-if="pm.peerId !== webrtcStore.myPeerId"
                     ></audio>
                     <div
-                      class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
+                      class="matrix-view__items__item__label flex items-center justify-start bg-black text-xl text-white"
                     >
-                      <div class="">
-                        {{ webrtcStore.peerMedias[pm.peerId].displayName }}
+                      <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                      <div
+                        class=""
+                        v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          class="bi bi-soundwave"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                          />
+                        </svg>
                       </div>
                     </div>
-                  </template>
-                </div>
+                  </div>
+                </template>
               </div>
-            </template>
+            </div>
             <!-- // ViewMode: Matrix -->
           </div>
 
           <!-- Rightside -->
-          <div class="rightside overflow-y-auto" v-if="selectedTabPc !== ''">
+          <div class="rightside overflow-y-auto bg-slate-50" v-if="selectedTabPc !== ''">
             <div class="rightside__contents">
               <template v-if="selectedTabPc === 'chat'">
-                <div class="h-full w-full border-0 border-dashed border-red-500">
+                <div class="h-full w-full">
                   <TextChat />
                 </div>
               </template>
@@ -1076,11 +1235,11 @@ const doReload = () => {
 
               <!-- 背景設定 -->
               <template v-else-if="selectedTabPc === 'virtual-background'">
-                <div class="h-full w-full border-0 border-dashed border-red-500">
+                <div class="h-full w-full">
                   <div class="m-0 p-3 font-bold">バーチャル背景 設定</div>
                   <div style="height: calc(100% - 50px)">
                     <SelectVirtualBackground
-                      class="border-0 border-dashed border-blue-500 px-5"
+                      class="px-5"
                       :videoModeData="videoModeData"
                       v-model="videoMode"
                       @change="changeVideoMode"
@@ -1093,9 +1252,9 @@ const doReload = () => {
             <div class="rightside__menu">
               <RightsideMenu
                 :selected="selectedTabPc"
-                @open-chat="selectSettingsPc('chat')"
-                @open-settings="selectSettingsPc('settings')"
-                @open-bg="selectSettingsPc('virtual-background')"
+                @open-chat="selectSettingsPc('chat', 'rightside-menu')"
+                @open-settings="selectSettingsPc('settings', 'rightside-menu')"
+                @open-bg="selectSettingsPc('virtual-background', 'rightside-menu')"
               />
             </div>
           </div>
@@ -1104,7 +1263,7 @@ const doReload = () => {
         <!-- // main -->
 
         <!-- footer -->
-        <div class="footer flex h-16 items-center justify-between bg-slate-200">
+        <div class="footer">
           <MeetingController
             :viewMode="viewMode"
             :trackStatusVideo="trackStatus.video"
@@ -1113,7 +1272,7 @@ const doReload = () => {
             @toggle-video="toggleVideo"
             @toggle-audio="toggleAudio"
             @exit-room="exitRoom"
-            @open-settings="selectSettingsPc('settings')"
+            @open-settings="selectSettingsPc('settings', 'meeting-controller')"
           />
         </div>
         <!-- // footer -->
@@ -1143,6 +1302,18 @@ const doReload = () => {
     </div>
   </ModalGeneral>
 
+  <ModalGeneral ref="modalAlertMessage">
+    <div class="w-64 p-3">
+      <div class="text-center">
+        <div class="font-bold">{{ textAlertType }}</div>
+        <div class="m-3">{{ textAlertMessage }}</div>
+        <ButtonGeneralPrimary class="h-12 w-24" @click="modalAlertMessage.close()">
+          OK
+        </ButtonGeneralPrimary>
+      </div>
+    </div>
+  </ModalGeneral>
+
   <!-- [スマートフォン]: チャット／設定／背景 ダイアログ -->
   <ModalGeneral ref="modalSettings">
     <div class="common-dialog w-80 p-3 sm:w-[37.5rem]">
@@ -1151,8 +1322,8 @@ const doReload = () => {
           <TextChat />
         </template>
         <template v-else-if="selectedTabSp === 'settings'">
-          <div class="h-full w-full border-0 border-dashed border-red-500">
-            <div class="m-0 border-0 border-dashed border-red-500 p-3 font-bold">設定</div>
+          <div class="h-full w-full">
+            <div class="m-0 p-3 font-bold">設定</div>
             <div style="height: calc(100% - 60px); overflow-y: auto">
               <SettingParts
                 v-model:my-video-mirrored="myVideoMirrored"
@@ -1208,17 +1379,71 @@ $footerHeight: 64px;
   height: $footerHeight;
 }
 
-.pc-meeting {
+.pc {
   width: calc(100vw - 374px - 0px);
   height: 100%;
+  background-color: black;
+
+  .speaker-view {
+    .target-speaker {
+      height: calc(100vh - (72px + 28px) - $footerHeight);
+      position: relative;
+    }
+
+    .speakers {
+      width: 100%;
+      overflow-x: auto;
+
+      .speakers__list {
+        width: calc(128px * v-bind(numOfPeers));
+        overflow-x: hidden;
+
+        .speakers__list__item {
+          width: 128px;
+          height: calc(72px + 28px);
+          padding: 2px;
+          position: relative;
+
+          .speakers__list__item--label {
+            border-radius: 5px;
+            padding: 3px 5px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
+          }
+        }
+      }
+    }
+  }
+
+  .matrix-view {
+    .matrix-view__items {
+      height: calc(100vh - $footerHeight);
+
+      .matrix-view__items__item {
+        position: relative;
+
+        .matrix-view__items__item__label {
+          border-radius: 5px;
+          padding: 3px 5px;
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          z-index: 10;
+        }
+      }
+    }
+  }
 }
-.pc-meeting-full {
-  width: calc(100vw - 6px);
+.pc-full {
+  width: 100vw;
 }
 
 .rightside {
   width: 374px;
   height: 100%;
+  z-index: 100;
 
   &__contents {
     height: calc(100% - 43px);
@@ -1229,58 +1454,60 @@ $footerHeight: 64px;
   }
 }
 
-.main-speaker-view {
-  height: calc(100vh - 148px - $footerHeight);
-}
-.main-matrix-view {
-  height: calc(100vh - $footerHeight);
+.sp {
+  .speaker-view {
+    .target-speaker {
+      height: calc(100vh - (72px + 28px) - $footerHeight);
+      position: relative;
+    }
+
+    .speakers {
+      width: 100%;
+      overflow-x: auto;
+
+      .speakers__list {
+        width: calc(128px * v-bind(numOfPeers));
+        overflow-x: hidden;
+
+        .speakers__list__item {
+          width: 128px;
+          height: calc(72px + 28px);
+          padding: 2px;
+          position: relative;
+
+          .speakers__list__item--label {
+            border-radius: 5px;
+            padding: 3px 5px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
+          }
+        }
+      }
+    }
+  }
+
+  .matrix-view {
+    height: calc(100vh - $footerHeight);
+
+    .matrix-view__item {
+      position: relative;
+
+      .matrix-view__item__label {
+        border-radius: 5px;
+        padding: 3px 5px;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 10;
+      }
+    }
+  }
 }
 
 .my-video-mirrored {
   transform: scaleX(-1);
-}
-
-.select-background-image {
-  width: 350px;
-  margin: 0 auto;
-  background-color: #f0f0f0;
-
-  .vbg {
-    width: 172px;
-    position: relative;
-
-    &_image {
-      width: 100%;
-      height: 100%;
-    }
-
-    &__radio {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      display: none;
-      transform: scale(2);
-      cursor: pointer;
-    }
-  }
-  .vbg.selected {
-    border: 3px black solid;
-  }
-}
-
-.speakers {
-  width: 100%;
-  overflow-x: auto;
-
-  &-list {
-    width: calc(240px * v-bind(numOfPeers));
-
-    &-item {
-      max-width: 240px;
-      max-height: 240px;
-      padding: 5px;
-    }
-  }
 }
 
 .common-dialog {
