@@ -782,7 +782,7 @@ const doReload = () => {
       <div class="mx-auto h-screen w-screen bg-slate-800 sm:hidden">
         <!-- main -->
         <div class="main flex justify-start">
-          <div class="sp w-full relative">
+          <div class="sp relative w-full">
             <!-- ViewMode: Speaker -->
             <div class="speaker-view" v-if="viewMode === 'speaker'">
               <div
@@ -806,9 +806,30 @@ const doReload = () => {
                   <div
                     class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-3 text-xl font-bold text-white"
                   >
-                    <div class="">
-                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }} :
-                      {{ Math.floor(webrtcStore.peerMedias[targetSpeakerPeerId].volume * 100) / 100  }}
+                    <div class="flex items-center justify-start">
+                      <div class="">
+                        {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      </div>
+                      <div
+                        class=""
+                        v-if="
+                          webrtcStore.peerMedias[targetSpeakerPeerId].volume > VOLUME_VALID_VALUE
+                        "
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          class="bi bi-soundwave"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -823,7 +844,7 @@ const doReload = () => {
                       v-if="pm.available"
                     >
                       <video
-                        class="p-1 border-0 border-red-500 border-dashed"
+                        class="border-0 border-dashed border-red-500 p-1"
                         :class="{
                           'my-video-mirrored':
                             myVideoMirrored &&
@@ -842,11 +863,26 @@ const doReload = () => {
                         v-if="pm.peerId !== webrtcStore.myPeerId"
                       ></audio>
                       <div
-                        class="speakers__list__item--label bg-black text-xs font-bold text-white"
+                        class="speakers__list__item--label flex items-center justify-start bg-black text-xs font-bold text-white"
                       >
-                        <div class="">
-                          {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
-                          {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
+                        <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                        <div
+                          class=""
+                          v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            class="bi bi-soundwave"
+                            viewBox="0 0 16 16"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -912,10 +948,27 @@ const doReload = () => {
                     v-if="pm.peerId !== webrtcStore.myPeerId"
                   ></audio>
                   <div
-                    class="matrix-view__item__label text-white bg-black text-xl"
+                    class="matrix-view__item__label flex items-center justify-start bg-black text-xl text-white"
                   >
-                    {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
-                    {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
+                    <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                    <div
+                      class=""
+                      v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="currentColor"
+                        class="bi bi-soundwave"
+                        viewBox="0 0 16 16"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                        />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </template>
@@ -943,11 +996,14 @@ const doReload = () => {
       <!-- // xs: スマートフォン -->
 
       <!-- sm: タブレット、パソコン -->
-      <div class="mx-auto h-screen w-screen bg-slate-800 hidden sm:block">
+      <div class="mx-auto hidden h-screen w-screen bg-slate-800 sm:block">
         <!-- main -->
         <div class="main flex justify-start">
-          <div class="pc relative" style="border: 0px red dashed" :class="{ 'pc-full': selectedTabPc === '' }">
-
+          <div
+            class="pc relative"
+            style="border: 0px red dashed"
+            :class="{ 'pc-full': selectedTabPc === '' }"
+          >
             <!-- ViewMode: Speaker -->
             <div class="speaker-view" v-if="viewMode === 'speaker'">
               <div
@@ -969,11 +1025,32 @@ const doReload = () => {
                     playsinline
                   ></video>
                   <div
-                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black p-1 text-xs font-bold text-white"
+                    class="absolute bottom-0 left-0 z-10 rounded-md bg-black text-xl font-bold text-white"
                   >
-                    <div class="">
-                      {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }} :
-                      {{ Math.floor(webrtcStore.peerMedias[targetSpeakerPeerId].volume * 100) / 100  }}
+                    <div class="flex items-center justify-start">
+                      <div class="">
+                        {{ webrtcStore.peerMedias[targetSpeakerPeerId].displayName }}
+                      </div>
+                      <div
+                        class=""
+                        v-if="
+                          webrtcStore.peerMedias[targetSpeakerPeerId].volume > VOLUME_VALID_VALUE
+                        "
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          class="bi bi-soundwave"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -982,11 +1059,8 @@ const doReload = () => {
 
               <!-- speakers list -->
               <div class="speakers border-2 border-slate-900">
-                <div class="speakers__list flex flex-nowrap justify-start items-center">
-                  <template
-                    v-for="pm in webrtcStore.peerMedias"
-                    :key="pm.peerId"
-                  >
+                <div class="speakers__list flex flex-nowrap items-center justify-start">
+                  <template v-for="pm in webrtcStore.peerMedias" :key="pm.peerId">
                     <div
                       class="speakers__list__item flex items-center"
                       @click="chooseSpeaker(pm.peerId)"
@@ -1012,10 +1086,27 @@ const doReload = () => {
                         v-if="pm.peerId !== webrtcStore.myPeerId"
                       ></audio>
                       <div
-                        class="speakers__list__item--label text-white bg-black text-xs"
+                        class="speakers__list__item--label flex items-center justify-start bg-black text-xs text-white"
                       >
-                        {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
-                        {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
+                        <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                        <div
+                          class=""
+                          v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            class="bi bi-soundwave"
+                            viewBox="0 0 16 16"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </template>
@@ -1082,10 +1173,27 @@ const doReload = () => {
                       v-if="pm.peerId !== webrtcStore.myPeerId"
                     ></audio>
                     <div
-                      class="matrix-view__items__item__label text-white bg-black text-xl"
+                      class="matrix-view__items__item__label flex items-center justify-start bg-black text-xl text-white"
                     >
-                      {{ webrtcStore.peerMedias[pm.peerId].displayName }} :
-                      {{ Math.floor(webrtcStore.peerMedias[pm.peerId].volume * 100) / 100  }}
+                      <div class="">{{ webrtcStore.peerMedias[pm.peerId].displayName }}</div>
+                      <div
+                        class=""
+                        v-if="webrtcStore.peerMedias[pm.peerId].volume > VOLUME_VALID_VALUE"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          class="bi bi-soundwave"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -1269,9 +1377,9 @@ $footerHeight: 64px;
   background-color: black;
 
   .speaker-view {
-
     .target-speaker {
       height: calc(100vh - (72px + 28px) - $footerHeight);
+      position: relative;
     }
 
     .speakers {
@@ -1318,9 +1426,7 @@ $footerHeight: 64px;
         }
       }
     }
-
   }
-
 }
 .pc-full {
   width: 100vw;
@@ -1341,11 +1447,10 @@ $footerHeight: 64px;
 }
 
 .sp {
-
   .speaker-view {
-
     .target-speaker {
       height: calc(100vh - (72px + 28px) - $footerHeight);
+      position: relative;
     }
 
     .speakers {
