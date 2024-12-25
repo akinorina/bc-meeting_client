@@ -314,9 +314,8 @@ const checkStatusPeerConn = async () => {
 // 音声出力の大きなUserの Peer ID を取得
 const getTargetUser = () => {
   const maxVolumePeerData = webrtcStore.getTargetUserPeerId()
-  if (maxVolumePeerData.volume > VOLUME_VALID_VALUE) {
+  if (maxVolumePeerData.volume > VOLUME_VALID_VALUE && maxVolumePeerData.peerId !== webrtcStore.myPeerId) {
     // volume値がある程度あるなら、ターゲットを変更
-    console.log('max > ', maxVolumePeerData.name, maxVolumePeerData.peerId)
     targetSpeakerPeerId.value = maxVolumePeerData.peerId
   }
 }
