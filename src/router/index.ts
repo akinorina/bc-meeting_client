@@ -39,6 +39,11 @@ const router = createRouter({
       component: () => import('../views/samples/MediaNormalView.vue')
     },
     {
+      path: '/samples/media-alttext',
+      name: 'samples_media-alttext',
+      component: () => import('../views/samples/MediaAltTextView.vue')
+    },
+    {
       path: '/samples/audio',
       name: 'samples_audio',
       component: () => import('../views/samples/AudioView.vue')
