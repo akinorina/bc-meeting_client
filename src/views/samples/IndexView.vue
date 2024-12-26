@@ -47,6 +47,15 @@ import VccHeader from '@/components/VccHeader.vue'
               </div>
             </div>
           </router-link>
+
+          <router-link :to="{ name: 'samples_media-normal' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">media normal</h5>
+                <p class="">Mediaのサンプル (normal) です。</p>
+              </div>
+            </div>
+          </router-link>
         </div>
 
         <div class="">
