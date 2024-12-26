@@ -47,6 +47,42 @@ import VccHeader from '@/components/VccHeader.vue'
               </div>
             </div>
           </router-link>
+
+          <router-link :to="{ name: 'samples_media-normal' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">media (normal)</h5>
+                <p class="">Mediaのサンプル (normal) です。</p>
+              </div>
+            </div>
+          </router-link>
+
+          <router-link :to="{ name: 'samples_media-alttext' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">media (alt text)</h5>
+                <p class="">Mediaのサンプル (テキスト代替) です。</p>
+              </div>
+            </div>
+          </router-link>
+
+          <router-link :to="{ name: 'samples_media-blur' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">media (ぼかし)</h5>
+                <p class="">Mediaのサンプル (バーチャル背景：ぼかし) です。</p>
+              </div>
+            </div>
+          </router-link>
+
+          <router-link :to="{ name: 'samples_media-vbg' }" class="">
+            <div class="">
+              <div class="m-3 rounded-lg border p-3 hover:bg-slate-200">
+                <h5 class="">media (画像)</h5>
+                <p class="">Mediaのサンプル (バーチャル背景：画像) です。</p>
+              </div>
+            </div>
+          </router-link>
         </div>
 
         <div class="">

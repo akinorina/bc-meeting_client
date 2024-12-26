@@ -198,7 +198,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
     }
   }
 
-  // バーチャル背景: バックグラウンド作成
+  // バーチャル背景: 画像セグメンテーション
   const createBodySegmentation = async () => {
     const vision = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'

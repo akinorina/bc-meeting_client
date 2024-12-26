@@ -5,7 +5,10 @@ import { axios } from '@/lib/Axios'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
 import { useMediaDeviceStore } from '@/stores/mediaDevice'
-import { useMediaStreamStore } from '@/stores/mediaStream'
+import { useMediaStreamNormalStore } from '@/stores/mediaStreamNormal'
+import { useMediaStreamAlttextStore } from '@/stores/mediaStreamAlttext'
+import { useMediaStreamVbgStore } from '@/stores/mediaStreamVbg'
+import { useMediaStreamBlurStore } from '@/stores/mediaStreamBlur'
 import { useRoomStore } from '@/stores/rooms'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
@@ -37,7 +40,10 @@ watch(webrtcStore.peerMedias, () => {
 })
 
 const mediaDeviceStore = useMediaDeviceStore()
-const mediaStreamStore = useMediaStreamStore()
+const mediaStreamNormalStore = useMediaStreamNormalStore()
+const mediaStreamAltTextStore = useMediaStreamAlttextStore()
+const mediaStreamBlurStore = useMediaStreamBlurStore()
+const mediaStreamVbgStore = useMediaStreamVbgStore()
 const roomStore = useRoomStore()
 
 const roomHashParam = computed({
@@ -54,8 +60,9 @@ const roomHash = ref(roomHashParam.value)
 const mediaStream = ref<MediaStream>(new MediaStream())
 
 // video mode
-const videoMode = ref('normal')
-const videoModeTmp = ref('normal')
+const videoMode = ref<'normal' | 'alt-text' | 'blur' | 'image'>('normal')
+const videoModeTmp = ref<'normal' | 'alt-text' | 'blur' | 'image'>('normal')
+const videoModeBefore = ref<'normal' | 'alt-text' | 'blur' | 'image'>('normal')
 const videoModeData = ref<BackgroundSettingObject>(backgroundData as BackgroundSettingObject)
 
 // my MediaStream video/audio
@@ -67,7 +74,7 @@ const myVideoMirrored = ref(true)
 // my display name
 const myDisplayName = ref('')
 watch(myDisplayName, () => {
-  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
+  mediaStreamAltTextStore.altText = webrtcStore.myName = myDisplayName.value
 })
 
 // 招待メール送信先メールアドレス
@@ -107,7 +114,7 @@ const startRoom = async () => {
   statusEnterRoom.value = false
 
   // canvas text
-  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = ''
+  mediaStreamAltTextStore.altText = webrtcStore.myName = myDisplayName.value = ''
 
   // Room 情報取得
   try {
@@ -121,9 +128,9 @@ const startRoom = async () => {
   // open the mediastream
   try {
     await mediaDeviceStore.init()
-    await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-    mediaStreamStore.openAltText()
-    await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
+    // normalモード
+    videoMode.value = 'normal'
+    await mediaStreamNormalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
   } catch (err: any) {
     if (err.message === 'coud not get a User Media.') {
       modalFailureGettingUserMedia.value.open()
@@ -131,8 +138,7 @@ const startRoom = async () => {
   }
 
   // normal mediaStream 設定
-  webrtcStore.myMediaStream = mediaStream.value =
-    mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
+  mediaStream.value = mediaStreamNormalStore.getMediaStream() as MediaStream
   trackStatus.value = { video: true, audio: true }
 
   // open Peer
@@ -145,7 +151,10 @@ const startRoom = async () => {
   // Profile表示名を表示名初期値に設定
   if (authStore.isAuthenticated()) {
     const resProfile = await authStore.getProfile()
-    mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = resProfile.data.username
+    mediaStreamAltTextStore.altText =
+      webrtcStore.myName =
+      myDisplayName.value =
+        resProfile.data.username
   }
 }
 onMounted(startRoom)
@@ -159,15 +168,21 @@ const endRoom = async () => {
 
   await webrtcStore.close()
 
-  await mediaStreamStore.closeVirtualBackground()
-  await mediaStreamStore.closeAltText()
-  await mediaStreamStore.closeNormal()
-
-  // close the mediaStream
-  mediaStream.value.getTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
+  // mediaStream 削除
+  switch (videoMode.value) {
+    case 'normal':
+      mediaStreamNormalStore.closeMediaStream()
+      break
+    case 'alt-text':
+      mediaStreamAltTextStore.closeMediaStream()
+      break
+    case 'blur':
+      mediaStreamBlurStore.closeMediaStream()
+      break
+    case 'image':
+      mediaStreamVbgStore.closeMediaStream()
+      break
+  }
 }
 onBeforeUnmount(endRoom)
 // beforeunload
@@ -244,8 +259,10 @@ const enterRoom = async () => {
   }
 
   // init.
+  // MediaStream 設定
+  webrtcStore.myMediaStream = mediaStream.value
   // 表示名
-  mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value
+  mediaStreamAltTextStore.altText = webrtcStore.myName = myDisplayName.value
   // Peer ID.
   targetSpeakerPeerId.value = webrtcStore.myPeerId
   // dataConnData 初期化
@@ -266,7 +283,7 @@ const enterRoom = async () => {
     checkStatusPeerConn()
   }, 5000)
 
-  // 相手の disconnect 不良への対応
+  // Speakerモードの Target User 自動選択への対応
   cIId2 = setInterval(() => {
     getTargetUser()
   }, 1000)
@@ -281,11 +298,11 @@ const exitRoom = async (options: any = {}) => {
   statusEnterRoom.value = false
 
   if (cIId !== null) {
-    await clearInterval(cIId)
+    clearInterval(cIId)
     cIId = null
   }
   if (cIId2 !== null) {
-    await clearInterval(cIId2)
+    clearInterval(cIId2)
     cIId2 = null
   }
 
@@ -325,44 +342,61 @@ const getTargetUser = () => {
 
 // バーチャル背景 mediaStream 切替
 const changeVideoMode = async () => {
-  // mediaStream に変更後の VideoTrack を配置
+  // 既存mediaStream から Video を入れ替え
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
   })
+  switch (videoModeData.value[videoModeBefore.value].type) {
+    case 'normal':
+      mediaStreamNormalStore.closeMediaStream('video')
+      break
+    case 'alt-text':
+      mediaStreamAltTextStore.closeMediaStream('video')
+      break
+    case 'blur':
+      mediaStreamBlurStore.closeMediaStream('video')
+      break
+    case 'image':
+      mediaStreamVbgStore.closeMediaStream('video')
+      break
+  }
+
   switch (videoModeData.value[videoMode.value].type) {
     case 'normal':
       // Normal のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      await mediaStreamNormalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamNormalStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
-
+      // video on/off switch => ON
       trackStatus.value.video = true
       break
     case 'alt-text':
       // AltText のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      mediaStreamAltTextStore.openMediaStream()
+      ;(mediaStreamAltTextStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
-
+      // video on/off switch => OFF
       trackStatus.value.video = false
       break
     case 'blur':
-    case 'image':
-      // VirtualBackground パラメータ設定
-      mediaStreamStore.virtualMode = videoModeData.value[videoMode.value].type
-      mediaStreamStore.backgroundBlur = videoModeData.value[videoMode.value].blur
-      mediaStreamStore.bgImageUrl = videoModeData.value[videoMode.value].url
-
-      // VirtualBackground 再起動
-      mediaStreamStore.closeVirtualBackground()
-      await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-      // VirtualBackground のVideoトラックを mediaStream に追加
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
+      mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
-
+      // video on/off switch => ON
+      trackStatus.value.video = true
+      break
+    case 'image':
+      mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
+      mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
+      })
+      // video on/off switch => ON
       trackStatus.value.video = true
       break
   }
@@ -371,10 +405,32 @@ const changeVideoMode = async () => {
   if (statusEnterRoom.value) {
     webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
   }
+
+  videoModeBefore.value = videoMode.value
 }
 
 // video on/off
 const toggleVideo = async () => {
+  // 既存mediaStream から Video を入れ替え
+  mediaStream.value.getVideoTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
+  switch (videoModeData.value[videoMode.value].type) {
+    case 'normal':
+      mediaStreamNormalStore.closeMediaStream('video')
+      break
+    case 'alt-text':
+      mediaStreamAltTextStore.closeMediaStream('video')
+      break
+    case 'blur':
+      mediaStreamBlurStore.closeMediaStream('video')
+      break
+    case 'image':
+      mediaStreamVbgStore.closeMediaStream('video')
+      break
+  }
+
   // 値の更新
   if (videoMode.value === 'alt-text') {
     // altText -> normal or ...
@@ -387,25 +443,31 @@ const toggleVideo = async () => {
     trackStatus.value.video = false
   }
 
-  // 既存mediaStream から Video を入れ替え
-  mediaStream.value.getVideoTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-  switch (videoMode.value) {
+  switch (videoModeData.value[videoMode.value].type) {
     case 'normal':
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      await mediaStreamNormalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamNormalStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
       break
     case 'alt-text':
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      mediaStreamAltTextStore.openMediaStream()
+      ;(mediaStreamAltTextStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
       break
-    default:
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+    case 'blur':
+      mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
+      mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
+      })
+      break
+    case 'image':
+      mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
+      mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
       break
   }
@@ -414,11 +476,17 @@ const toggleVideo = async () => {
   if (statusEnterRoom.value) {
     webrtcStore.replaceVideoTrackToPeerConnection(mediaStream.value)
   }
+
+  videoModeBefore.value = videoMode.value
 }
 
 // audio on/off
 const toggleAudio = () => {
   trackStatus.value.audio = !trackStatus.value.audio
+
+  mediaStream.value.getAudioTracks().forEach((tr) => {
+    tr.enabled = trackStatus.value.audio
+  })
 
   // 通信中は PeerConnection の Audio トラックを変更
   if (statusEnterRoom.value) {
@@ -505,6 +573,7 @@ const selectSettingsPc = (
 // 設定ダイアログ: Video入力 切替
 const changeVideoInput = async () => {
   // close the video mediastream
+  // 既存mediaStream から Video を入れ替え
   mediaStream.value.getVideoTracks().forEach((tr) => {
     tr.stop()
     mediaStream.value.removeTrack(tr)
@@ -514,28 +583,35 @@ const changeVideoInput = async () => {
   mediaDeviceStore.mediaStreamConstraints.video.deviceId = mediaDeviceStore.videoInputDeviceId
 
   // mediastream 再起動
-  await mediaStreamStore.closeNormal()
-  await mediaStreamStore.closeAltText()
-  await mediaStreamStore.closeVirtualBackground()
-  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-  mediaStreamStore.openAltText()
-  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-  // 切り替えたMediaStreamからVideoトラックを追加
-  switch (videoMode.value) {
+  switch (videoModeData.value[videoMode.value].type) {
     case 'normal':
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      mediaStreamNormalStore.closeMediaStream('video')
+      await mediaStreamNormalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamNormalStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
       break
     case 'alt-text':
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+      mediaStreamAltTextStore.closeMediaStream('video')
+      mediaStreamAltTextStore.openMediaStream()
+      ;(mediaStreamAltTextStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
       break
-    default:
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
+    case 'blur':
+      mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
+      mediaStreamBlurStore.closeMediaStream('video')
+      await mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
+      })
+      break
+    case 'image':
+      mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
+      mediaStreamVbgStore.closeMediaStream('video')
+      await mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+      ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+        mediaStream.value.addTrack(tr)
       })
       break
   }
@@ -558,19 +634,22 @@ const changeAudioInput = async () => {
   mediaDeviceStore.mediaStreamConstraints.audio.deviceId = mediaDeviceStore.audioInputDeviceId
 
   // mediastream 再起動
-  await mediaStreamStore.closeNormal()
-  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-
-  // Normal の Audio を接続
-  mediaStreamStore.mediaStreamNormal?.getAudioTracks().forEach((tr) => {
-    mediaStream.value.addTrack(tr.clone())
+  mediaStreamNormalStore.closeMediaStream('audio')
+  await mediaStreamNormalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
+  ;(mediaStreamNormalStore.getMediaStream() as MediaStream).getAudioTracks().forEach((tr) => {
+    mediaStream.value.addTrack(tr)
   })
+
+  // 通信中は PeerConnection の Audio トラックを置き換え
+  if (statusEnterRoom.value) {
+    webrtcStore.replaceAudioTrackToPeerConnection(mediaStream.value)
+  }
 }
 
 // 表示名を変更
 const changeDisplayName = () => {
   // 表示名を更新
-  webrtcStore.myName = mediaStreamStore.altText = myDisplayName.value
+  webrtcStore.myName = mediaStreamAltTextStore.altText = myDisplayName.value
 
   // webrtcStore.peerMedias[myPeerId].displayName を更新
   Object.keys(webrtcStore.peerMedias).forEach((sKey: string) => {
@@ -597,19 +676,15 @@ const doReload = () => {
       <div class="container mx-auto">
         <div class="p-3">
           <video
-            class="max-h-80 w-full bg-slate-100"
+            class="mx-auto max-h-80 w-full bg-slate-100"
             :class="{ 'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' }"
             :srcObject.prop="mediaStream"
             autoplay
             muted
             playsinline
           ></video>
+          <audio :srcObject.prop="mediaStream" autoplay playsinline></audio>
           <!--
-          <audio
-            :srcObject.prop="mediaStream"
-            autoplay
-            playsinline
-          ></audio>
           -->
 
           <div class="flex w-full justify-between">
