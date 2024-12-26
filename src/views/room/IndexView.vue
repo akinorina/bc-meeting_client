@@ -248,6 +248,8 @@ const enterRoom = async () => {
   }
 
   // init.
+  // MediaStream 設定
+  webrtcStore.myMediaStream = mediaStream.value
   // 表示名
   mediaStreamAltTextStore.altText = webrtcStore.myName = myDisplayName.value
   // Peer ID.
@@ -361,6 +363,7 @@ const changeVideoMode = async () => {
       trackStatus.value.video = false
       break
     case 'blur':
+      mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
       mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
       ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
@@ -369,6 +372,7 @@ const changeVideoMode = async () => {
       trackStatus.value.video = true
       break
     case 'image':
+      mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
       mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
       ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
@@ -426,12 +430,14 @@ const toggleVideo = async () => {
       })
       break
     case 'blur':
+      mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
       mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
       ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
       })
       break
     case 'image':
+      mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
       mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
       ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
@@ -566,6 +572,7 @@ const changeVideoInput = async () => {
       })
       break
     case 'blur':
+      mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
       mediaStreamBlurStore.closeMediaStream('video')
       await mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints);
       ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
@@ -573,6 +580,7 @@ const changeVideoInput = async () => {
       })
       break
     case 'image':
+      mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
       mediaStreamVbgStore.closeMediaStream('video')
       await mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints);
       ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
