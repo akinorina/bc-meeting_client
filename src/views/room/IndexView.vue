@@ -5,10 +5,10 @@ import { axios } from '@/lib/Axios'
 import { useAuthStore } from '@/stores/auth'
 import { useWebrtcStore } from '@/stores/webrtc'
 import { useMediaDeviceStore } from '@/stores/mediaDevice'
-import { useMediaStreamNormalStore } from '@/stores/mediaStreamNormal';
-import { useMediaStreamAlttextStore } from '@/stores/mediaStreamAlttext';
-import { useMediaStreamVbgStore } from '@/stores/mediaStreamVbg';
-import { useMediaStreamBlurStore } from '@/stores/mediaStreamBlur';
+import { useMediaStreamNormalStore } from '@/stores/mediaStreamNormal'
+import { useMediaStreamAlttextStore } from '@/stores/mediaStreamAlttext'
+import { useMediaStreamVbgStore } from '@/stores/mediaStreamVbg'
+import { useMediaStreamBlurStore } from '@/stores/mediaStreamBlur'
 import { useRoomStore } from '@/stores/rooms'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
@@ -151,7 +151,10 @@ const startRoom = async () => {
   // Profile表示名を表示名初期値に設定
   if (authStore.isAuthenticated()) {
     const resProfile = await authStore.getProfile()
-    mediaStreamAltTextStore.altText = webrtcStore.myName = myDisplayName.value = resProfile.data.username
+    mediaStreamAltTextStore.altText =
+      webrtcStore.myName =
+      myDisplayName.value =
+        resProfile.data.username
   }
 }
 onMounted(startRoom)
@@ -167,10 +170,18 @@ const endRoom = async () => {
 
   // mediaStream 削除
   switch (videoMode.value) {
-    case 'normal': mediaStreamNormalStore.closeMediaStream(); break
-    case 'alt-text': mediaStreamAltTextStore.closeMediaStream(); break
-    case 'blur': mediaStreamBlurStore.closeMediaStream(); break
-    case 'image': mediaStreamVbgStore.closeMediaStream(); break
+    case 'normal':
+      mediaStreamNormalStore.closeMediaStream()
+      break
+    case 'alt-text':
+      mediaStreamAltTextStore.closeMediaStream()
+      break
+    case 'blur':
+      mediaStreamBlurStore.closeMediaStream()
+      break
+    case 'image':
+      mediaStreamVbgStore.closeMediaStream()
+      break
   }
 }
 onBeforeUnmount(endRoom)
@@ -337,17 +348,25 @@ const changeVideoMode = async () => {
     mediaStream.value.removeTrack(tr)
   })
   switch (videoModeData.value[videoModeBefore.value].type) {
-    case 'normal': mediaStreamNormalStore.closeMediaStream('video'); break
-    case 'alt-text': mediaStreamAltTextStore.closeMediaStream('video'); break
-    case 'blur': mediaStreamBlurStore.closeMediaStream('video'); break
-    case 'image': mediaStreamVbgStore.closeMediaStream('video'); break
+    case 'normal':
+      mediaStreamNormalStore.closeMediaStream('video')
+      break
+    case 'alt-text':
+      mediaStreamAltTextStore.closeMediaStream('video')
+      break
+    case 'blur':
+      mediaStreamBlurStore.closeMediaStream('video')
+      break
+    case 'image':
+      mediaStreamVbgStore.closeMediaStream('video')
+      break
   }
 
   switch (videoModeData.value[videoMode.value].type) {
     case 'normal':
       // Normal のVideoトラックを mediaStream に追加
       await mediaStreamNormalStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
-      ; (mediaStreamNormalStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+      ;(mediaStreamNormalStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
       })
       // video on/off switch => ON
@@ -356,7 +375,7 @@ const changeVideoMode = async () => {
     case 'alt-text':
       // AltText のVideoトラックを mediaStream に追加
       mediaStreamAltTextStore.openMediaStream()
-      ; (mediaStreamAltTextStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
+      ;(mediaStreamAltTextStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
       })
       // video on/off switch => OFF
@@ -398,10 +417,18 @@ const toggleVideo = async () => {
     mediaStream.value.removeTrack(tr)
   })
   switch (videoModeData.value[videoMode.value].type) {
-    case 'normal': mediaStreamNormalStore.closeMediaStream('video'); break
-    case 'alt-text': mediaStreamAltTextStore.closeMediaStream('video'); break
-    case 'blur': mediaStreamBlurStore.closeMediaStream('video'); break
-    case 'image': mediaStreamVbgStore.closeMediaStream('video'); break
+    case 'normal':
+      mediaStreamNormalStore.closeMediaStream('video')
+      break
+    case 'alt-text':
+      mediaStreamAltTextStore.closeMediaStream('video')
+      break
+    case 'blur':
+      mediaStreamBlurStore.closeMediaStream('video')
+      break
+    case 'image':
+      mediaStreamVbgStore.closeMediaStream('video')
+      break
   }
 
   // 値の更新
@@ -574,7 +601,7 @@ const changeVideoInput = async () => {
     case 'blur':
       mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
       mediaStreamBlurStore.closeMediaStream('video')
-      await mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints);
+      await mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
       ;(mediaStreamBlurStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
       })
@@ -582,7 +609,7 @@ const changeVideoInput = async () => {
     case 'image':
       mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
       mediaStreamVbgStore.closeMediaStream('video')
-      await mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints);
+      await mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
       ;(mediaStreamVbgStore.getMediaStream() as MediaStream).getVideoTracks().forEach((tr) => {
         mediaStream.value.addTrack(tr)
       })
@@ -649,18 +676,14 @@ const doReload = () => {
       <div class="container mx-auto">
         <div class="p-3">
           <video
-            class="max-h-80 w-full mx-auto bg-slate-100"
+            class="mx-auto max-h-80 w-full bg-slate-100"
             :class="{ 'my-video-mirrored': myVideoMirrored && videoMode !== 'alt-text' }"
             :srcObject.prop="mediaStream"
             autoplay
             muted
             playsinline
           ></video>
-          <audio
-            :srcObject.prop="mediaStream"
-            autoplay
-            playsinline
-          ></audio>
+          <audio :srcObject.prop="mediaStream" autoplay playsinline></audio>
           <!--
           -->
 
