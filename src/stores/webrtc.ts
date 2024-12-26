@@ -481,7 +481,12 @@ export const useWebrtcStore = defineStore('webrtc', () => {
   function disconnectMedia() {
     // PeerMediaすべてを停止、Close、削除
     Object.keys(peerMedias.value).forEach(async (peerId) => {
-      if (peerId !== myPeerId.value) {
+      if (peerId === myPeerId.value) {
+        // audio source node 削除
+        peerMedias.value[peerId].audioSrcNode?.disconnect()
+        // volume worklet node 削除
+        peerMedias.value[peerId].volumeWorkletNode?.disconnect()
+      } else {
         // DataConnection CLOSE
         if (peerMedias.value[peerId].dataConn) {
           peerMedias.value[peerId].dataConn?.close()
