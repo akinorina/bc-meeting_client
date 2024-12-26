@@ -61,8 +61,20 @@ export const useMediaStreamNormalStore = defineStore('media-stream-normal', () =
   }
 
   // mediaStream 削除
-  const closeMediaStream = async () => {
-    mediaStreamNormal.value?.getTracks().forEach((tr) => {
+  const closeMediaStream = async (kind: '' | 'video' | 'audio' = '') => {
+    let tracks = []
+    switch (kind) {
+      case 'video':
+        tracks = mediaStreamNormal.value?.getVideoTracks() as MediaStreamTrack[]
+        break
+      case 'audio':
+        tracks = mediaStreamNormal.value?.getAudioTracks() as MediaStreamTrack[]
+        break
+      default:
+        tracks = mediaStreamNormal.value?.getTracks() as MediaStreamTrack[]
+        break
+    }
+    tracks.forEach((tr) => {
       tr.stop()
       mediaStreamNormal.value?.removeTrack(tr)
     })

@@ -182,8 +182,6 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
   const processFrameVirtual = async () => {
     if (!videoVbg || !ctxVbg.value) return
 
-    console.log('----- processFrameVirtual() -----')
-
     if (videoVbg.currentTime === lastWebcamTime) {
       if (webcamRunning.value) {
         requestIdVb = window.requestAnimationFrame(processFrameVirtual)
@@ -246,14 +244,26 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
   }
 
   // mediaStream 削除
-  const closeMediaStream = async () => {
+  const closeMediaStream = async (kind: '' | 'video' | 'audio' = '') => {
     webcamRunning.value = false
 
     // requestAnimationFrame() 停止
     window.cancelAnimationFrame(requestIdVb)
 
     // mediaStream 停止
-    mediaStreamVbg.value?.getTracks().forEach((tr) => {
+    let tracks: MediaStreamTrack[] = []
+    switch (kind) {
+      case 'video':
+        tracks = mediaStreamVbg.value?.getVideoTracks() as MediaStreamTrack[]
+        break
+      case 'audio':
+        tracks = mediaStreamVbg.value?.getAudioTracks() as MediaStreamTrack[]
+        break
+      default:
+        tracks = mediaStreamVbg.value?.getTracks() as MediaStreamTrack[]
+        break
+    }
+    tracks.forEach((tr) => {
       tr.stop()
       mediaStreamVbg.value?.removeTrack(tr)
     })

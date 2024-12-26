@@ -167,8 +167,6 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   const processFrameBlur = async () => {
     if (!videoVbg || !ctxVbg.value || !ctxBlur.value) return
 
-    console.log('----- processFrameBlur() -----')
-
     if (videoVbg.currentTime === lastWebcamTime) {
       if (webcamRunning.value) {
         requestIdVb = window.requestAnimationFrame(processFrameBlur)
@@ -239,14 +237,25 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   }
 
   // mediaStream 削除
-  const closeMediaStream = async () => {
+  const closeMediaStream = async (kind: '' | 'video' | 'audio' = '') => {
     webcamRunning.value = false
 
     // requestAnimationFrame() 停止
     window.cancelAnimationFrame(requestIdVb)
 
-    // mediaStream 停止
-    mediaStreamVbg.value?.getTracks().forEach((tr) => {
+    let tracks: MediaStreamTrack[] = []
+    switch (kind) {
+      case 'video':
+        tracks = mediaStreamVbg.value?.getVideoTracks() as MediaStreamTrack[]
+        break
+      case 'audio':
+        tracks = mediaStreamVbg.value?.getAudioTracks() as MediaStreamTrack[]
+        break
+      default:
+        tracks = mediaStreamVbg.value?.getTracks() as MediaStreamTrack[]
+        break
+    }
+    tracks.forEach((tr) => {
       tr.stop()
       mediaStreamVbg.value?.removeTrack(tr)
     })
