@@ -11,59 +11,6 @@ const router = createRouter({
       component: IndexView
     },
     {
-      path: '/samples',
-      name: 'samples',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/samples/IndexView.vue')
-    },
-    {
-      path: '/samples/generalmodal',
-      name: 'samples_generalmodal',
-      component: () => import('../views/samples/ModalGeneralView.vue')
-    },
-    {
-      path: '/samples/buttons',
-      name: 'samples_buttons',
-      component: () => import('../views/samples/ButtonsView.vue')
-    },
-    {
-      path: '/samples/media',
-      name: 'samples_media',
-      component: () => import('../views/samples/MediaView.vue')
-    },
-    {
-      path: '/samples/media-normal',
-      name: 'samples_media-normal',
-      component: () => import('../views/samples/MediaNormalView.vue')
-    },
-    {
-      path: '/samples/media-alttext',
-      name: 'samples_media-alttext',
-      component: () => import('../views/samples/MediaAltTextView.vue')
-    },
-    {
-      path: '/samples/media-blur',
-      name: 'samples_media-blur',
-      component: () => import('../views/samples/MediaBlurView.vue')
-    },
-    {
-      path: '/samples/media-vbg',
-      name: 'samples_media-vbg',
-      component: () => import('../views/samples/MediaVbgView.vue')
-    },
-    {
-      path: '/samples/audio',
-      name: 'samples_audio',
-      component: () => import('../views/samples/AudioView.vue')
-    },
-    {
-      path: '/samples/draggable',
-      name: 'samples_draggable',
-      component: () => import('../views/samples/DraggableView.vue')
-    },
-    {
       path: '/signin',
       name: 'sign-in',
       component: () => import('../views/auth/SigninView.vue')
