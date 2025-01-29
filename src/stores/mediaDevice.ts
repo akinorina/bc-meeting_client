@@ -6,8 +6,8 @@ export const useMediaDeviceStore = defineStore('media-device', () => {
   const mediaStreamConstraints = ref<any>({
     video: {
       deviceId: '',
-      width: 1920,
-      height: 1080,
+      width: 640, // 1280, // 1920,
+      height: 360, // 720, // 1080,
       aspectRatio: 1.777777778,
       frameRate: { max: 30 },
       facingMode: 'user'

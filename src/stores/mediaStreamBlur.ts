@@ -33,8 +33,8 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   const ctxOption = {
     x: 0,
     y: 0,
-    width: 1920,
-    height: 1080
+    width: 640, // 1280, // 1920,
+    height: 360 // 720 // 1080
   }
 
   // バックグラウンド分割`処理用

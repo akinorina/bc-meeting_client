@@ -36,8 +36,8 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
   const ctxOption = {
     x: 0,
     y: 0,
-    width: 1920,
-    height: 1080
+    width: 640, // 1280, // 1920,
+    height: 360 // 720 // 1080
   }
 
   // 背景画像 URL(path)
