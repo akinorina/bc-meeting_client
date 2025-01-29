@@ -9,8 +9,8 @@ export const useMediaStreamAlttextStore = defineStore('media-stream-alttext', ()
   const ctxOption = {
     x: 0,
     y: 0,
-    width: 3840, // 1920,
-    height: 2160 // 1080
+    width: 640, // 1280, // 1920,
+    height: 360 // 720 // 1080
   }
 
   // MediaStream 代替テキスト用
