@@ -37,7 +37,7 @@ export const useMediaStreamAlttextStore = defineStore('media-stream-alttext', ()
     ctxAlt.value.clearRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
     ctxAlt.value.fillStyle = 'black'
     ctxAlt.value.fillRect(ctxOption.x, ctxOption.y, ctxOption.width, ctxOption.height)
-    ctxAlt.value.font = '200px sans-serif'
+    ctxAlt.value.font = '50px sans-serif'
     ctxAlt.value.fillStyle = 'white'
     ctxAlt.value.textAlign = 'center'
     ctxAlt.value.textBaseline = 'bottom'
