@@ -123,11 +123,17 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
     videoVbg = document.createElement('video') as HTMLVideoElement
     // カメラからの映像ストリームを取得し、ビデオ要素にセット
     await _openNormal(mediaStreamConstraints)
+    // 音声 MediaStreamTrack の削除
+    mediaStreamNormal.value?.getAudioTracks().forEach((tr) => {
+      tr.stop()
+      mediaStreamNormal.value?.removeTrack(tr)
+    })
+
     videoVbg.srcObject = mediaStreamNormal.value as MediaStream
     videoVbg.play()
     videoVbg.muted = true
     videoVbg.onloadedmetadata = () => {
-      initBodySegmentation()
+      _initBodySegmentation()
     }
   }
 
@@ -145,19 +151,19 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
   }
 
   // 画像セグメンテーション初期化 => 実行
-  async function initBodySegmentation() {
+  async function _initBodySegmentation() {
     // フレーム処理の開始
     webcamRunning.value = true
 
     // ボディセグメンテーションモデルの作成
-    await createBodySegmentation()
+    await _createBodySegmentation()
 
     // background virtual image
-    processFrameVirtual()
+    _processFrameVirtual()
   }
 
   // 画像セグメンテーション生成
-  async function createBodySegmentation() {
+  async function _createBodySegmentation() {
     const vision = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
     )
@@ -179,12 +185,12 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
   }
 
   // バーチャル背景描画
-  async function processFrameVirtual() {
+  async function _processFrameVirtual() {
     if (!videoVbg || !ctxVbg.value) return
 
     if (videoVbg.currentTime === lastWebcamTime) {
       if (webcamRunning.value) {
-        requestIdVb = window.requestAnimationFrame(processFrameVirtual)
+        requestIdVb = window.requestAnimationFrame(_processFrameVirtual)
       }
       return
     }
@@ -239,7 +245,7 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
     ctxVbg.value.putImageData(dataNew, 0, 0)
 
     if (webcamRunning.value) {
-      requestIdVb = window.requestAnimationFrame(processFrameVirtual)
+      requestIdVb = window.requestAnimationFrame(_processFrameVirtual)
     }
   }
 
@@ -266,6 +272,12 @@ export const useMediaStreamVbgStore = defineStore('media-stream-vbg', () => {
     tracks.forEach((tr) => {
       tr.stop()
       mediaStreamVbg.value?.removeTrack(tr)
+    })
+
+    // Camera & Mic mediaStreamTrack の削除
+    mediaStreamNormal.value?.getTracks().forEach((tr) => {
+      tr.stop()
+      mediaStreamNormal.value?.removeTrack(tr)
     })
   }
 
