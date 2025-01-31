@@ -125,7 +125,7 @@ const startRoom = async () => {
     return false
   }
 
-  // open the mediastream
+  // normal mediaStream 生成
   try {
     await mediaDeviceStore.init()
     // normalモード
@@ -138,7 +138,8 @@ const startRoom = async () => {
   }
 
   // normal mediaStream 設定
-  mediaStream.value = mediaStreamNormalStore.getMediaStream() as MediaStream
+  mediaStream.value = mediaStreamNormalStore.cloneMediaStream() as MediaStream
+  mediaStreamNormalStore.closeMediaStream()
   trackStatus.value = { video: true, audio: true }
 
   // open Peer
@@ -183,6 +184,24 @@ const endRoom = async () => {
       mediaStreamVbgStore.closeMediaStream()
       break
   }
+  // //
+  // console.log('---')
+  // const numOfTracks = mediaStream.value.getTracks().length
+  // console.log('numOfTracks', numOfTracks)
+
+  // const numOfTracksAudio = mediaStream.value.getAudioTracks().length
+  // console.log('numOfTracksAudio', numOfTracksAudio)
+
+  // const numOfTracksVideo = mediaStream.value.getVideoTracks().length
+  // console.log('numOfTracksVideo', numOfTracksVideo)
+
+  // console.log('---')
+
+  // mediaStream に残った MediaStreamTrack を削除
+  mediaStream.value.getTracks().forEach((tr) => {
+    tr.stop()
+    mediaStream.value.removeTrack(tr)
+  })
 }
 onBeforeUnmount(endRoom)
 // beforeunload

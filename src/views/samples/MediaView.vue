@@ -1,235 +1,52 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useMediaDeviceStore } from '../../stores/mediaDevice'
-import { useMediaStreamStore } from '@/stores/mediaStream'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { useMediaStreamStore } from '../../stores/mediaStream'
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue'
-import ModalGeneral from '@/components/ui/ModalGeneral.vue'
+import ModalGeneral from '@/components/ModalGeneral.vue'
 import InputCheckbox from '../../components/ui/InputCheckbox.vue'
 import InputText from '@/components/ui/InputText.vue'
 import { RouterLink } from 'vue-router'
-import backgroundData from '../../assets/background.json'
-import type { BackgroundSettingObject } from '@/lib'
 
-const mediaDeviceStore = useMediaDeviceStore()
+// mediaStream
 const mediaStreamStore = useMediaStreamStore()
-
-// media stream
-const mediaStream = ref<MediaStream>(new MediaStream())
-
-// video/audio: on/off
-const trackStatus = ref({ video: true, audio: true })
-
-// 鏡映反転 flag
-const myVideoMirrored = ref(true)
-
-// altText
-const altText = ref('')
-watch(altText, () => {
-  mediaStreamStore.altText = altText.value
-})
 
 // 設定ダイアログ
 const modalSettings = ref()
 
-// バーチャル背景 mediaStream 設定
-// video mode
-const videoMode = ref('normal')
-const videoModeTmp = ref('normal')
-const videoModeData = ref<BackgroundSettingObject>(backgroundData as BackgroundSettingObject)
-
 onMounted(async () => {
-  // canvas text
-  altText.value = 'your name.'
-
   // open the mediastream
-  await mediaDeviceStore.init()
-  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-  mediaStreamStore.openAltText()
-  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-  mediaStream.value = mediaStreamStore.mediaStreamNormal?.clone() as MediaStream
-  trackStatus.value = { video: true, audio: true }
+  mediaStreamStore.init()
 })
 
 onBeforeUnmount(async () => {
-  await mediaStreamStore.closeVirtualBackground()
-  mediaStreamStore.closeAltText()
-  await mediaStreamStore.closeNormal()
-
   // close the mediaStream
-  mediaStream.value.getTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
+  mediaStreamStore.destroy()
 })
-
-// video on/off
-const toggleVideo = async () => {
-  trackStatus.value.video = !trackStatus.value.video
-  if (trackStatus.value.video) {
-    // altText -> normal or ...
-    videoMode.value = videoModeTmp.value
-  } else {
-    // normal or ... -> altText
-    videoModeTmp.value = videoMode.value
-    videoMode.value = 'alt-text'
-  }
-
-  // 既存mediaStream から Video を入れ替え
-  mediaStream.value.getVideoTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-  switch (videoMode.value) {
-    case 'normal':
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'alt-text':
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    default:
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-  }
-}
-
-// audio on/off
-const toggleAudio = () => {
-  trackStatus.value.audio = !trackStatus.value.audio
-  mediaStream.value.getAudioTracks().forEach((tr: MediaStreamTrack) => {
-    tr.enabled = trackStatus.value.audio
-  })
-}
 
 // open setting dialog
 const openSettings = () => {
   // device list
-  mediaDeviceStore.makeDeviceList()
+  mediaStreamStore.mediaDeviceStore.makeDeviceList()
   // open modal
   modalSettings.value.open()
-}
-// デバイス変更 - Video
-const changeVideoInput = async () => {
-  // close the video mediastream
-  mediaStream.value.getVideoTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-
-  // device 切替 - Video Input
-  mediaDeviceStore.mediaStreamConstraints.video.deviceId = mediaDeviceStore.videoInputDeviceId
-
-  // mediastream 再起動
-  await mediaStreamStore.closeNormal()
-  mediaStreamStore.closeAltText()
-  await mediaStreamStore.closeVirtualBackground()
-  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-  mediaStreamStore.openAltText()
-  await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-  // 切り替えたMediaStreamからVideoトラックを追加
-  switch (videoMode.value) {
-    case 'normal':
-      mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    case 'alt-text':
-      mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-    default:
-      mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-        mediaStream.value.addTrack(tr.clone())
-      })
-      break
-  }
-}
-// デバイス変更 - Audio
-const changeAudioInput = async () => {
-  // close the video mediastream
-  mediaStream.value.getAudioTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-
-  // device 切替 - Audio Input
-  mediaDeviceStore.mediaStreamConstraints.audio.deviceId = mediaDeviceStore.audioInputDeviceId
-
-  // mediastream 再起動
-  await mediaStreamStore.closeNormal()
-  await mediaStreamStore.openNormal(mediaDeviceStore.mediaStreamConstraints)
-
-  // Normal の Audio を接続
-  mediaStreamStore.mediaStreamNormal?.getAudioTracks().forEach((tr) => {
-    mediaStream.value.addTrack(tr.clone())
-  })
-}
-
-// バーチャル背景 mediaStream 切替
-const changeBackground = async () => {
-  trackStatus.value.video = true
-
-  mediaStream.value.getVideoTracks().forEach((tr) => {
-    tr.stop()
-    mediaStream.value.removeTrack(tr)
-  })
-
-  if (videoMode.value) {
-    switch (videoModeData.value[videoMode.value].type) {
-      case 'normal':
-        // Normal のVideoトラックを mediaStream に追加
-        mediaStreamStore.mediaStreamNormal?.getVideoTracks().forEach((tr) => {
-          mediaStream.value.addTrack(tr.clone())
-        })
-        break
-      case 'alt-text':
-        // AltText のVideoトラックを mediaStream に追加
-        mediaStreamStore.mediaStreamAltText?.getVideoTracks().forEach((tr) => {
-          mediaStream.value.addTrack(tr.clone())
-        })
-        break
-      case 'blur':
-      case 'image':
-        // VirtualBackground パラメータ設定
-        mediaStreamStore.virtualMode = videoModeData.value[videoMode.value].type
-        mediaStreamStore.backgroundBlur = videoModeData.value[videoMode.value].blur
-        mediaStreamStore.bgImageUrl = videoModeData.value[videoMode.value].url
-
-        // VirtualBackground 再起動
-        mediaStreamStore.closeVirtualBackground()
-        await mediaStreamStore.openVirtualBackground(mediaDeviceStore.mediaStreamConstraints)
-
-        // VirtualBackground のVideoトラックを mediaStream に追加
-        mediaStreamStore.mediaStreamVbg?.getVideoTracks().forEach((tr) => {
-          mediaStream.value.addTrack(tr.clone())
-        })
-        break
-    }
-  }
 }
 </script>
 
 <template>
   <div class="h-full w-full bg-slate-100 p-3">
-    <div class="flex justify-center">
-      <video
-        class="max-h-96 max-w-full bg-slate-100"
-        :class="{ 'video-mirrored': myVideoMirrored && videoMode !== 'alt-text' }"
-        :srcObject.prop="mediaStream"
-        autoplay
-        muted
-        playsinline
-      ></video>
+    <div class="">
+      <div class="flex justify-center mx-auto bg-slate-100 h-80">
+        <video
+          class=""
+          :class="{ 'video-mirrored': mediaStreamStore.myVideoMirrored && mediaStreamStore.videoMode !== 'alt-text' }"
+          :srcObject.prop="mediaStreamStore.mediaStream"
+          autoplay
+          muted
+          playsinline
+        ></video>
+      </div>
     </div>
-    <audio :srcObject.prop="mediaStream" autoplay playsinline></audio>
+    <audio :srcObject.prop="mediaStreamStore.mediaStream" autoplay playsinline></audio>
 
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
@@ -237,10 +54,10 @@ const changeBackground = async () => {
         <ButtonGeneralPrimary
           class="me-3 h-12 w-12"
           :class="{
-            'bg-slate-400': !trackStatus.video,
-            'hover:bg-slate-500': !trackStatus.video
+            'bg-slate-400': !mediaStreamStore.trackStatus.video,
+            'hover:bg-slate-500': !mediaStreamStore.trackStatus.video
           }"
-          @click="toggleVideo"
+          @click="mediaStreamStore.toggleVideo"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -249,7 +66,7 @@ const changeBackground = async () => {
             fill="currentColor"
             class="bi bi-camera-video-fill"
             viewBox="0 0 20 20"
-            v-if="trackStatus.video"
+            v-if="mediaStreamStore.trackStatus.video"
           >
             <path
               fill-rule="evenodd"
@@ -277,10 +94,10 @@ const changeBackground = async () => {
         <ButtonGeneralPrimary
           class="me-3 h-12 w-12"
           :class="{
-            'bg-slate-400': !trackStatus.audio,
-            'hover:bg-slate-500': !trackStatus.audio
+            'bg-slate-400': !mediaStreamStore.trackStatus.audio,
+            'hover:bg-slate-500': !mediaStreamStore.trackStatus.audio
           }"
-          @click="toggleAudio"
+          @click="mediaStreamStore.toggleAudio"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -289,7 +106,7 @@ const changeBackground = async () => {
             fill="currentColor"
             class="bi bi-mic-fill"
             viewBox="0 0 20 20"
-            v-if="trackStatus.audio"
+            v-if="mediaStreamStore.trackStatus.audio"
           >
             <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z" />
             <path
@@ -320,7 +137,7 @@ const changeBackground = async () => {
     <!-- mediastream alternative video text -->
     <div class="mx-auto">
       <div class="my-3 flex items-center justify-center">
-        <InputText class="w-80 p-3" v-model="altText" placeholder="your name" />
+        <InputText class="w-80 p-3" v-model="mediaStreamStore.altText" placeholder="表示名を入力してください" />
       </div>
     </div>
     <!-- // mediastream alternative video text-->
@@ -337,15 +154,15 @@ const changeBackground = async () => {
       <div class="my-3 flex items-center justify-center">
         <!-- select a virtual background. -->
         <div class="">
-          <select class="mt-3 w-64 border p-3" v-model="videoMode" @change="changeBackground">
-            <template v-for="(val, sKey) in videoModeData" :key="sKey">
+          <select class="mt-3 w-64 border p-3" v-model="mediaStreamStore.videoMode" @change="mediaStreamStore.changeBackground">
+            <template v-for="(val, sKey) in mediaStreamStore.videoModeData" :key="sKey">
               <option :value="sKey">
                 {{ val.label }}
               </option>
             </template>
           </select>
           <div class="h-12 w-64 border px-3 py-2">
-            {{ videoMode }}
+            {{ mediaStreamStore.videoMode }}
           </div>
         </div>
         <!-- // select a virtual background. -->
@@ -366,17 +183,17 @@ const changeBackground = async () => {
       <div class="text-center font-bold">設定</div>
 
       <div class="my-5 w-96 border px-2 py-5">
-        <InputCheckbox class="" v-model="myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
+        <InputCheckbox class="" v-model="mediaStreamStore.myVideoMirrored">自身の画像を鏡映反転する</InputCheckbox>
       </div>
 
-      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceVideoInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStreamStore.mediaDeviceStore.deviceVideoInputs.length > 0">
         <div class="font-bold">映像入力</div>
         <select
           class="mt-3 w-full border p-3"
-          v-model="mediaDeviceStore.videoInputDeviceId"
-          @change="changeVideoInput"
+          v-model="mediaStreamStore.mediaDeviceStore.videoInputDeviceId"
+          @change="mediaStreamStore.changeVideoInput"
         >
-          <template v-for="(val, sKey) in mediaDeviceStore.deviceVideoInputs" :key="sKey">
+          <template v-for="(val, sKey) in mediaStreamStore.mediaDeviceStore.deviceVideoInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
             </option>
@@ -384,14 +201,14 @@ const changeBackground = async () => {
         </select>
       </div>
 
-      <div class="my-5 w-96 border px-2 py-3" v-if="mediaDeviceStore.deviceAudioInputs.length > 0">
+      <div class="my-5 w-96 border px-2 py-3" v-if="mediaStreamStore.mediaDeviceStore.deviceAudioInputs.length > 0">
         <div class="font-bold">音声入力</div>
         <select
           class="mt-3 w-full border p-3"
-          v-model="mediaDeviceStore.audioInputDeviceId"
-          @change="changeAudioInput"
+          v-model="mediaStreamStore.mediaDeviceStore.audioInputDeviceId"
+          @change="mediaStreamStore.changeAudioInput"
         >
-          <template v-for="(val, sKey) in mediaDeviceStore.deviceAudioInputs" :key="sKey">
+          <template v-for="(val, sKey) in mediaStreamStore.mediaDeviceStore.deviceAudioInputs" :key="sKey">
             <option :value="val.deviceId">
               {{ val.label }}
             </option>

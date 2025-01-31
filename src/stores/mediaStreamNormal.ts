@@ -3,10 +3,13 @@ import { defineStore } from 'pinia'
 
 export const useMediaStreamNormalStore = defineStore('media-stream-normal', () => {
   // media stream
-  const mediaStreamNormal = ref<MediaStream>()
+  const mediaStreamNormal = ref<MediaStream>(new MediaStream())
 
   // mediaStream 作成
-  async function openMediaStream(mediaStreamConstraints: MediaStreamConstraints) {
+  async function openMediaStream(
+    mediaStreamConstraints: MediaStreamConstraints,
+    opt: '' | 'only-video' | 'only-audio' = ''
+  ) {
     // 対応待ち設定
     let waitingId
     // eslint-disable-next-line no-async-promise-executor
@@ -17,6 +20,20 @@ export const useMediaStreamNormalStore = defineStore('media-stream-normal', () =
 
       try {
         mediaStreamNormal.value = await navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
+        switch (opt) {
+          case 'only-video':
+            mediaStreamNormal.value.getAudioTracks().forEach((tr) => {
+              tr.stop()
+              mediaStreamNormal.value.removeTrack(tr)
+            })
+            break
+          case 'only-audio':
+            mediaStreamNormal.value.getVideoTracks().forEach((tr) => {
+              tr.stop()
+              mediaStreamNormal.value.removeTrack(tr)
+            })
+            break
+        }
       } catch (err: any) {
         console.error('Failed to get local stream', err)
 
@@ -60,29 +77,35 @@ export const useMediaStreamNormalStore = defineStore('media-stream-normal', () =
     return mediaStreamNormal.value
   }
 
+  // mediaStream 取得
+  function cloneMediaStream() {
+    return mediaStreamNormal.value.clone()
+  }
+
   // mediaStream 削除
   async function closeMediaStream(kind: '' | 'video' | 'audio' = '') {
     let tracks = []
     switch (kind) {
       case 'video':
-        tracks = mediaStreamNormal.value?.getVideoTracks() as MediaStreamTrack[]
+        tracks = mediaStreamNormal.value.getVideoTracks() as MediaStreamTrack[]
         break
       case 'audio':
-        tracks = mediaStreamNormal.value?.getAudioTracks() as MediaStreamTrack[]
+        tracks = mediaStreamNormal.value.getAudioTracks() as MediaStreamTrack[]
         break
       default:
-        tracks = mediaStreamNormal.value?.getTracks() as MediaStreamTrack[]
+        tracks = mediaStreamNormal.value.getTracks() as MediaStreamTrack[]
         break
     }
     tracks.forEach((tr) => {
       tr.stop()
-      mediaStreamNormal.value?.removeTrack(tr)
+      mediaStreamNormal.value.removeTrack(tr)
     })
   }
 
   return {
     openMediaStream,
     getMediaStream,
+    cloneMediaStream,
     closeMediaStream
   }
 })
