@@ -61,7 +61,7 @@ export const useMediaStreamNormalStore = defineStore('media-stream-normal', () =
   }
 
   // mediaStream 削除
-  const closeMediaStream = async (kind: '' | 'video' | 'audio' = '') => {
+  async function closeMediaStream(kind: '' | 'video' | 'audio' = '') {
     let tracks = []
     switch (kind) {
       case 'video':

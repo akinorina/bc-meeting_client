@@ -142,7 +142,7 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   }
 
   // 画像セグメンテーション
-  const createBodySegmentation = async () => {
+  async function createBodySegmentation() {
     const vision = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
     )
@@ -164,7 +164,7 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   }
 
   // ぼかし描画
-  const processFrameBlur = async () => {
+  async function processFrameBlur() {
     if (!videoVbg || !ctxVbg.value || !ctxBlur.value) return
 
     if (videoVbg.currentTime === lastWebcamTime) {
@@ -192,7 +192,7 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
     // Start segmenting the stream.
     imageSegmenter.segmentForVideo(videoVbg, startTimeMs, callbackForVideoBlur)
   }
-  const callbackForVideoBlur = async (result: ImageSegmenterResult) => {
+  async function callbackForVideoBlur(result: ImageSegmenterResult) {
     if (!videoVbg || !ctxVbg.value || !ctxBlur.value || !result.categoryMask) return
 
     // Canvas 画像 => imageData
@@ -237,7 +237,7 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   }
 
   // mediaStream 削除
-  const closeMediaStream = async (kind: '' | 'video' | 'audio' = '') => {
+  async function closeMediaStream(kind: '' | 'video' | 'audio' = '') {
     webcamRunning.value = false
 
     // requestAnimationFrame() 停止
@@ -262,7 +262,7 @@ export const useMediaStreamBlurStore = defineStore('media-stream-blur', () => {
   }
 
   // mediaStream 取得
-  const getMediaStream = () => {
+  function getMediaStream() {
     return mediaStreamVbg.value
   }
 
