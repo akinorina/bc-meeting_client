@@ -88,6 +88,9 @@ const startRoom = async () => {
   // 状態: 退室
   statusEnterRoom.value = false
 
+  // リセット
+  mediaStreamStore.trackStatus = { video: true, audio: true }
+
   // canvas text
   mediaStreamStore.altText = webrtcStore.myName = myDisplayName.value = ''
 
