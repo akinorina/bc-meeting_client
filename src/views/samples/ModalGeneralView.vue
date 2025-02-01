@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import ModalGeneral from '@/components/ui/ModalGeneral.vue'
+import ModalGeneral from '@/components/ModalGeneral.vue'
 import ButtonGeneral from '@/components/ui/ButtonGeneral.vue'
 
 const gmodal = ref()
