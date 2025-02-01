@@ -46,12 +46,12 @@ export const useMediaStreamAlttextStore = defineStore('media-stream-alttext', ()
   }
 
   // mediaStream 取得
-  const getMediaStream = () => {
+  function getMediaStream() {
     return mediaStreamAltText.value
   }
 
   // mediaStream 削除
-  const closeMediaStream = async (kind: '' | 'video' | 'audio' = '') => {
+  async function closeMediaStream(kind: '' | 'video' | 'audio' = '') {
     // 描画停止
     window.cancelAnimationFrame(requestIdAltText.value)
     // track削除
