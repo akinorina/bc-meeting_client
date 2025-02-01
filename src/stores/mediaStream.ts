@@ -94,6 +94,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
         break
       case 'blur':
         // video トラック Blur設定
+        mediaStreamBlurStore.backgroundBlur = videoModeData.value[videoMode.value].blur
         await mediaStreamBlurStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
         mediaStreamBlur.value = mediaStreamBlurStore.getMediaStream() as MediaStream
         //
@@ -107,6 +108,7 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
         })
         break
       case 'image':
+        mediaStreamVbgStore.bgImageUrl = videoModeData.value[videoMode.value].url
         await mediaStreamVbgStore.openMediaStream(mediaDeviceStore.mediaStreamConstraints)
         mediaStreamVbg.value = mediaStreamVbgStore.getMediaStream() as MediaStream
         //
@@ -216,6 +218,10 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
    * videoMode 変更
    */
   async function changeBackground() {
+    console.log('--- mediaStreamStore.changeBackground() ---')
+    console.log('videoMode      ', videoMode.value)
+    console.log('videoModeBefore', videoModeBefore.value)
+
     //
     await _removeVideoTrack(videoModeBefore.value)
     //
@@ -240,6 +246,8 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
         videoModeBefore.value = videoMode.value
         break
     }
+
+    console.log('--- mediaStreamStore.changeBackground() --- end')
   }
 
   /**
@@ -267,7 +275,9 @@ export const useMediaStreamStore = defineStore('media-stream', () => {
   /**
    * destroy
    */
-  function destroy() {
+  async function destroy() {
+    await _removeVideoTrack(videoModeBefore.value)
+
     mediaStream.value?.getTracks().forEach((tr) => {
       tr.stop()
       mediaStream.value?.removeTrack(tr)
