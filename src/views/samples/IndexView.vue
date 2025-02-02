@@ -134,6 +134,19 @@
         </router-link>
         -->
       </div>
+
+      <div class="mt-3 border p-3">
+        <h2 class="font-bold">Payment</h2>
+
+        <router-link :to="{ name: 'samples_payment' }" class="">
+          <div class="">
+            <div class="m-3 rounded-lg border p-3 hover:bg-sky-200">
+              <h5 class="">Payment サンプル</h5>
+              <p class="">Stripe を使った支払いのサンプル。</p>
+            </div>
+          </div>
+        </router-link>
+      </div>
     </div>
   </div>
 </template>

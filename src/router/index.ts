@@ -19,6 +19,11 @@ const router = createRouter({
       component: () => import('../views/samples/IndexView.vue')
     },
     {
+      path: '/samples/payment',
+      name: 'samples_payment',
+      component: () => import('../views/samples/PaymentView.vue')
+    },
+    {
       path: '/samples/buttons',
       name: 'samples_buttons',
       component: () => import('../views/samples/ButtonsView.vue')
