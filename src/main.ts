@@ -1,5 +1,7 @@
 import './assets/scss/main.scss'
 
+import 'https://js.stripe.com/v3/'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { CkeditorPlugin } from '@ckeditor/ckeditor5-vue'

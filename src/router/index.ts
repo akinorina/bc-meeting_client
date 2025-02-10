@@ -24,6 +24,11 @@ const router = createRouter({
       component: () => import('../views/samples/PaymentView.vue')
     },
     {
+      path: '/samples/payment/complete',
+      name: 'samples_payment_complete',
+      component: () => import('../views/samples/PaymentCompleteView.vue')
+    },
+    {
       path: '/samples/buttons',
       name: 'samples_buttons',
       component: () => import('../views/samples/ButtonsView.vue')
@@ -220,7 +225,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
   // 行き先ページが管理者用ページである判定
-  const isMyPage = String(to.name).match(/^mypage/) !== null
+  const isMyPage = String(to.name).match(/^(mypage|samples_payment)/) !== null
 
   if (isMyPage && !authStore.isAuthenticated()) {
     // 管理者用ページへ未認証状態で遷移の場合、ログイン画面へ遷移
