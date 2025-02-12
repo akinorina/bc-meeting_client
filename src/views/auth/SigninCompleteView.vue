@@ -11,10 +11,10 @@ const authStore = useAuthStore()
 const resultStatus = ref(false)
 
 onMounted(async () => {
-  resultStatus.value = await authStore.signInByGoogleRedirect(route.query)
+  // resultStatus.value = await authStore.signInByGoogleRedirect(route.query)
 })
 
-const toMypagePayment = async () => {
+const toUserPage = async () => {
   router.push({ name: 'mypage_payment' })
 }
 const toTop = async () => {
@@ -29,12 +29,12 @@ const toTop = async () => {
     <div class="border">
       <div v-if="resultStatus">
         <div class="border p-3">
-          <div class="">Google アカウントでサインインしました。</div>
-          <div class="">Userページへ進んでください。</div>
+          <div class="">サインインしました。</div>
+          <div class="">Subscription 設定ページへ進んでください。</div>
         </div>
 
         <div class="border p-3 text-center">
-          <ButtonGeneralPrimary class="" @click="toMypagePayment">Subscription設定ページ</ButtonGeneralPrimary>
+          <ButtonGeneralPrimary class="" @click="toUserPage">Subscription 設定ページ</ButtonGeneralPrimary>
         </div>
       </div>
       <div v-else>

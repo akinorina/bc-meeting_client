@@ -160,6 +160,11 @@ const router = createRouter({
       name: 'mypage',
       component: () => import('../views/mypage/IndexView.vue')
     },
+    {
+      path: '/mypage/payment',
+      name: 'mypage_payment',
+      component: () => import('../views/mypage/PaymentView.vue')
+    },
     // settings
     {
       path: '/mypage/settings',
