@@ -1,5 +1,3 @@
-// import { ref } from 'vue'
-import { type Stripe } from '@stripe/stripe-js'
 import { defineStore } from 'pinia'
 import { axios } from '@/lib/Axios'
 
@@ -52,7 +50,7 @@ export const useStripeStore = defineStore('stripe', () => {
   }
 
   /**
-   * Subscription(サブスクリプション) 一覧取得
+   * Subscription(サブスクリプション) - 一覧取得
    */
   async function listSubscription(customerId: string, priceId: string) {
     let url = '/api/stripe/list-subscription?customer=' + customerId
@@ -63,86 +61,43 @@ export const useStripeStore = defineStore('stripe', () => {
   }
 
   /**
-   * Invoice(請求書) 一覧取得
+   * Subscription(サブスクリプション) - キャンセル
    */
-  async function listInvoice(subscriptionId: string) {
-    const options = {}
-    const res = await axios.get('/api/stripe/list-invoice?subscription=' + subscriptionId, options)
-    return res.data
+  async function cancelSubscription(subscriptionId: string) {
+    try {
+      const options = {}
+      const response = await axios.post(
+        '/api/stripe/cancel-subscription/' + subscriptionId,
+        options
+      )
+      console.log('response', response)
+    } catch (err: any) {
+      console.error(err.message)
+    }
   }
 
   /**
-   * create-payment-intent
+   * Invoices(請求書) - 一覧取得
    */
-  async function createPaymentIntent() {
-    const options = {}
-    const res = await axios.get('/api/stripe/create-payment-intent', options)
-    return res.data
+  async function listInvoices(subscriptionId: string) {
+    try {
+      const options = {}
+      const response = await axios.get('/api/stripe/list-invoice/' + subscriptionId, options)
+      console.log('response', response)
+      return response.data
+    } catch (err: any) {
+      console.error(err.message)
+    }
   }
-
-  // async function getImage(id: number) {
-  //   try {
-  //     image.value = new Image()
-  //     const options = {}
-  //     const response = await axios.get('/api/images/' + id, options)
-  //     image.value = new Image(response.data)
-  //   } catch (err: any) {
-  //     console.error(err.message)
-  //   }
-  // }
-
-  // async function newImage() {
-  //   try {
-  //     image.value = new Image()
-  //   } catch (err: any) {
-  //     console.error(err.message)
-  //   }
-  // }
-
-  // async function createImage() {
-  //   try {
-  //     const options = image.value
-  //     await axios.post('/api/images', options)
-  //   } catch (err: any) {
-  //     console.error(err.message)
-  //   }
-  // }
-
-  // async function uploadImage() {
-  //   try {
-  //     const options = image.value
-  //     await axios.post('/api/images/upload', options)
-  //   } catch (err: any) {
-  //     console.error(err.message)
-  //   }
-  // }
-
-  // async function updateImage(id: number) {
-  //   try {
-  //     const options = image.value
-  //     await axios.put('/api/images/' + id, options)
-  //   } catch (err: any) {
-  //     console.error(err.message)
-  //   }
-  // }
-
-  // async function deleteImage(id: number) {
-  //   try {
-  //     const options = {}
-  //     await axios.delete('/api/images/' + id, options)
-  //   } catch (err: any) {
-  //     console.error(err.message)
-  //   }
-  // }
 
   return {
     getConfig,
     getPrices,
-    createPaymentIntent,
     createCustomer,
     listCustomer,
     createSubscription,
     listSubscription,
-    listInvoice
+    cancelSubscription,
+    listInvoices
   }
 })

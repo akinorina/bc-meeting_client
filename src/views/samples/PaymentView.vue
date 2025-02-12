@@ -7,15 +7,12 @@ import {
   loadStripe,
   type Stripe,
   type StripeElements,
-  type StripeCardElement,
   type StripePaymentElementOptions,
   type StripePaymentElement,
 } from "@stripe/stripe-js";
-import type { Invoice } from '@stripe/stripe-js/types';
 import { useStripeStore } from '../../stores/stripe';
 import ButtonGeneralPrimary from '@/components/ui/ButtonGeneralPrimary.vue';
 import VccHeader from '@/components/VccHeader.vue';
-import { URL } from 'node:url';
 
 const authStore = useAuthStore()
 const stripeStore = useStripeStore()
@@ -30,9 +27,8 @@ const customerId = ref('')
 const subscription = ref()
 const clientSecret = ref('')
 const elements = ref<StripeElements>()
-const cardElement = ref<StripeCardElement>()
 const paymentElement = ref<StripePaymentElement>()
-const invoices = ref<Invoice[]>([])
+const invoices = ref<any[]>([])
 
 // 選択値
 const name = ref('Akinori Nakata')
@@ -40,7 +36,7 @@ const email = ref('')
 const priceId = ref('')
 
 // others
-const stepName = ref('create1')
+const stepName = ref('')
 const messages = ref<string[]>([])
 const isLoading = ref(false);
 
@@ -56,6 +52,9 @@ onMounted(async () => {
   // Prices一覧 取得
   prices.value = (await stripeStore.getPrices()).prices
   console.log('prices', prices.value)
+  if (prices.value.length === 0) {
+    throw new Error('価格データがありませんでした。')
+  }
   priceId.value = prices.value[0].id
 
   // サインインユーザー情報取得
@@ -82,15 +81,17 @@ onMounted(async () => {
   // Subscription 既存から取得
   const listSubscriptions = (await stripeStore.listSubscription(customerId.value, priceId.value))
   // console.log('subscriptions', listSubscriptions.subscriptions.data)
-  if (listSubscriptions.subscriptions.data.length > 0) {
-    console.log('..... Subscription が見つかりました。')
+  if (listSubscriptions.subscriptions.data.length === 0) {
+    console.log('..... Subscription が見つかりませんでした。', listSubscriptions.subscriptions.data.length)
+  } else {
+    console.log('..... Subscription が見つかりました。', listSubscriptions.subscriptions.data.length)
     subscription.value = listSubscriptions.subscriptions.data[0]
     console.log('::: subscription', subscription.value)
 
-    stepName.value = 'update1'
-
-    invoices.value = await stripeStore.listInvoice(subscription.value.id);
+    invoices.value = await stripeStore.listInvoices(subscription.value.id);
     console.log('invoices', invoices.value)
+
+    stepName.value = 'available'
   }
 
   // isLoading.value = false;
@@ -184,6 +185,12 @@ const submitSubscribe2 = async () => {
 // サブスクリプションのキャンセル
 const cancelSubscription = async () => {
   console.log('--- cancelSubscription() ---')
+
+  // Subscription キャンセルを実行
+  stripeStore.cancelSubscription(subscription.value.id)
+
+  // 画面遷移
+  stepName.value = 'canceled'
 }
 
 const setMessage = (message: string) => {
@@ -196,8 +203,6 @@ const setMessage = (message: string) => {
 <template>
   <div class="container mx-auto w-screen bg-inherit">
     <VccHeader />
-
-    <h1 class="">payment view</h1>
 
     <div class="border p-3 my-3" v-if="stepName === 'create1'">
       <h1 class="mb-3 text-xl font-bold">支払いフォーム</h1>
@@ -273,7 +278,7 @@ const setMessage = (message: string) => {
       </div>
     </div>
 
-    <div class="border p-3 my-3" v-else-if="stepName === 'update1'">
+    <div class="border p-3 my-3" v-else-if="stepName === 'available'">
       <h1 class="mb-3 text-xl font-bold">サブスクリプション</h1>
 
       <div class="">
@@ -283,8 +288,7 @@ const setMessage = (message: string) => {
           <div class="">サービス名: {{ subscription.status }}</div>
           <div class="">サービス開始日: {{ dayjs(subscription.start_date * 1000).format('YYYY-MM-DD') }}</div>
           <div class="">現在の期間: {{ dayjs(subscription.current_period_start * 1000).format('YYYY-MM-DD') }} 〜 {{ dayjs(subscription.current_period_end * 1000).format('YYYY-MM-DD') }}</div>
-          <div class="">xxxxx: {{ subscription.status }}</div>
-          <!--  -->
+          <div class="">状態: {{ subscription.status }}</div>
         </div>
 
         <div class="my-3">
@@ -324,7 +328,15 @@ const setMessage = (message: string) => {
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="border p-3 my-3" v-else-if="stepName === 'canceled'">
+      <h1 class="mb-3 text-xl font-bold">サブスクリプション</h1>
+
+      <div class="">
+        キャンセルしました。
+      </div>
+    </div>
+</div>
 </template>
 
 <style lang="scss" scoped>
