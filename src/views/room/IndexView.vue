@@ -588,11 +588,11 @@ const doReload = () => {
                 class="me-0 h-10 w-20"
                 :class="{
                   'bg-slate-400 hover:bg-slate-400':
-                    myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStreamStore.mediaStream.active
+                    webrtcStore.myPeerId === '' || !mediaStreamStore.mediaStream.active
                 }"
                 @click="enterRoom"
                 :disabled="
-                  myDisplayName === '' || webrtcStore.myPeerId === '' || !mediaStreamStore.mediaStream.active
+                  webrtcStore.myPeerId === '' || !mediaStreamStore.mediaStream.active
                 "
               >
                 入室
